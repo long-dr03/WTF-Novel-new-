@@ -33,15 +33,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 try {
                     // Fetch user profile using the token
                     const response: any = await axios.get('/me')
-                    if (response && response.data && response.data.user) {
+                    if (response && response.user) {
+                        setUser(response.user)
+                    } else if (response && response.data && response.data.user) {
                         setUser(response.data.user)
                     } else {
                         // If token is invalid or request fails, clear auth
                         localStorage.removeItem('jwt')
                         setUser(null)
                     }
-                } catch (error) {
-                    console.error('Auth check failed:', error)
+                } catch (error: any) {
+                    // Chỉ log lỗi nếu không phải 401/404 (expected errors)
+                    if (error?.response?.status !== 401 && error?.response?.status !== 404) {
+                        console.error('Auth check failed:', error)
+                    }
                     localStorage.removeItem('jwt')
                     setUser(null)
                 }

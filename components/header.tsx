@@ -12,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { HeaderSearch } from "./header-search";
 
 export const Header = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -23,6 +24,10 @@ export const Header = () => {
                     <Image src="/logo.jpg" alt="Logo" width={50} height={50} className="rounded-lg" />
                     <span className="text-xl font-bold">Novel</span>
                 </Link>
+
+                <div className="flex-1 max-w-md mx-4">
+                    <HeaderSearch />
+                </div>
 
                 <div className="flex items-center gap-4">
                     {isAuthenticated && user ? (

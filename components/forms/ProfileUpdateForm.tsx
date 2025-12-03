@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { profileUpdateSchema, type ProfileUpdateFormData } from "@/lib/validations/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { AvatarUpload } from "@/components/ui/AvatarUpload"
 import {
     Form,
     FormControl,
@@ -77,12 +78,12 @@ export function ProfileUpdateForm({ defaultValues, onSubmit }: ProfileUpdateForm
                         <FormItem>
                             <FormLabel>Avatar</FormLabel>
                             <FormControl>
-                                <Input
-                                    {...fieldProps}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(event) => {
-                                        onChange(event.target.files && event.target.files[0]);
+                                <AvatarUpload
+                                    value={value}
+                                    defaultPreview={defaultValues?.avatar}
+                                    onChange={onChange}
+                                    onError={(error: string) => {
+                                        form.setError('avatar', { message: error })
                                     }}
                                 />
                             </FormControl>

@@ -1,4 +1,5 @@
 "use client"
+import { Facebook, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,14 +19,14 @@ export const Footer = () => {
                     <div className="flex flex-col gap-3">
                         <h3 className="font-semibold text-lg">Liên hệ</h3>
                         <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-                            <li className="hover:text-foreground transition-colors">
-                                <Link href="/">Facebook</Link>
+                            <li className="flex gap-2 hover:text-foreground transition-colors">
+                                <Facebook size={16} strokeWidth={1.5} /> <Link href="/"> Facebook</Link>
                             </li>
-                            <li className="hover:text-foreground transition-colors">
-                                <Link href="/">Instagram</Link>
+                            <li className="flex gap-2 hover:text-foreground transition-colors">
+                                <Instagram size={16} strokeWidth={1.5} /> <Link href="/"> Instagram</Link>
                             </li>
-                            <li className="hover:text-foreground transition-colors">
-                                <Link href="/">Twitter</Link>
+                            <li className="flex gap-2 hover:text-foreground transition-colors">
+                                <Linkedin size={16} strokeWidth={1.5} /> <Link href="/"> linkedin</Link>
                             </li>
                         </ul>
                     </div>
