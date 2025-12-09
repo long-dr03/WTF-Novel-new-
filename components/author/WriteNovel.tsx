@@ -40,7 +40,8 @@ import {
     Pilcrow
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-
+import {createNovelService,
+        uploadChapterService} from "@/services/novelService";
 // Toolbar Button Component
 const ToolbarButton = ({
     onClick,
@@ -93,7 +94,7 @@ const ToolbarDivider = ({ isDark }: { isDark: boolean }) => (
     )} />
 );
 
-const EditorPage = () => {
+const WriteNovel = () => {
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [isPreview, setIsPreview] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -512,4 +513,11 @@ const EditorPage = () => {
     );
 };
 
-export default EditorPage;
+const createNovel = () => {
+    return (
+        <div>
+            Create Novel Component
+        </div>
+    )
+}
+export default WriteNovel;
