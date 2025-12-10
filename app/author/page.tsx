@@ -1,6 +1,5 @@
-
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { DashboardStats } from "@/components/author/DashboardStats"
@@ -8,12 +7,37 @@ import { NovelList } from "@/components/author/NovelList"
 import  WriteNovel  from "@/components/author/WriteNovel"
 import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
-
+import { getNovelsByAuthorService } from "@/services/novelService"
 type TabType = "dashboard" | "novels" | "write" | "settings"
 
 const Page = () => {
     const { user } = useAuth()
     const [activeTab, setActiveTab] = useState<TabType>("dashboard")
+    const [authorNovels, setAuthorNovels] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchNovels = async () => {
+            if (user?.id) {
+                try {
+                    const novels = await getNovelsByAuthorService(user.id)
+                    setAuthorNovels(novels || [])
+                } catch (error) {
+                    console.error("Error fetching novels:", error)
+                } finally {
+                    setLoading(false)
+                }
+            }
+        }
+        fetchNovels()
+    }, [user?.id])
+
+    // Callback khi nhấn "Sửa" từ NovelList
+    const handleEditNovel = (novelId: string) => {
+        setSelectedNovelId(novelId)
+        setActiveTab("write")
+    }
 
     if (!user) {
         return null
@@ -43,13 +67,16 @@ const Page = () => {
     ]
 
     const renderContent = () => {
+        if (loading && activeTab === "novels") {
+            return <div className="p-6">Đang tải...</div>
+        }
         switch (activeTab) {
             case "dashboard":
                 return <DashboardStats />
             case "novels":
-                return <NovelList />
+                return <NovelList novels={authorNovels} onEditNovel={handleEditNovel} />
             case "write":
-                return <WriteNovel />
+                return <WriteNovel novels={authorNovels} selectedNovelId={selectedNovelId} onNovelChange={setSelectedNovelId} />
             case "settings":
                 return (
                     <div className="p-6">

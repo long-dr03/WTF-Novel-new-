@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById , getPopularNovels, getNovelsByAuthor } from '../controller/NovelController';
 interface NovelData {
     title: string;
     description: string;
@@ -41,8 +41,22 @@ const createNovelService = async (novelData: NovelData) => {
         return null;
     }
 };
-
+const getNovelsByAuthorService = async (authorId: string) => {
+    const response = await getNovelsByAuthor(authorId);
+    return response.data;
+}
+const getNovelByIdService = async(novelId: string) => {
+    const response = await getNovelById(novelId);
+    return response.data;
+}
+const getPopularNovelsService = async(limit: number = 10) => {
+    const response = await getPopularNovels(limit);
+    return response.data;
+}
 export {
     createNovelService,
-    uploadChapterService
+    uploadChapterService,
+    getNovelByIdService,
+    getNovelsByAuthorService,
+    getPopularNovelsService
 }

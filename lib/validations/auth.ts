@@ -21,7 +21,7 @@ export const registerSchema = z.object({
 export const profileUpdateSchema = z.object({
     username: z.string().min(3, "Tên người dùng phải có ít nhất 3 ký tự"),
     email: z.string().email("Email không hợp lệ"),
-    avatar: z.any().optional(),
+    avatar: z.string().optional(), // URL string from UploadThing
     oldPassword: z.string().optional(),
     newPassword: z.string().min(6, "Mật khẩu mới phải có ít nhất 6 ký tự").optional().or(z.literal("")),
     confirmPassword: z.string().optional(),

@@ -37,4 +37,15 @@ const createNovel = (data: NovelData) => {
     });
 };
 
-export { createNovel, uploadChapter };
+const getNovelsByAuthor = (authorId: string) => {
+    return axios.get(`/author/${authorId}/novels`);
+};
+
+const getNovelById = (novelId: string) => {
+    return axios.get(`/novel/${novelId}`);
+};
+const getPopularNovels = (limit: number = 10) => {
+    return axios.get(`/novels/popular?limit=${limit}`);
+};
+
+export { createNovel, uploadChapter, getNovelById, getNovelsByAuthor, getPopularNovels };

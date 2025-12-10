@@ -40,8 +40,7 @@ import {
     Pilcrow
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import {createNovelService,
-        uploadChapterService} from "@/services/novelService";
+import {uploadChapterService,getNovelsByAuthorService} from "@/services/novelService";
 // Toolbar Button Component
 const ToolbarButton = ({
     onClick,
@@ -94,11 +93,29 @@ const ToolbarDivider = ({ isDark }: { isDark: boolean }) => (
     )} />
 );
 
-const WriteNovel = () => {
+interface Novel {
+    _id?: string;
+    id?: string;
+    title: string;
+    coverImage?: string;
+}
+
+interface WriteNovelProps {
+    novels?: Novel[];
+    selectedNovelId?: string | null;
+    onNovelChange?: (novelId: string | null) => void;
+}
+
+const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: WriteNovelProps) => {
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [isPreview, setIsPreview] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [chapterTitle, setChapterTitle] = useState("");
+    const [chapterNumber, setChapterNumber] = useState(1);
+
+    // Lấy truyện được chọn
+    const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
 
     const editor = useEditor({
         extensions: [
@@ -139,40 +156,54 @@ const WriteNovel = () => {
     const wordCount = editor?.storage.characterCount?.words() || 0;
     const charCount = editor?.storage.characterCount?.characters() || 0;
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         if (!editor) return;
+        
+        // Kiểm tra đã chọn truyện chưa
+        if (!selectedNovelId) {
+            alert('Vui lòng chọn truyện trước khi lưu chương!');
+            return;
+        }
+        
         setIsSaving(true);
         
         // Lấy nội dung theo nhiều định dạng
         const htmlContent = editor.getHTML();      // Định dạng HTML
         const jsonContent = editor.getJSON();      // Định dạng JSON (ProseMirror)
-        const textContent = editor.getText();      // Chỉ text thuần
         
         // Lấy word/char count trực tiếp từ editor
         const words = editor.storage.characterCount?.words() || 0;
         const chars = editor.storage.characterCount?.characters() || 0;
         
-        // Log để xem các định dạng
-        console.log('=== NỘI DUNG EDITOR ===');
-        console.log('📄 HTML Format:', htmlContent);
-        console.log('📋 JSON Format:', JSON.stringify(jsonContent, null, 2));
-        console.log('📝 Text Format:', textContent);
-        console.log('========================');
-        
-        // Ví dụ data để gửi lên server
-        const saveData = {
-            title: 'Chương 1', // Có thể thêm input cho title
-            content: htmlContent, // Hoặc jsonContent tùy bạn chọn
-            contentJson: jsonContent, // Lưu cả 2 để linh hoạt
+        // Data để gửi lên server
+        const chapterData = {
+            novelId: selectedNovelId,
+            chapterNumber: chapterNumber,
+            title: chapterTitle || `Chương ${chapterNumber}`,
+            content: htmlContent,
+            contentJson: jsonContent,
             wordCount: words,
             charCount: chars,
-            updatedAt: new Date().toISOString(),
+            status: 'draft' as const,
         };
         
-        console.log('💾 Data để gửi lên server:', saveData);
-        
-        setTimeout(() => setIsSaving(false), 1000);
-    }, [editor]);
+        try {
+            const result = await uploadChapterService(chapterData);
+            if (result) {
+                console.log('✅ Lưu chương thành công:', result);
+                alert('Lưu chương thành công!');
+                // Tăng số chương lên để viết chương tiếp theo
+                setChapterNumber(prev => prev + 1);
+                setChapterTitle('');
+                editor.commands.clearContent();
+            }
+        } catch (error) {
+            console.error('❌ Lỗi khi lưu chương:', error);
+            alert('Có lỗi xảy ra khi lưu chương!');
+        } finally {
+            setIsSaving(false);
+        }
+    }, [editor, selectedNovelId, chapterNumber, chapterTitle]);
 
     // Theme colors
     const theme = {
@@ -197,16 +228,99 @@ const WriteNovel = () => {
                 "mx-auto transition-all duration-300",
                 isFullscreen ? "max-w-6xl px-4 py-4" : "max-w-4xl px-4 py-8"
             )}>
+                {/* Novel Selection */}
+                <div className={cn(
+                    "mb-6 p-4 rounded-2xl border",
+                    theme.toolbarBg,
+                    theme.editorBorder
+                )}>
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        <div className="flex-1">
+                            <label className={cn("block text-sm font-medium mb-2", theme.text)}>
+                                Chọn truyện
+                            </label>
+                            <select
+                                value={selectedNovelId || ""}
+                                onChange={(e) => onNovelChange?.(e.target.value || null)}
+                                className={cn(
+                                    "w-full p-3 rounded-xl border transition-all duration-200",
+                                    isDarkMode 
+                                        ? "bg-stone-800 border-stone-700 text-stone-200" 
+                                        : "bg-white border-stone-300 text-stone-800",
+                                    "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                )}
+                            >
+                                <option value="">-- Chọn truyện để viết --</option>
+                                {novels.map((novel) => (
+                                    <option key={novel._id || novel.id} value={novel._id || novel.id}>
+                                        {novel.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {selectedNovel && (
+                            <>
+                                <div className="flex-1">
+                                    <label className={cn("block text-sm font-medium mb-2", theme.text)}>
+                                        Số chương
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={chapterNumber}
+                                        onChange={(e) => setChapterNumber(Number(e.target.value))}
+                                        className={cn(
+                                            "w-full p-3 rounded-xl border transition-all duration-200",
+                                            isDarkMode 
+                                                ? "bg-stone-800 border-stone-700 text-stone-200" 
+                                                : "bg-white border-stone-300 text-stone-800",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        )}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className={cn("block text-sm font-medium mb-2", theme.text)}>
+                                        Tiêu đề chương
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={chapterTitle}
+                                        onChange={(e) => setChapterTitle(e.target.value)}
+                                        placeholder="Nhập tiêu đề chương..."
+                                        className={cn(
+                                            "w-full p-3 rounded-xl border transition-all duration-200",
+                                            isDarkMode 
+                                                ? "bg-stone-800 border-stone-700 text-stone-200 placeholder:text-stone-500" 
+                                                : "bg-white border-stone-300 text-stone-800 placeholder:text-stone-400",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        )}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    {selectedNovel && (
+                        <div className={cn("mt-3 text-sm", theme.textMuted)}>
+                            Đang viết cho: <span className={cn("font-medium", theme.text)}>{selectedNovel.title}</span>
+                        </div>
+                    )}
+                    {!selectedNovel && novels.length === 0 && (
+                        <div className={cn("mt-3 text-sm text-amber-500")}>
+                            Bạn chưa có truyện nào. Vui lòng tạo truyện mới trước khi viết chương.
+                        </div>
+                    )}
+                </div>
+
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <FileText className={cn("w-8 h-8", isDarkMode ? "text-purple-400" : "text-purple-600")} />
                         <div>
                             <h1 className={cn("text-2xl font-bold", theme.text)}>
-                                Novel Editor
+                                {selectedNovel ? `Viết chương ${chapterNumber}` : "Novel Editor"}
                             </h1>
                             <p className={cn("text-sm", theme.textMuted)}>
-                                Viết nên câu chuyện của riêng bạn
+                                {selectedNovel ? chapterTitle || "Chưa có tiêu đề" : "Viết nên câu chuyện của riêng bạn"}
                             </p>
                         </div>
                     </div>

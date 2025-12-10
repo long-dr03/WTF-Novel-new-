@@ -80,8 +80,8 @@ export function ProfileUpdateForm({ defaultValues, onSubmit }: ProfileUpdateForm
                             <FormControl>
                                 <AvatarUpload
                                     value={value}
-                                    defaultPreview={defaultValues?.avatar}
-                                    onChange={onChange}
+                                    defaultPreview={defaultValues?.avatar || value}
+                                    onChange={(url) => onChange(url)}
                                     onError={(error: string) => {
                                         form.setError('avatar', { message: error })
                                     }}

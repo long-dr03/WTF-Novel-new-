@@ -4,10 +4,37 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Heart, Edit, Trash2, Plus, BookOpen } from "lucide-react"
+import { Eye, Heart, Edit, Trash2, Plus, BookOpen, Loader2 } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { createNovelService } from "@/services/novelService"
+import { useAuth } from "@/components/providers/AuthProvider"
+import { CoverImageUpload } from "@/components/ui/CoverImageUpload"
+
+const createNovelSchema = z.object({
+    title: z.string().min(1, "Tiêu đề không được để trống").max(200, "Tiêu đề tối đa 200 ký tự"),
+    description: z.string().min(10, "Mô tả ít nhất 10 ký tự").max(2000, "Mô tả tối đa 2000 ký tự"),
+    image: z.string().optional(), // URL string from UploadThing
+    status: z.enum(["Đang viết", "Hoàn thành", "Tạm dừng"]),
+})
+
+type CreateNovelFormValues = z.infer<typeof createNovelSchema>
 
 export interface Novel {
-    id: string
+    id?: string
+    _id?: string
     title: string
     coverImage?: string
     status: "Đang viết" | "Hoàn thành" | "Tạm dừng"
@@ -77,20 +104,20 @@ const NovelCard = ({ novel, onEdit, onDelete }: NovelCardProps) => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1 gap-2"
-                        onClick={() => onEdit?.(novel.id)}
+                        onClick={() => onEdit?.(novel._id || novel.id || '')}
                     >
                         <Edit className="h-4 w-4" />
                         Sửa
                     </Button>
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <Button
+                        variant="outline"
+                        size="sm"
                         className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => onDelete?.(novel.id)}
+                        onClick={() => onDelete?.(novel._id || novel.id || '')}
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -101,58 +128,85 @@ const NovelCard = ({ novel, onEdit, onDelete }: NovelCardProps) => {
 }
 
 interface NovelListProps {
-    novels?: Novel[]
+    novels?: any[]
     isLoading?: boolean
     onCreateNew?: () => void
+    onEditNovel?: (novelId: string) => void
 }
 
-export const NovelList = ({ 
-    novels: externalNovels, 
+export const NovelList = ({
+    novels: externalNovels,
     isLoading = false,
-    onCreateNew 
+    onCreateNew,
+    onEditNovel
 }: NovelListProps) => {
-    // Dữ liệu mẫu - sẽ được thay thế bằng props từ API
-    const [mockNovels] = useState<Novel[]>([
-        {
-            id: "1",
-            title: "Kiếm Thần Vô Song",
-            coverImage: "https://picsum.photos/seed/novel1/200/300",
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const { user } = useAuth();
+    const [imageError, setImageError] = useState<string>("")
+
+    const form = useForm<CreateNovelFormValues>({
+        resolver: zodResolver(createNovelSchema),
+        defaultValues: {
+            title: "",
+            description: "",
+            image: undefined,
             status: "Đang viết",
-            chapters: 45,
-            views: 12500,
-            likes: 890,
-            lastUpdated: "2 giờ trước",
-            genre: "Huyền huyễn"
         },
-        {
-            id: "2",
-            title: "Ma Đạo Tổ Sư",
-            coverImage: "https://picsum.photos/seed/novel2/200/300",
-            status: "Hoàn thành",
-            chapters: 113,
-            views: 45000,
-            likes: 3200,
-            lastUpdated: "1 tuần trước",
-            genre: "Đam mỹ"
-        },
-        {
-            id: "3",
-            title: "Phàm Nhân Tu Tiên",
-            coverImage: "https://picsum.photos/seed/novel3/200/300",
-            status: "Đang viết",
-            chapters: 78,
-            views: 28000,
-            likes: 1500,
-            lastUpdated: "1 ngày trước",
-            genre: "Tiên hiệp"
+    })
+
+    const onSubmit = async (values: CreateNovelFormValues) => {
+        setIsSubmitting(true)
+        try {
+            // values.image is now a URL string from UploadThing
+            const imageUrl = values.image || ""
+            
+            const novelData = {
+                title: values.title,
+                description: values.description,
+                author: user?.id || "Unknown",
+                genres: [""],
+                image: imageUrl,
+                status: values.status,
+                views: 0,
+                likes: 0,
+            }
+            const result = await createNovelService(novelData)
+            if (result) {
+                console.log("Novel created successfully:", result)
+                form.reset()
+                setImageError("")
+                setIsDialogOpen(false)
+            }
+        } catch (error) {
+            console.error("Error creating novel:", error)
+        } finally {
+            setIsSubmitting(false)
         }
-    ])
+    }
 
-    const novels = externalNovels || mockNovels
-
+    interface novel {
+        _id: string;
+        id?: string;
+        title: string;
+        coverImage: string;
+        description: string;
+        genres: string[];
+        createdAt: string;
+        updatedAt: string;
+        views: number;
+        likes: number;
+        status?: "Đang viết" | "Hoàn thành" | "Tạm dừng";
+        chapters?: number;
+        lastUpdated?: string;
+    }
+    const novels: novel[] = externalNovels as novel[] || [];
     const handleEdit = (id: string) => {
         console.log('Edit novel:', id)
-        // TODO: Navigate to edit page or open modal
+        // Gọi callback để chuyển qua tab viết truyện
+        if (onEditNovel) {
+            onEditNovel(id)
+        }
     }
 
     const handleDelete = (id: string) => {
@@ -211,16 +265,113 @@ export const NovelList = ({
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Danh sách truyện</h2>
                     <p className="text-muted-foreground mt-2">
-                        {novels.length > 0 
+                        {novels.length > 0
                             ? `Quản lý ${novels.length} tác phẩm của bạn`
                             : "Bạn chưa có tác phẩm nào"
                         }
                     </p>
                 </div>
-                <Button className="gap-2" onClick={handleCreateNew}>
-                    <Plus className="h-4 w-4" />
-                    Tạo truyện mới
-                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger className="flex items-center gap-2 bg-amber-50 text-black p-2 rounded-xl"> <Plus className="h-4 w-4" /> Tạo truyện mới</DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Tạo truyện mới</DialogTitle>
+                            <DialogDescription>
+                                Điền thông tin để tạo truyện mới của bạn
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Tiêu đề truyện *</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Nhập tiêu đề truyện..." {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Mô tả *</FormLabel>
+                                            <FormControl>
+                                                <Textarea 
+                                                    placeholder="Mô tả ngắn về truyện của bạn..." 
+                                                    className="min-h-[100px]"
+                                                    {...field} 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="image"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Ảnh bìa</FormLabel>
+                                            <FormControl>
+                                                <CoverImageUpload
+                                                    value={field.value}
+                                                    onChange={(url) => {
+                                                        field.onChange(url)
+                                                        setImageError("")
+                                                    }}
+                                                    onError={(error) => setImageError(error)}
+                                                />
+                                            </FormControl>
+                                            {imageError && (
+                                                <p className="text-sm text-destructive">{imageError}</p>
+                                            )}
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="status"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Trạng thái</FormLabel>
+                                            <FormControl>
+                                                <select
+                                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                    {...field}
+                                                >
+                                                    <option value="Đang viết">Đang viết</option>
+                                                    <option value="Hoàn thành">Hoàn thành</option>
+                                                    <option value="Tạm dừng">Tạm dừng</option>
+                                                </select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        onClick={() => setIsDialogOpen(false)}
+                                    >
+                                        Hủy
+                                    </Button>
+                                    <Button type="submit" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Tạo truyện
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {novels.length === 0 ? (
@@ -237,14 +388,28 @@ export const NovelList = ({
                 </Card>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {novels.map((novel) => (
-                        <NovelCard
-                            key={novel.id}
-                            novel={novel}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
-                    ))}
+                    {novels.map((novel, index) => {
+                        // Convert backend data to NovelCard format
+                        const novelCardData: Novel = {
+                            _id: novel._id,
+                            id: novel.id,
+                            title: novel.title,
+                            coverImage: novel.coverImage,
+                            status: novel.status || "Đang viết",
+                            chapters: novel.chapters || 0,
+                            views: novel.views || 0,
+                            likes: novel.likes || 0,
+                            lastUpdated: novel.lastUpdated || novel.updatedAt || novel.createdAt,
+                        };
+                        return (
+                            <NovelCard
+                                key={novel._id || novel.id || index}
+                                novel={novelCardData}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
+                        );
+                    })}
                 </div>
             )}
         </div>

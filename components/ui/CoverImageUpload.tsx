@@ -8,7 +8,7 @@ import { useUploadThing } from '@/lib/uploadthing'
 import 'react-image-crop/dist/ReactCrop.css'
 import './avatar-upload.css'
 
-interface AvatarUploadProps {
+interface CoverImageUploadProps {
     value?: string
     defaultPreview?: string
     onChange: (url: string) => void
@@ -35,13 +35,13 @@ function centerAspectCrop(
     )
 }
 
-export function AvatarUpload({ value, defaultPreview, onChange, onError }: AvatarUploadProps) {
+export function CoverImageUpload({ value, defaultPreview, onChange, onError }: CoverImageUploadProps) {
     const [imgSrc, setImgSrc] = useState<string>('')
     const [crop, setCrop] = useState<Crop>()
     const [completedCrop, setCompletedCrop] = useState<Crop>()
     const [scale, setScale] = useState(1)
     const [rotate, setRotate] = useState(0)
-    const [aspect] = useState<number>(1)
+    const [aspect] = useState<number>(2 / 3) // Aspect ratio cho ảnh bìa truyện
     const [filter, setFilter] = useState<string>('none')
     const [brightness, setBrightness] = useState(100)
     const [contrast, setContrast] = useState(100)
@@ -50,7 +50,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
     const [isProcessing, setIsProcessing] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
 
-    const { startUpload } = useUploadThing("avatarImage", {
+    const { startUpload } = useUploadThing("coverImage", {
         onClientUploadComplete: (res) => {
             if (res && res[0]) {
                 const uploadedUrl = res[0].ufsUrl || res[0].url
@@ -192,7 +192,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                 return
             }
 
-            const file = new File([blob], 'avatar.png', { type: 'image/png' })
+            const file = new File([blob], 'cover.png', { type: 'image/png' })
             
             // Upload to UploadThing
             setIsUploading(true)
@@ -203,6 +203,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                 setIsUploading(false)
                 setIsProcessing(false)
             }
+            setIsProcessing(false)
         }, 'image/png', 0.95)
     }, [completedCrop, scale, rotate, filter, brightness, contrast, startUpload, onError])
 
@@ -223,16 +224,16 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
             {!imgSrc ? (
                 <div
                     {...getRootProps()}
-                    className={`avatar-dropzone ${isDragActive ? 'active' : ''}`}
+                    className={`avatar-dropzone cover-dropzone ${isDragActive ? 'active' : ''}`}
                 >
                     <input {...getInputProps()} />
                     <div className="dropzone-content">
                         {preview ? (
-                            <div className="preview-wrapper">
-                                <img src={preview} alt="Avatar preview" className="avatar-preview" />
+                            <div className="preview-wrapper cover-preview-wrapper">
+                                <img src={preview} alt="Cover preview" className="cover-preview" />
                                 <div className="overlay">
                                     <Upload className="icon" />
-                                    <p className="text">Thay đổi ảnh đại diện</p>
+                                    <p className="text">Thay đổi ảnh bìa</p>
                                 </div>
                             </div>
                         ) : (
@@ -244,6 +245,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                                         : 'Kéo thả ảnh hoặc click để chọn'}
                                 </p>
                                 <p className="upload-hint">PNG, JPG, WEBP, GIF (tối đa 5MB)</p>
+                                <p className="upload-hint">Khuyến nghị: 200x300px (tỷ lệ 2:3)</p>
                             </>
                         )}
                     </div>
@@ -251,7 +253,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
             ) : (
                 <div className="crop-container">
                     <div className="crop-header">
-                        <h3>Chỉnh sửa ảnh</h3>
+                        <h3>Chỉnh sửa ảnh bìa</h3>
                         <button
                             type="button"
                             onClick={handleReset}
@@ -268,7 +270,6 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                             onChange={(_, percentCrop) => setCrop(percentCrop)}
                             onComplete={(c) => setCompletedCrop(c)}
                             aspect={aspect}
-                            circularCrop
                         >
                             <img
                                 ref={imgRef}
@@ -277,12 +278,12 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                                 style={{
                                     transform: `scale(${scale}) rotate(${rotate}deg)`,
                                     filter: `${filter === 'grayscale'
-                                            ? 'grayscale(100%)'
-                                            : filter === 'sepia'
-                                                ? 'sepia(100%)'
-                                                : filter === 'blur'
-                                                    ? 'blur(2px)'
-                                                    : ''
+                                        ? 'grayscale(100%)'
+                                        : filter === 'sepia'
+                                            ? 'sepia(100%)'
+                                            : filter === 'blur'
+                                                ? 'blur(2px)'
+                                                : ''
                                         } brightness(${brightness}%) contrast(${contrast}%)`,
                                 }}
                                 onLoad={onImageLoad}
