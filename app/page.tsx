@@ -36,7 +36,7 @@ export default function Home() {
       {/* Section Danh mục với GooeyNav */}
       <section className="w-full max-w-[1300px] px-4 py-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <h2 className="text-3xl font-bold">Truyện mới nhất</h2>
+          <h2 className="text-3xl font-bold">Truyện mới nhất nef</h2>
 
           <GooeyNav
             items={categoryTabs}
