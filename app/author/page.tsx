@@ -10,19 +10,25 @@ import { cn } from "@/lib/utils"
 import { getNovelsByAuthorService } from "@/services/novelService"
 type TabType = "dashboard" | "novels" | "write" | "settings"
 
+interface Novel {
+    _id: string;
+    title: string;
+    description: string;
+    image: string;
+    status: string;
+}
 const Page = () => {
     const { user } = useAuth()
     const [activeTab, setActiveTab] = useState<TabType>("dashboard")
-    const [authorNovels, setAuthorNovels] = useState<any[]>([])
+    const [authorNovels, setAuthorNovels] = useState<Novel[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null)
-
     useEffect(() => {
         const fetchNovels = async () => {
             if (user?.id) {
                 try {
-                    const novels = await getNovelsByAuthorService(user.id)
-                    setAuthorNovels(novels || [])
+                    const response = await getNovelsByAuthorService(user.id)
+                    setAuthorNovels(response || [])
                 } catch (error) {
                     console.error("Error fetching novels:", error)
                 } finally {

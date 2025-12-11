@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById , getPopularNovels, getNovelsByAuthor } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById , getPopularNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus } from '../controller/NovelController';
 interface NovelData {
     title: string;
     description: string;
@@ -18,6 +18,7 @@ interface ChapterData {
     wordCount: number
     charCount: number
     status: 'draft'
+    chapterId?: string; // Optional - for updating existing chapters
     scheduledAt?: Date;
     publishedAt?: Date;
     views?: number;
@@ -43,20 +44,53 @@ const createNovelService = async (novelData: NovelData) => {
 };
 const getNovelsByAuthorService = async (authorId: string) => {
     const response = await getNovelsByAuthor(authorId);
-    return response.data;
+    return response;
 }
 const getNovelByIdService = async(novelId: string) => {
     const response = await getNovelById(novelId);
-    return response.data;
+    return response;
 }
 const getPopularNovelsService = async(limit: number = 10) => {
     const response = await getPopularNovels(limit);
-    return response.data;
+    return response;
 }
+const getChaptersByNovelService = async(novelId: string) => {
+    const response = await getChaptersByNovel(novelId);
+    return response;
+}
+const getChapterContentService = async(novelId: string, chapterNumber: number) => {
+    const response = await getChapterContent(novelId, chapterNumber);
+    return response;
+}
+
+const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'published' | 'scheduled') => {
+    try {
+        const response = await updateChapterStatus(chapterId, status);
+        return response;
+    } catch (error) {
+        console.error("Error updating chapter status:", error);
+        return null;
+    }
+}
+
+const updateNovelStatusService = async(novelId: string, status: 'ongoing' | 'completed' | 'hiatus') => {
+    try {
+        const response = await updateNovelStatus(novelId, status);
+        return response;
+    } catch (error) {
+        console.error("Error updating novel status:", error);
+        return null;
+    }
+}
+
 export {
     createNovelService,
     uploadChapterService,
     getNovelByIdService,
     getNovelsByAuthorService,
-    getPopularNovelsService
+    getPopularNovelsService,
+    getChaptersByNovelService,
+    getChapterContentService,
+    updateChapterStatusService,
+    updateNovelStatusService
 }

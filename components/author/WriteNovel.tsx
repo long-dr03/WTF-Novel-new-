@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -37,10 +37,17 @@ import {
     Maximize2,
     Minimize2,
     Type,
-    Pilcrow
+    Pilcrow,
+    Plus,
+    Edit3,
+    RefreshCw,
+    Send,
+    Clock,
+    FileEdit,
+    PencilLine  
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import {uploadChapterService,getNovelsByAuthorService} from "@/services/novelService";
+import {uploadChapterService,getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService} from "@/services/novelService";
 // Toolbar Button Component
 const ToolbarButton = ({
     onClick,
@@ -100,6 +107,19 @@ interface Novel {
     coverImage?: string;
 }
 
+interface Chapter {
+    _id?: string;
+    id?: string;
+    chapterNumber: number;
+    title: string;
+    content?: string;
+    contentJson?: any;
+    wordCount?: number;
+    status?: string;
+    publishedAt?: string;
+    updatedAt?: string;
+}
+
 interface WriteNovelProps {
     novels?: Novel[];
     selectedNovelId?: string | null;
@@ -113,6 +133,15 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     const [isSaving, setIsSaving] = useState(false);
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterNumber, setChapterNumber] = useState(1);
+    const [chapterStatus, setChapterStatus] = useState<'draft' | 'published' | 'scheduled'>('draft');
+    
+    // State cho danh sách chương và chế độ sửa
+    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [isLoadingChapters, setIsLoadingChapters] = useState(false);
+    const [editMode, setEditMode] = useState<'new' | 'edit'>('new');
+    const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+    const [isLoadingContent, setIsLoadingContent] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
 
     // Lấy truyện được chọn
     const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
@@ -156,6 +185,163 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     const wordCount = editor?.storage.characterCount?.words() || 0;
     const charCount = editor?.storage.characterCount?.characters() || 0;
 
+    // Load danh sách chương khi chọn truyện
+    useEffect(() => {
+        const loadChapters = async () => {
+            if (!selectedNovelId) {
+                setChapters([]);
+                setEditMode('new');
+                setSelectedChapterId(null);
+                return;
+            }
+            
+            setIsLoadingChapters(true);
+            try {
+                const response = await getChaptersByNovelService(selectedNovelId);
+                if (response) {
+                    // Sắp xếp theo số chương
+                    setChapters(response);
+                    
+                    // Tự động set số chương tiếp theo
+                    if (response.length > 0) {
+                        const maxChapter = Math.max(...response.map((c: Chapter) => c.chapterNumber));
+                        setChapterNumber(maxChapter);
+                    } else {
+                        setChapterNumber(1);
+                    }
+                } else {
+                    setChapters([]);
+                    setChapterNumber(1);
+                }
+            } catch (error) {
+                console.error('Lỗi khi load danh sách chương:', error);
+                setChapters([]);
+            } finally {
+                setIsLoadingChapters(false);
+            }
+        };
+        
+        loadChapters();
+    }, [selectedNovelId]);
+
+    // Load nội dung chương khi chọn chương để sửa
+    const handleSelectChapterToEdit = async (chapter: Chapter) => {
+        if (!selectedNovelId || !editor) return;
+        
+        setIsLoadingContent(true);
+        setSelectedChapterId(chapter._id || chapter.id || null);
+        
+        try {
+            const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber);
+            console.log('📖 Chapter data loaded:', chapterData);
+            
+            if (chapterData) {
+                setChapterNumber(chapterData.chapterNumber);
+                setChapterTitle(chapterData.title || '');
+                setChapterStatus(chapterData.status || 'draft');
+                
+                // Set content vào editor
+                if (chapterData.contentJson) {
+                    editor.commands.setContent(chapterData.contentJson);
+                } else if (chapterData.content) {
+                    editor.commands.setContent(chapterData.content);
+                }
+                
+                setEditMode('edit');
+            } else {
+                alert('Không tìm thấy dữ liệu chương!');
+            }
+        } catch (error) {
+            console.error('Lỗi khi load nội dung chương:', error);
+            alert('Không thể load nội dung chương!');
+        } finally {
+            setIsLoadingContent(false);
+        }
+    };
+
+    // Reset về chế độ viết mới
+    const handleNewChapter = () => {
+        if (!editor) return;
+        
+        setEditMode('new');
+        setSelectedChapterId(null);
+        setChapterTitle('');
+        setChapterStatus('draft');
+        editor.commands.clearContent();
+        
+        // Set số chương tiếp theo
+        if (chapters.length > 0) {
+            const maxChapter = Math.max(...chapters.map(c => c.chapterNumber));
+            setChapterNumber(maxChapter + 1);
+        } else {
+            setChapterNumber(1);
+        }
+    };
+
+    // Đăng chương (thay đổi status từ draft -> published)
+    const handlePublish = async () => {
+        if (!selectedChapterId) {
+            alert('Vui lòng lưu chương trước khi đăng!');
+            return;
+        }
+        
+        if (!confirm('Bạn có chắc muốn đăng chương này?')) return;
+        
+        setIsPublishing(true);
+        try {
+            const result = await updateChapterStatusService(selectedChapterId, 'published');
+            if (result) {
+                setChapterStatus('published');
+                alert('Đăng chương thành công!');
+                
+                // Reload danh sách chương
+                if (selectedNovelId) {
+                    const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                    if (chaptersData && Array.isArray(chaptersData)) {
+                        const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
+                        setChapters(sortedChapters);
+                    }
+                }
+            } else {
+                alert('Không thể đăng chương!');
+            }
+        } catch (error) {
+            console.error('Lỗi khi đăng chương:', error);
+            alert('Có lỗi xảy ra khi đăng chương!');
+        } finally {
+            setIsPublishing(false);
+        }
+    };
+
+    // Thay đổi status chương
+    const handleStatusChange = async (newStatus: 'draft' | 'published' | 'scheduled') => {
+        if (editMode === 'new') {
+            // Chỉ cập nhật local state nếu đang ở chế độ viết mới
+            setChapterStatus(newStatus);
+            return;
+        }
+        
+        if (!selectedChapterId) return;
+        
+        try {
+            const result = await updateChapterStatusService(selectedChapterId, newStatus);
+            if (result) {
+                setChapterStatus(newStatus);
+                
+                // Reload danh sách chương
+                if (selectedNovelId) {
+                    const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                    if (chaptersData && Array.isArray(chaptersData)) {
+                        const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
+                        setChapters(sortedChapters);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật trạng thái:', error);
+        }
+    };
+
     const handleSave = useCallback(async () => {
         if (!editor) return;
         
@@ -184,18 +370,34 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
             contentJson: jsonContent,
             wordCount: words,
             charCount: chars,
-            status: 'draft' as const,
+            status: chapterStatus,
+            ...(editMode === 'edit' && selectedChapterId && { chapterId: selectedChapterId }),
         };
         
         try {
             const result = await uploadChapterService(chapterData);
+            console.log('📝 Upload result:', result);
+            
             if (result) {
                 console.log('✅ Lưu chương thành công:', result);
-                alert('Lưu chương thành công!');
-                // Tăng số chương lên để viết chương tiếp theo
-                setChapterNumber(prev => prev + 1);
-                setChapterTitle('');
-                editor.commands.clearContent();
+                alert(editMode === 'edit' ? 'Cập nhật chương thành công!' : 'Lưu chương mới thành công!');
+                
+                // Reload danh sách chương - API trả về array trực tiếp
+                const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                if (chaptersData && Array.isArray(chaptersData)) {
+                    const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
+                    setChapters(sortedChapters);
+                }
+                
+                // Nếu là tạo mới, reset form
+                if (editMode === 'new') {
+                    const maxChapter = Math.max(...chapters.map(c => c.chapterNumber), chapterNumber);
+                    setChapterNumber(maxChapter + 1);
+                    setChapterTitle('');
+                    editor.commands.clearContent();
+                }
+            } else {
+                alert('Không nhận được phản hồi từ server!');
             }
         } catch (error) {
             console.error('❌ Lỗi khi lưu chương:', error);
@@ -203,7 +405,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
         } finally {
             setIsSaving(false);
         }
-    }, [editor, selectedNovelId, chapterNumber, chapterTitle]);
+    }, [editor, selectedNovelId, chapterNumber, chapterTitle, editMode, selectedChapterId, chapters, chapterStatus]);
 
     // Theme colors
     const theme = {
@@ -296,9 +498,141 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                         )}
                                     />
                                 </div>
+                                <div className="w-40">
+                                    <label className={cn("block text-sm font-medium mb-2", theme.text)}>
+                                        Trạng thái
+                                    </label>
+                                    <select
+                                        value={chapterStatus}
+                                        onChange={(e) => handleStatusChange(e.target.value as 'draft' | 'published' | 'scheduled')}
+                                        className={cn(
+                                            "w-full p-3 rounded-xl border transition-all duration-200",
+                                            isDarkMode 
+                                                ? "bg-stone-800 border-stone-700 text-stone-200" 
+                                                : "bg-white border-stone-300 text-stone-800",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        )}
+                                    >
+                                        <option value="draft"><PencilLine /> Bản nháp</option>
+                                        <option value="published"><BookUp /> Đã đăng</option>
+                                        <option value="scheduled"><Clock /> Hẹn giờ</option>
+                                    </select>
+                                </div>
                             </>
                         )}
                     </div>
+                    
+                    {/* Chương đã đăng - Dropdown chọn chương để sửa */}
+                    {selectedNovel && (
+                        <div className={cn(
+                            "mt-4 pt-4 border-t",
+                            isDarkMode ? "border-stone-700" : "border-stone-300"
+                        )}>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className={cn("text-sm font-medium flex items-center gap-2", theme.text)}>
+                                    <FileText className="w-4 h-4" />
+                                    Các chương đã đăng ({chapters.length} chương)
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    {isLoadingChapters && (
+                                        <RefreshCw className={cn("w-4 h-4 animate-spin", theme.textMuted)} />
+                                    )}
+                                    <button
+                                        onClick={handleNewChapter}
+                                        disabled={editMode === 'new'}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all",
+                                            editMode === 'new'
+                                                ? isDarkMode 
+                                                    ? "bg-green-500/20 text-green-400 cursor-default"
+                                                    : "bg-green-100 text-green-700 cursor-default"
+                                                : isDarkMode
+                                                    ? "bg-stone-700 text-stone-300 hover:bg-green-500/20 hover:text-green-400"
+                                                    : "bg-stone-200 text-stone-600 hover:bg-green-100 hover:text-green-700"
+                                        )}
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Viết chương mới
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {chapters.length > 0 ? (
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {chapters.map((chapter) => {
+                                        const isSelected = (chapter._id || chapter.id) === selectedChapterId;
+                                        return (
+                                            <button
+                                                key={chapter._id || chapter.id}
+                                                onClick={() => handleSelectChapterToEdit(chapter)}
+                                                disabled={isLoadingContent}
+                                                className={cn(
+                                                    "w-full p-3 rounded-xl border text-left transition-all duration-200 flex items-center justify-between group",
+                                                    isSelected
+                                                        ? isDarkMode
+                                                            ? "bg-purple-500/20 border-purple-500/50 text-purple-300"
+                                                            : "bg-purple-100 border-purple-300 text-purple-700"
+                                                        : isDarkMode
+                                                            ? "bg-stone-800/50 border-stone-700 text-stone-300 hover:bg-stone-700/50 hover:border-stone-600"
+                                                            : "bg-white border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400",
+                                                    isLoadingContent && "opacity-50 cursor-wait"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className={cn(
+                                                        "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium",
+                                                        isSelected
+                                                            ? isDarkMode ? "bg-purple-500/30" : "bg-purple-200"
+                                                            : isDarkMode ? "bg-stone-700" : "bg-stone-200"
+                                                    )}>
+                                                        {chapter.chapterNumber}
+                                                    </span>
+                                                    <div>
+                                                        <p className="font-medium text-sm">
+                                                            {chapter.title || `Chương ${chapter.chapterNumber}`}
+                                                        </p>
+                                                        <p className={cn("text-xs", theme.textMuted)}>
+                                                            {chapter.wordCount ? `${chapter.wordCount} từ` : 'Chưa có nội dung'}
+                                                            {chapter.status && (
+                                                                <span className={cn(
+                                                                    "ml-2 px-1.5 py-0.5 rounded text-xs",
+                                                                    chapter.status === 'published' 
+                                                                        ? "bg-green-500/20 text-green-400"
+                                                                        : "bg-amber-500/20 text-amber-400"
+                                                                )}>
+                                                                    {chapter.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <Edit3 className={cn(
+                                                    "w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity",
+                                                    isSelected && "opacity-100"
+                                                )} />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className={cn("text-sm py-4 text-center", theme.textMuted)}>
+                                    Chưa có chương nào được đăng cho truyện này.
+                                </p>
+                            )}
+                            
+                            {/* Indicator chế độ hiện tại */}
+                            {editMode === 'edit' && selectedChapterId && (
+                                <div className={cn(
+                                    "mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
+                                    isDarkMode ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-700"
+                                )}>
+                                    <Edit3 className="w-4 h-4" />
+                                    Đang chỉnh sửa chương {chapterNumber}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
                     {selectedNovel && (
                         <div className={cn("mt-3 text-sm", theme.textMuted)}>
                             Đang viết cho: <span className={cn("font-medium", theme.text)}>{selectedNovel.title}</span>
@@ -317,7 +651,12 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                         <FileText className={cn("w-8 h-8", isDarkMode ? "text-purple-400" : "text-purple-600")} />
                         <div>
                             <h1 className={cn("text-2xl font-bold", theme.text)}>
-                                {selectedNovel ? `Viết chương ${chapterNumber}` : "Novel Editor"}
+                                {editMode === 'edit' 
+                                    ? `Sửa chương ${chapterNumber}` 
+                                    : selectedNovel 
+                                        ? `Viết chương ${chapterNumber}` 
+                                        : "Novel Editor"
+                                }
                             </h1>
                             <p className={cn("text-sm", theme.textMuted)}>
                                 {selectedNovel ? chapterTitle || "Chưa có tiêu đề" : "Viết nên câu chuyện của riêng bạn"}
@@ -369,6 +708,40 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                             {isSaving ? "Đang lưu..." : "Lưu"}
                         </button>
+                        
+                        {/* Nút Đăng chương - chỉ hiện khi đang edit và chưa publish */}
+                        {editMode === 'edit' && chapterStatus !== 'published' && (
+                            <button
+                                onClick={handlePublish}
+                                disabled={isPublishing}
+                                className={cn(
+                                    "px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 font-medium",
+                                    "bg-gradient-to-r from-green-500 to-emerald-500 text-white",
+                                    "hover:from-green-600 hover:to-emerald-600",
+                                    "shadow-lg shadow-green-500/25",
+                                    isPublishing && "opacity-70"
+                                )}
+                            >
+                                <Send className={cn("w-4 h-4", isPublishing && "animate-spin")} />
+                                {isPublishing ? "Đang đăng..." : "Đăng"}
+                            </button>
+                        )}
+                        
+                        {/* Badge trạng thái */}
+                        {editMode === 'edit' && (
+                            <div className={cn(
+                                "px-3 py-2 rounded-xl text-sm flex items-center gap-1.5",
+                                chapterStatus === 'published' 
+                                    ? isDarkMode ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-700"
+                                    : chapterStatus === 'scheduled'
+                                        ? isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-700"
+                                        : isDarkMode ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-700"
+                            )}>
+                                {chapterStatus === 'published' && <><Eye className="w-3.5 h-3.5" /> Đã đăng</>}
+                                {chapterStatus === 'scheduled' && <><Clock className="w-3.5 h-3.5" /> Hẹn giờ</>}
+                                {chapterStatus === 'draft' && <><FileEdit className="w-3.5 h-3.5" /> Bản nháp</>}
+                            </div>
+                        )}
                     </div>
                 </div>
 

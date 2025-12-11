@@ -19,6 +19,7 @@ interface ChapterData {
     wordCount: number
     charCount: number
     status: 'draft'
+    chapterId?: string; // Optional - for updating existing chapters
     scheduledAt?: Date;
     publishedAt?: Date;
     views?: number;
@@ -44,8 +45,35 @@ const getNovelsByAuthor = (authorId: string) => {
 const getNovelById = (novelId: string) => {
     return axios.get(`/novel/${novelId}`);
 };
+
 const getPopularNovels = (limit: number = 10) => {
     return axios.get(`/novels/popular?limit=${limit}`);
 };
 
-export { createNovel, uploadChapter, getNovelById, getNovelsByAuthor, getPopularNovels };
+const getChaptersByNovel = (novelId: string) => {
+    return axios.get(`/novel/${novelId}/chapters`);
+};
+
+const getChapterContent = (novelId: string, chapterNumber: number) => {
+    return axios.get(`/novel/${novelId}/chapter/${chapterNumber}`);
+};
+
+const updateChapterStatus = (chapterId: string, status: 'draft' | 'published' | 'scheduled') => {
+    return axios.put(`/chapter/${chapterId}/status`, { status });
+};
+
+const updateNovelStatus = (novelId: string, status: 'ongoing' | 'completed' | 'hiatus') => {
+    return axios.put(`/novel/${novelId}/status`, { status });
+};
+
+export { 
+    createNovel, 
+    uploadChapter, 
+    getNovelById, 
+    getNovelsByAuthor, 
+    getPopularNovels, 
+    getChaptersByNovel, 
+    getChapterContent,
+    updateChapterStatus,
+    updateNovelStatus
+};

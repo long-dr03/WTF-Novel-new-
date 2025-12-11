@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { HeaderSearch } from "./header-search";
+import { PenLine } from "lucide-react";
 
 export const Header = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -30,6 +31,16 @@ export const Header = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Nút Sáng tác - chỉ hiển thị cho tác giả */}
+                    {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (
+                        <Button variant="outline" asChild className="gap-2">
+                            <Link href="/author">
+                                <PenLine className="h-4 w-4" />
+                                Sáng tác
+                            </Link>
+                        </Button>
+                    )}
+                    
                     {isAuthenticated && user ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
