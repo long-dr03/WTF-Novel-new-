@@ -61,19 +61,34 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
-
     useEffect(() => {
         const fetchData = async () => {
             if (!novelId || !chapterNumber) return
             try {
-                const [chapterData, novelData, chaptersData] = await Promise.all([
+                const [chapterResponse, novelResponse, chaptersResponse] = await Promise.all([
                     getChapterContentService(novelId, chapterNumber),
                     getNovelByIdService(novelId),
                     getChaptersByNovelService(novelId)
                 ])
-                setChapter(chapterData)
-                setNovel(novelData)
-                setChapters(chaptersData || [])
+                // Xử lý chapter data
+                const chapterData = chapterResponse as unknown as Chapter
+                if (chapterData && chapterData._id) {
+                    setChapter(chapterData)
+                }
+                
+                // Xử lý novel data
+                const novelData = novelResponse as unknown as Novel
+                if (novelData && novelData._id) {
+                    setNovel(novelData)
+                }
+                
+                // Xử lý chapters list
+                const chaptersData = chaptersResponse as unknown as ChapterInfo[]
+                if (Array.isArray(chaptersData)) {
+                    setChapters(chaptersData)
+                } else {
+                    setChapters([])
+                }
             } catch (error) {
                 console.error("Error fetching chapter:", error)
             } finally {

@@ -338,7 +338,7 @@ export const NovelList = ({
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger className="flex items-center gap-2 bg-amber-50 text-black p-2 rounded-xl"> <Plus className="h-4 w-4" /> Tạo truyện mới</DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Tạo truyện mới</DialogTitle>
                             <DialogDescription>

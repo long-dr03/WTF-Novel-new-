@@ -44,10 +44,10 @@ import {
     Send,
     Clock,
     FileEdit,
-    PencilLine  
+    PencilLine
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import {uploadChapterService,getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService} from "@/services/novelService";
+import { uploadChapterService, getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
 // Toolbar Button Component
 const ToolbarButton = ({
     onClick,
@@ -91,7 +91,13 @@ const ToolbarButton = ({
         {children}
     </button>
 );
-
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 // Toolbar Divider
 const ToolbarDivider = ({ isDark }: { isDark: boolean }) => (
     <div className={cn(
@@ -134,7 +140,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterNumber, setChapterNumber] = useState(1);
     const [chapterStatus, setChapterStatus] = useState<'draft' | 'published' | 'scheduled'>('draft');
-    
+
     // State cho danh sách chương và chế độ sửa
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isLoadingChapters, setIsLoadingChapters] = useState(false);
@@ -194,14 +200,14 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                 setSelectedChapterId(null);
                 return;
             }
-            
+
             setIsLoadingChapters(true);
             try {
                 const response = await getChaptersByNovelService(selectedNovelId);
                 if (response) {
                     // Sắp xếp theo số chương
                     setChapters(response);
-                    
+
                     // Tự động set số chương tiếp theo
                     if (response.length > 0) {
                         const maxChapter = Math.max(...response.map((c: Chapter) => c.chapterNumber));
@@ -220,33 +226,33 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                 setIsLoadingChapters(false);
             }
         };
-        
+
         loadChapters();
     }, [selectedNovelId]);
 
     // Load nội dung chương khi chọn chương để sửa
     const handleSelectChapterToEdit = async (chapter: Chapter) => {
         if (!selectedNovelId || !editor) return;
-        
+
         setIsLoadingContent(true);
         setSelectedChapterId(chapter._id || chapter.id || null);
-        
+
         try {
             const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber);
             console.log('📖 Chapter data loaded:', chapterData);
-            
+
             if (chapterData) {
                 setChapterNumber(chapterData.chapterNumber);
                 setChapterTitle(chapterData.title || '');
                 setChapterStatus(chapterData.status || 'draft');
-                
+
                 // Set content vào editor
                 if (chapterData.contentJson) {
                     editor.commands.setContent(chapterData.contentJson);
                 } else if (chapterData.content) {
                     editor.commands.setContent(chapterData.content);
                 }
-                
+
                 setEditMode('edit');
             } else {
                 alert('Không tìm thấy dữ liệu chương!');
@@ -262,13 +268,13 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     // Reset về chế độ viết mới
     const handleNewChapter = () => {
         if (!editor) return;
-        
+
         setEditMode('new');
         setSelectedChapterId(null);
         setChapterTitle('');
         setChapterStatus('draft');
         editor.commands.clearContent();
-        
+
         // Set số chương tiếp theo
         if (chapters.length > 0) {
             const maxChapter = Math.max(...chapters.map(c => c.chapterNumber));
@@ -284,16 +290,16 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
             alert('Vui lòng lưu chương trước khi đăng!');
             return;
         }
-        
+
         if (!confirm('Bạn có chắc muốn đăng chương này?')) return;
-        
+
         setIsPublishing(true);
         try {
             const result = await updateChapterStatusService(selectedChapterId, 'published');
             if (result) {
                 setChapterStatus('published');
                 alert('Đăng chương thành công!');
-                
+
                 // Reload danh sách chương
                 if (selectedNovelId) {
                     const chaptersData = await getChaptersByNovelService(selectedNovelId);
@@ -320,14 +326,14 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
             setChapterStatus(newStatus);
             return;
         }
-        
+
         if (!selectedChapterId) return;
-        
+
         try {
             const result = await updateChapterStatusService(selectedChapterId, newStatus);
             if (result) {
                 setChapterStatus(newStatus);
-                
+
                 // Reload danh sách chương
                 if (selectedNovelId) {
                     const chaptersData = await getChaptersByNovelService(selectedNovelId);
@@ -344,23 +350,23 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
     const handleSave = useCallback(async () => {
         if (!editor) return;
-        
+
         // Kiểm tra đã chọn truyện chưa
         if (!selectedNovelId) {
             alert('Vui lòng chọn truyện trước khi lưu chương!');
             return;
         }
-        
+
         setIsSaving(true);
-        
+
         // Lấy nội dung theo nhiều định dạng
         const htmlContent = editor.getHTML();      // Định dạng HTML
         const jsonContent = editor.getJSON();      // Định dạng JSON (ProseMirror)
-        
+
         // Lấy word/char count trực tiếp từ editor
         const words = editor.storage.characterCount?.words() || 0;
         const chars = editor.storage.characterCount?.characters() || 0;
-        
+
         // Data để gửi lên server
         const chapterData = {
             novelId: selectedNovelId,
@@ -373,22 +379,22 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
             status: chapterStatus,
             ...(editMode === 'edit' && selectedChapterId && { chapterId: selectedChapterId }),
         };
-        
+
         try {
             const result = await uploadChapterService(chapterData);
             console.log('📝 Upload result:', result);
-            
+
             if (result) {
                 console.log('✅ Lưu chương thành công:', result);
                 alert(editMode === 'edit' ? 'Cập nhật chương thành công!' : 'Lưu chương mới thành công!');
-                
+
                 // Reload danh sách chương - API trả về array trực tiếp
                 const chaptersData = await getChaptersByNovelService(selectedNovelId);
                 if (chaptersData && Array.isArray(chaptersData)) {
                     const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
                     setChapters(sortedChapters);
                 }
-                
+
                 // Nếu là tạo mới, reset form
                 if (editMode === 'new') {
                     const maxChapter = Math.max(...chapters.map(c => c.chapterNumber), chapterNumber);
@@ -415,7 +421,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
         toolbarBg: isDarkMode ? "bg-stone-800/80" : "bg-white/80",
         text: isDarkMode ? "text-stone-200" : "text-stone-800",
         textMuted: isDarkMode ? "text-stone-400" : "text-stone-500",
-        prose: isDarkMode 
+        prose: isDarkMode
             ? "prose-invert prose-p:text-stone-300 prose-headings:text-stone-100 prose-strong:text-stone-100 prose-blockquote:text-stone-400 prose-blockquote:border-stone-600 prose-code:text-purple-300 prose-code:bg-stone-700 prose-pre:bg-stone-900 prose-pre:text-stone-300"
             : "prose-p:text-stone-700 prose-headings:text-stone-900 prose-strong:text-stone-900 prose-blockquote:text-stone-600 prose-blockquote:border-stone-400 prose-code:text-purple-700 prose-code:bg-stone-200 prose-pre:bg-stone-100 prose-pre:text-stone-800",
     };
@@ -441,24 +447,42 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             <label className={cn("block text-sm font-medium mb-2", theme.text)}>
                                 Chọn truyện
                             </label>
-                            <select
+
+                            <Select
                                 value={selectedNovelId || ""}
-                                onChange={(e) => onNovelChange?.(e.target.value || null)}
-                                className={cn(
-                                    "w-full p-3 rounded-xl border transition-all duration-200",
-                                    isDarkMode 
-                                        ? "bg-stone-800 border-stone-700 text-stone-200" 
-                                        : "bg-white border-stone-300 text-stone-800",
-                                    "focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                )}
+                                onValueChange={(value) => onNovelChange?.(value || null)}
                             >
-                                <option value="">-- Chọn truyện để viết --</option>
-                                {novels.map((novel) => (
-                                    <option key={novel._id || novel.id} value={novel._id || novel.id}>
-                                        {novel.title}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger className={cn(
+                                    "w-full h-12 px-4 rounded-xl border transition-all duration-200 shadow-sm",
+                                    isDarkMode
+                                        ? "bg-stone-800 border-stone-700 text-stone-200 hover:border-stone-600"
+                                        : "bg-white border-stone-300 text-stone-800 hover:border-stone-400",
+                                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                )}>
+                                    <SelectValue placeholder="Chọn truyện..." className="text-stone-500" />
+                                </SelectTrigger>
+                                <SelectContent className={cn(
+                                    "rounded-xl border shadow-xl",
+                                    isDarkMode
+                                        ? "bg-stone-800 border-stone-700"
+                                        : "bg-white border-stone-200"
+                                )}>
+                                    {novels.map((novel) => (
+                                        <SelectItem 
+                                            key={novel._id || novel.id || ""} 
+                                            value={(novel._id || novel.id || "")}
+                                            className={cn(
+                                                "rounded-lg cursor-pointer transition-colors my-1",
+                                                isDarkMode
+                                                    ? "text-stone-200 focus:bg-purple-500/20 focus:text-purple-300"
+                                                    : "text-stone-800 focus:bg-purple-100 focus:text-purple-700"
+                                            )}
+                                        >
+                                            {novel.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         {selectedNovel && (
                             <>
@@ -472,11 +496,11 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                         value={chapterNumber}
                                         onChange={(e) => setChapterNumber(Number(e.target.value))}
                                         className={cn(
-                                            "w-full p-3 rounded-xl border transition-all duration-200",
-                                            isDarkMode 
-                                                ? "bg-stone-800 border-stone-700 text-stone-200" 
-                                                : "bg-white border-stone-300 text-stone-800",
-                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            "w-full h-10 px-4 rounded-xl border transition-all duration-200 shadow-sm appearance-none",
+                                            isDarkMode
+                                                ? "!bg-stone-800 border-stone-700 text-stone-200 hover:border-stone-600"
+                                                : "!bg-white border-stone-300 text-stone-800 hover:border-stone-400",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                                         )}
                                     />
                                 </div>
@@ -490,38 +514,89 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                         onChange={(e) => setChapterTitle(e.target.value)}
                                         placeholder="Nhập tiêu đề chương..."
                                         className={cn(
-                                            "w-full p-3 rounded-xl border transition-all duration-200",
-                                            isDarkMode 
-                                                ? "bg-stone-800 border-stone-700 text-stone-200 placeholder:text-stone-500" 
-                                                : "bg-white border-stone-300 text-stone-800 placeholder:text-stone-400",
-                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            "w-full h-10 px-4 rounded-xl border transition-all duration-200 shadow-sm",
+                                            isDarkMode
+                                                ? "!bg-stone-800 border-stone-700 text-stone-200 hover:border-stone-600 placeholder:text-stone-500"
+                                                : "!bg-white border-stone-300 text-stone-800 hover:border-stone-400 placeholder:text-stone-400",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                                         )}
                                     />
                                 </div>
-                                <div className="w-40">
+                                <div className="w-44">
                                     <label className={cn("block text-sm font-medium mb-2", theme.text)}>
                                         Trạng thái
                                     </label>
-                                    <select
-                                        value={chapterStatus}
-                                        onChange={(e) => handleStatusChange(e.target.value as 'draft' | 'published' | 'scheduled')}
-                                        className={cn(
-                                            "w-full p-3 rounded-xl border transition-all duration-200",
-                                            isDarkMode 
-                                                ? "bg-stone-800 border-stone-700 text-stone-200" 
-                                                : "bg-white border-stone-300 text-stone-800",
-                                            "focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                        )}
-                                    >
-                                        <option value="draft"><PencilLine /> Bản nháp</option>
-                                        <option value="published"><BookUp /> Đã đăng</option>
-                                        <option value="scheduled"><Clock /> Hẹn giờ</option>
-                                    </select>
+                                    <Select value={chapterStatus}
+                                        onValueChange={(value) => handleStatusChange(value as 'draft' | 'published' | 'scheduled')}>
+                                        <SelectTrigger className={cn(
+                                            "w-full h-12 px-4 rounded-xl border transition-all duration-200 shadow-sm",
+                                            isDarkMode
+                                                ? "bg-stone-800 border-stone-700 text-stone-200 hover:border-stone-600"
+                                                : "bg-white border-stone-300 text-stone-800 hover:border-stone-400",
+                                            "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                        )}>
+                                            <div className="flex items-center gap-2">
+                                                {chapterStatus === 'draft' && <FileEdit className="w-4 h-4 text-amber-400" />}
+                                                {chapterStatus === 'published' && <Send className="w-4 h-4 text-green-400" />}
+                                                {chapterStatus === 'scheduled' && <Clock className="w-4 h-4 text-blue-400" />}
+                                                <SelectValue placeholder="Trạng thái" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent className={cn(
+                                            "rounded-xl border shadow-xl",
+                                            isDarkMode
+                                                ? "bg-stone-800 border-stone-700"
+                                                : "bg-white border-stone-200"
+                                        )}>
+                                            <SelectItem 
+                                                value="draft"
+                                                className={cn(
+                                                    "rounded-lg cursor-pointer transition-colors my-1",
+                                                    isDarkMode
+                                                        ? "text-stone-200 focus:bg-amber-500/20 focus:text-amber-300"
+                                                        : "text-stone-800 focus:bg-amber-100 focus:text-amber-700"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <FileEdit className="w-4 h-4 text-amber-400" />
+                                                    Bản nháp
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem 
+                                                value="published"
+                                                className={cn(
+                                                    "rounded-lg cursor-pointer transition-colors my-1",
+                                                    isDarkMode
+                                                        ? "text-stone-200 focus:bg-green-500/20 focus:text-green-300"
+                                                        : "text-stone-800 focus:bg-green-100 focus:text-green-700"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Send className="w-4 h-4 text-green-400" />
+                                                    Đã đăng
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem 
+                                                value="scheduled"
+                                                className={cn(
+                                                    "rounded-lg cursor-pointer transition-colors my-1",
+                                                    isDarkMode
+                                                        ? "text-stone-200 focus:bg-blue-500/20 focus:text-blue-300"
+                                                        : "text-stone-800 focus:bg-blue-100 focus:text-blue-700"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-4 h-4 text-blue-400" />
+                                                    Hẹn giờ
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </>
                         )}
                     </div>
-                    
+
                     {/* Chương đã đăng - Dropdown chọn chương để sửa */}
                     {selectedNovel && (
                         <div className={cn(
@@ -543,7 +618,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                         className={cn(
                                             "px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all",
                                             editMode === 'new'
-                                                ? isDarkMode 
+                                                ? isDarkMode
                                                     ? "bg-green-500/20 text-green-400 cursor-default"
                                                     : "bg-green-100 text-green-700 cursor-default"
                                                 : isDarkMode
@@ -556,7 +631,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {chapters.length > 0 ? (
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
                                     {chapters.map((chapter) => {
@@ -596,7 +671,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                                             {chapter.status && (
                                                                 <span className={cn(
                                                                     "ml-2 px-1.5 py-0.5 rounded text-xs",
-                                                                    chapter.status === 'published' 
+                                                                    chapter.status === 'published'
                                                                         ? "bg-green-500/20 text-green-400"
                                                                         : "bg-amber-500/20 text-amber-400"
                                                                 )}>
@@ -619,7 +694,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                     Chưa có chương nào được đăng cho truyện này.
                                 </p>
                             )}
-                            
+
                             {/* Indicator chế độ hiện tại */}
                             {editMode === 'edit' && selectedChapterId && (
                                 <div className={cn(
@@ -632,10 +707,17 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             )}
                         </div>
                     )}
-                    
+
                     {selectedNovel && (
-                        <div className={cn("mt-3 text-sm", theme.textMuted)}>
-                            Đang viết cho: <span className={cn("font-medium", theme.text)}>{selectedNovel.title}</span>
+                        <div className={cn("mt-3 text-2xl", theme.textMuted)}>
+                            Đang viết cho:{" "}
+                            <span
+                                className={cn(
+                                    "font-medium bg-gradient-to-r from-[#FFAA00] to-[#FF5500] bg-clip-text text-transparent"
+                                )}
+                            >
+                                {selectedNovel.title}
+                            </span>
                         </div>
                     )}
                     {!selectedNovel && novels.length === 0 && (
@@ -643,6 +725,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             Bạn chưa có truyện nào. Vui lòng tạo truyện mới trước khi viết chương.
                         </div>
                     )}
+
                 </div>
 
                 {/* Header */}
@@ -651,10 +734,10 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                         <FileText className={cn("w-8 h-8", isDarkMode ? "text-purple-400" : "text-purple-600")} />
                         <div>
                             <h1 className={cn("text-2xl font-bold", theme.text)}>
-                                {editMode === 'edit' 
-                                    ? `Sửa chương ${chapterNumber}` 
-                                    : selectedNovel 
-                                        ? `Viết chương ${chapterNumber}` 
+                                {editMode === 'edit'
+                                    ? `Sửa chương ${chapterNumber}`
+                                    : selectedNovel
+                                        ? `Viết chương ${chapterNumber}`
                                         : "Novel Editor"
                                 }
                             </h1>
@@ -663,7 +746,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             </p>
                         </div>
                     </div>
-                    
+
                     {/* Mode & Action Buttons */}
                     <div className="flex items-center gap-2">
                         <button
@@ -671,29 +754,29 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             title={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
                             className={cn(
                                 "p-2.5 rounded-xl transition-all duration-200",
-                                isDarkMode 
-                                    ? "bg-stone-800 text-stone-300 hover:bg-stone-700" 
+                                isDarkMode
+                                    ? "bg-stone-800 text-stone-300 hover:bg-stone-700"
                                     : "bg-white text-stone-600 hover:bg-stone-100",
                                 "shadow-sm"
                             )}
                         >
                             {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                         </button>
-                        
+
                         <button
                             onClick={() => setIsDarkMode(!isDarkMode)}
                             title={isDarkMode ? "Chế độ sáng" : "Chế độ tối"}
                             className={cn(
                                 "p-2.5 rounded-xl transition-all duration-200",
-                                isDarkMode 
-                                    ? "bg-stone-800 text-amber-400 hover:bg-stone-700" 
+                                isDarkMode
+                                    ? "bg-stone-800 text-amber-400 hover:bg-stone-700"
                                     : "bg-white text-stone-600 hover:bg-stone-100",
                                 "shadow-sm"
                             )}
                         >
                             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                         </button>
-                        
+
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
@@ -708,7 +791,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                             {isSaving ? "Đang lưu..." : "Lưu"}
                         </button>
-                        
+
                         {/* Nút Đăng chương - chỉ hiện khi đang edit và chưa publish */}
                         {editMode === 'edit' && chapterStatus !== 'published' && (
                             <button
@@ -726,12 +809,12 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                 {isPublishing ? "Đang đăng..." : "Đăng"}
                             </button>
                         )}
-                        
+
                         {/* Badge trạng thái */}
                         {editMode === 'edit' && (
                             <div className={cn(
                                 "px-3 py-2 rounded-xl text-sm flex items-center gap-1.5",
-                                chapterStatus === 'published' 
+                                chapterStatus === 'published'
                                     ? isDarkMode ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-700"
                                     : chapterStatus === 'scheduled'
                                         ? isDarkMode ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-700"
@@ -953,8 +1036,8 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                     isPreview && "pointer-events-none"
                 )}>
                     <div className={cn(theme.prose)}>
-                        <EditorContent 
-                            editor={editor} 
+                        <EditorContent
+                            editor={editor}
                             className={cn(
                                 "transition-colors duration-300",
                                 isDarkMode ? "[&_.ProseMirror]:text-stone-300" : "[&_.ProseMirror]:text-stone-700",
@@ -962,7 +1045,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                 "[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left",
                                 "[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none",
                                 "[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0",
-                                isDarkMode 
+                                isDarkMode
                                     ? "[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-stone-600"
                                     : "[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-stone-400"
                             )}

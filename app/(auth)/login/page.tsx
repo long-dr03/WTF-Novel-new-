@@ -3,12 +3,12 @@
 import { LoginForm } from "@/components/forms"
 import { type LoginFormData } from "@/lib/validations/auth"
 import { getLogin } from "@/services/resgisterService"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/providers/AuthProvider"
 import Link from "next/link"
 import { useState } from "react"
 
 export default function LoginPage() {
-    const router = useRouter()
+    const { login } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
 
@@ -20,14 +20,22 @@ export default function LoginPage() {
             // Using the existing service with email as valueLogin and false for remember
             const result = await getLogin(data.email, data.password, false) as any
 
-            if (result) {
-                // Store token if returned
-                if (result.token) {
-                    localStorage.setItem('jwt', result.token)
+            if (result && result.token) {
+                // API trả về format: { token, data: { user } }
+                const userData = result.data?.user || result.user
+                
+                if (userData) {
+                    // Sử dụng login từ AuthProvider để cập nhật state ngay lập tức
+                    login(result.token, {
+                        id: userData.id || userData._id || '',
+                        username: userData.username || data.email.split('@')[0],
+                        email: userData.email || data.email,
+                        avatar: userData.avatar,
+                        role: userData.role || 'user'
+                    })
+                } else {
+                    setError("Đăng nhập thất bại. Không thể lấy thông tin người dùng.")
                 }
-
-                // Redirect to home or profile page on success
-                router.push('/profile')
             } else {
                 setError("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.")
             }

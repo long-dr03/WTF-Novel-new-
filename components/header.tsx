@@ -17,7 +17,7 @@ import { PenLine } from "lucide-react";
 
 export const Header = () => {
     const { user, isAuthenticated, logout } = useAuth();
-
+    
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="w-full max-w-[1300px] mx-auto flex h-16 items-center justify-between px-4">
