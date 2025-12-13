@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -44,10 +44,20 @@ import {
     Send,
     Clock,
     FileEdit,
-    PencilLine
+    PencilLine,
+    Upload,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    Search
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
+import WordUploader from "./WordUploader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 // Toolbar Button Component
 const ToolbarButton = ({
     onClick,
@@ -149,8 +159,38 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     const [isLoadingContent, setIsLoadingContent] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [chaptersPerPage] = useState(10);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Word uploader state
+    const [showWordUploader, setShowWordUploader] = useState(false);
+
     // Lấy truyện được chọn
     const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
+
+    // Filtered and paginated chapters
+    const filteredChapters = useMemo(() => {
+        if (!searchQuery.trim()) return chapters;
+        const query = searchQuery.toLowerCase();
+        return chapters.filter(ch => 
+            ch.title?.toLowerCase().includes(query) || 
+            ch.chapterNumber.toString().includes(query)
+        );
+    }, [chapters, searchQuery]);
+
+    const totalPages = Math.ceil(filteredChapters.length / chaptersPerPage);
+    
+    const paginatedChapters = useMemo(() => {
+        const startIndex = (currentPage - 1) * chaptersPerPage;
+        return filteredChapters.slice(startIndex, startIndex + chaptersPerPage);
+    }, [filteredChapters, currentPage, chaptersPerPage]);
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
 
     const editor = useEditor({
         extensions: [
@@ -191,43 +231,50 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
     const wordCount = editor?.storage.characterCount?.words() || 0;
     const charCount = editor?.storage.characterCount?.characters() || 0;
 
-    // Load danh sách chương khi chọn truyện
-    useEffect(() => {
-        const loadChapters = async () => {
-            if (!selectedNovelId) {
-                setChapters([]);
-                setEditMode('new');
-                setSelectedChapterId(null);
-                return;
-            }
+    // Function to load chapters
+    const loadChapters = async (novelId: string) => {
+        if (!novelId) {
+            setChapters([]);
+            setEditMode('new');
+            setSelectedChapterId(null);
+            return;
+        }
 
-            setIsLoadingChapters(true);
-            try {
-                const response = await getChaptersByNovelService(selectedNovelId);
-                if (response) {
-                    // Sắp xếp theo số chương
-                    setChapters(response);
+        setIsLoadingChapters(true);
+        try {
+            const response = await getChaptersByNovelService(novelId);
+            if (response && Array.isArray(response)) {
+                // Sắp xếp theo số chương
+                setChapters(response as Chapter[]);
 
-                    // Tự động set số chương tiếp theo
-                    if (response.length > 0) {
-                        const maxChapter = Math.max(...response.map((c: Chapter) => c.chapterNumber));
-                        setChapterNumber(maxChapter);
-                    } else {
-                        setChapterNumber(1);
-                    }
+                // Tự động set số chương tiếp theo
+                if (response.length > 0) {
+                    const maxChapter = Math.max(...response.map((c: Chapter) => c.chapterNumber));
+                    setChapterNumber(maxChapter);
                 } else {
-                    setChapters([]);
                     setChapterNumber(1);
                 }
-            } catch (error) {
-                console.error('Lỗi khi load danh sách chương:', error);
+            } else {
                 setChapters([]);
-            } finally {
-                setIsLoadingChapters(false);
+                setChapterNumber(1);
             }
-        };
+        } catch (error) {
+            console.error('Lỗi khi load danh sách chương:', error);
+            setChapters([]);
+        } finally {
+            setIsLoadingChapters(false);
+        }
+    };
 
-        loadChapters();
+    // Load danh sách chương khi chọn truyện
+    useEffect(() => {
+        if (selectedNovelId) {
+            loadChapters(selectedNovelId);
+        } else {
+            setChapters([]);
+            setEditMode('new');
+            setSelectedChapterId(null);
+        }
     }, [selectedNovelId]);
 
     // Load nội dung chương khi chọn chương để sửa
@@ -244,7 +291,8 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
             if (chapterData) {
                 setChapterNumber(chapterData.chapterNumber);
                 setChapterTitle(chapterData.title || '');
-                setChapterStatus(chapterData.status || 'draft');
+                const status = chapterData.status as 'draft' | 'published' | 'scheduled';
+                setChapterStatus(status || 'draft');
 
                 // Set content vào editor
                 if (chapterData.contentJson) {
@@ -612,29 +660,60 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                     {isLoadingChapters && (
                                         <RefreshCw className={cn("w-4 h-4 animate-spin", theme.textMuted)} />
                                     )}
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowWordUploader(true)}
+                                        className={cn(
+                                            "gap-1.5",
+                                            isDarkMode && "border-stone-700 hover:bg-blue-500/20 hover:text-blue-400"
+                                        )}
+                                        title="Upload chương từ file Word"
+                                    >
+                                        <Upload className="w-3.5 h-3.5" />
+                                        Upload Word
+                                    </Button>
+                                    <Button
+                                        variant={editMode === 'new' ? "default" : "outline"}
+                                        size="sm"
                                         onClick={handleNewChapter}
                                         disabled={editMode === 'new'}
                                         className={cn(
-                                            "px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all",
+                                            "gap-1.5",
                                             editMode === 'new'
-                                                ? isDarkMode
-                                                    ? "bg-green-500/20 text-green-400 cursor-default"
-                                                    : "bg-green-100 text-green-700 cursor-default"
-                                                : isDarkMode
-                                                    ? "bg-stone-700 text-stone-300 hover:bg-green-500/20 hover:text-green-400"
-                                                    : "bg-stone-200 text-stone-600 hover:bg-green-100 hover:text-green-700"
+                                                ? "bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30"
+                                                : isDarkMode && "border-stone-700 hover:bg-green-500/20 hover:text-green-400"
                                         )}
                                     >
                                         <Plus className="w-3.5 h-3.5" />
                                         Viết chương mới
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
 
-                            {chapters.length > 0 ? (
-                                <div className="space-y-2 max-h-48 overflow-y-auto">
-                                    {chapters.map((chapter) => {
+                            {/* Search bar for chapters */}
+                            {chapters.length > 5 && (
+                                <div className="mb-3 relative">
+                                    <Search className={cn(
+                                        "w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 z-10",
+                                        theme.textMuted
+                                    )} />
+                                    <Input
+                                        type="text"
+                                        placeholder="Tìm kiếm chương..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className={cn(
+                                            "pl-9",
+                                            isDarkMode && "bg-stone-800 border-stone-700"
+                                        )}
+                                    />
+                                </div>
+                            )}
+
+                            {filteredChapters.length > 0 ? (
+                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                    {paginatedChapters.map((chapter) => {
                                         const isSelected = (chapter._id || chapter.id) === selectedChapterId;
                                         return (
                                             <button
@@ -691,8 +770,64 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                 </div>
                             ) : (
                                 <p className={cn("text-sm py-4 text-center", theme.textMuted)}>
-                                    Chưa có chương nào được đăng cho truyện này.
+                                    {searchQuery ? "Không tìm thấy chương phù hợp." : "Chưa có chương nào được đăng cho truyện này."}
                                 </p>
+                            )}
+
+                            {/* Pagination controls */}
+                            {totalPages > 1 && (
+                                <div className={cn(
+                                    "mt-3 flex items-center justify-between pt-3 border-t",
+                                    isDarkMode ? "border-stone-700" : "border-stone-300"
+                                )}>
+                                    <span className={cn("text-xs", theme.textMuted)}>
+                                        Trang {currentPage}/{totalPages} • {filteredChapters.length} chương
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => setCurrentPage(1)}
+                                            disabled={currentPage === 1}
+                                            title="Trang đầu"
+                                        >
+                                            <ChevronsLeft className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            title="Trang trước"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </Button>
+                                        <span className={cn(
+                                            "px-3 py-1 text-xs font-medium rounded-lg",
+                                            isDarkMode ? "bg-stone-700 text-stone-300" : "bg-stone-200 text-stone-600"
+                                        )}>
+                                            {currentPage}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            title="Trang sau"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => setCurrentPage(totalPages)}
+                                            disabled={currentPage === totalPages}
+                                            title="Trang cuối"
+                                        >
+                                            <ChevronsRight className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
                             )}
 
                             {/* Indicator chế độ hiện tại */}
@@ -1079,6 +1214,22 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                     </div>
                 </div>
             </div>
+
+            {/* Word Uploader Modal */}
+            {showWordUploader && selectedNovelId && (
+                <WordUploader
+                    isDark={isDarkMode}
+                    novelId={selectedNovelId}
+                    currentMaxChapter={Math.max(...chapters.map(c => c.chapterNumber), 0)}
+                    onUploadComplete={async () => {
+                        // Reload chapters after upload
+                        await loadChapters(selectedNovelId);
+                        setShowWordUploader(false);
+                    }}
+                    onClose={() => setShowWordUploader(false)}
+                    uploadChapterFn={uploadChapterService}
+                />
+            )}
         </div>
     );
 };

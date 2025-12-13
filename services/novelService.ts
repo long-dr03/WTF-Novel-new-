@@ -1,4 +1,5 @@
 import { createNovel, uploadChapter, getNovelById , getPopularNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus } from '../controller/NovelController';
+
 interface NovelData {
     title: string;
     description: string;
@@ -9,6 +10,41 @@ interface NovelData {
     views: number;
     likes: number;
 }
+
+interface Novel {
+    _id?: string;
+    id?: string;
+    title: string;
+    description?: string;
+    image?: string;
+    coverImage?: string;
+    author?: any;
+    genres?: string[];
+    status?: string;
+    views?: number;
+    likes?: number;
+    chapters?: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+interface Chapter {
+    _id?: string;
+    id?: string;
+    novelId: string;
+    chapterNumber: number;
+    title: string;
+    content?: string;
+    contentJson?: any;
+    wordCount?: number;
+    charCount?: number;
+    status?: 'draft' | 'published' | 'scheduled';
+    publishedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    views?: number;
+}
+
 interface ChapterData {
     novelId: string;
     chapterNumber: number;
@@ -24,59 +60,101 @@ interface ChapterData {
     views?: number;
     authorNote?: string;
 }
-const uploadChapterService = async (dataChapter: ChapterData) => {
+
+// Helper function to extract data from API response
+const extractApiData = <T>(response: any): T | null => {
+    // Check if response has the new format { success, message, data }
+    if (response?.data?.success !== undefined) {
+        return response.data.success ? response.data.data : null;
+    }
+    // Fallback for old format or direct data
+    return response?.data ?? response ?? null;
+};
+
+const uploadChapterService = async (dataChapter: ChapterData): Promise<any> => {
     try {
-        const data = await uploadChapter(dataChapter)
-        return data
+        const response = await uploadChapter(dataChapter);
+        return extractApiData(response);
     } catch (error) {
-        console.error("Error register:", error);
+        console.error("Error uploading chapter:", error);
         return null;
     }
 }
-const createNovelService = async (novelData: NovelData) => {
+
+const createNovelService = async (novelData: NovelData): Promise<any> => {
     try {
-        const data = await createNovel(novelData)  
-        return data
+        const response = await createNovel(novelData);
+        return extractApiData(response);
     } catch (error) {
-        console.error("Error register:", error);
+        console.error("Error creating novel:", error);
         return null;
     }
 };
-const getNovelsByAuthorService = async (authorId: string) => {
-    const response = await getNovelsByAuthor(authorId);
-    return response?.data;
-}
-const getNovelByIdService = async(novelId: string) => {
-    const response = await getNovelById(novelId);
-    return response?.data;
-}
-const getPopularNovelsService = async(limit: number = 10) => {
-    const response = await getPopularNovels(limit);
-    return response?.data;
-}
-const getChaptersByNovelService = async(novelId: string) => {
-    const response = await getChaptersByNovel(novelId);
-    return response?.data;
-}
-const getChapterContentService = async(novelId: string, chapterNumber: number) => {
-    const response = await getChapterContent(novelId, chapterNumber);
-    return response?.data;
+
+const getNovelsByAuthorService = async (authorId: string): Promise<Novel[] | null> => {
+    try {
+        const response = await getNovelsByAuthor(authorId);
+        return extractApiData<Novel[]>(response);
+    } catch (error) {
+        console.error("Error fetching novels by author:", error);
+        return null;
+    }
 }
 
-const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'published' | 'scheduled') => {
+const getNovelByIdService = async(novelId: string): Promise<Novel | null> => {
+    try {
+        const response = await getNovelById(novelId);
+        return extractApiData<Novel>(response);
+    } catch (error) {
+        console.error("Error fetching novel:", error);
+        return null;
+    }
+}
+
+const getPopularNovelsService = async(limit: number = 10): Promise<Novel[] | null> => {
+    try {
+        const response = await getPopularNovels(limit);
+        return extractApiData<Novel[]>(response);
+    } catch (error) {
+        console.error("Error fetching popular novels:", error);
+        return null;
+    }
+}
+
+const getChaptersByNovelService = async(novelId: string): Promise<Chapter[] | null> => {
+    try {
+        const response = await getChaptersByNovel(novelId);
+        return extractApiData<Chapter[]>(response);
+    } catch (error) {
+        console.error("Error fetching chapters:", error);
+        return null;
+    }
+}
+
+const getChapterContentService = async(novelId: string, chapterNumber: number): Promise<Chapter | null> => {
+    try {
+        const response = await getChapterContent(novelId, chapterNumber);
+        return extractApiData<Chapter>(response);
+    } catch (error) {
+        console.error("Error fetching chapter content:", error);
+        return null;
+    }
+}
+
+const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'published' | 'scheduled'): Promise<any> => {
     try {
         const response = await updateChapterStatus(chapterId, status);
-        return response?.data;
+        return extractApiData(response);
     } catch (error) {
         console.error("Error updating chapter status:", error);
         return null;
     }
 }
 
-const updateNovelStatusService = async(novelId: string, status: 'ongoing' | 'completed' | 'hiatus') => {
+const updateNovelStatusService = async(novelId: string, status: 'ongoing' | 'completed' | 'hiatus'): Promise<any> => {
     try {
         const response = await updateNovelStatus(novelId, status);
-        return response?.data;
+        return extractApiData(response);
     } catch (error) {
         console.error("Error updating novel status:", error);
         return null;
@@ -94,3 +172,5 @@ export {
     updateChapterStatusService,
     updateNovelStatusService
 }
+
+export type { Novel, Chapter, ChapterData, NovelData }
