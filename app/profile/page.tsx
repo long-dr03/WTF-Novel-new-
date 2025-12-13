@@ -150,9 +150,7 @@ export default function ProfilePage() {
             formData.append('username', data.username);
             formData.append('email', data.email);
 
-            if (data.avatar instanceof File) {
-                formData.append('avatar', data.avatar);
-            } else if (typeof data.avatar === 'string') {
+            if (data.avatar) {
                 formData.append('avatar', data.avatar);
             }
 

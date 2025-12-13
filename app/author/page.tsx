@@ -28,7 +28,7 @@ const Page = () => {
             if (user?.id) {
                 try {
                     const response = await getNovelsByAuthorService(user.id)
-                    setAuthorNovels(response || [])
+                    setAuthorNovels(response.data)
                 } catch (error) {
                     console.error("Error fetching novels:", error)
                 } finally {

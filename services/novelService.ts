@@ -17,7 +17,7 @@ interface ChapterData {
     contentJson: any
     wordCount: number
     charCount: number
-    status: 'draft'
+    status: 'draft' | 'published' | 'scheduled'
     chapterId?: string; // Optional - for updating existing chapters
     scheduledAt?: Date;
     publishedAt?: Date;
@@ -44,29 +44,29 @@ const createNovelService = async (novelData: NovelData) => {
 };
 const getNovelsByAuthorService = async (authorId: string) => {
     const response = await getNovelsByAuthor(authorId);
-    return response;
+    return response?.data;
 }
 const getNovelByIdService = async(novelId: string) => {
     const response = await getNovelById(novelId);
-    return response;
+    return response?.data;
 }
 const getPopularNovelsService = async(limit: number = 10) => {
     const response = await getPopularNovels(limit);
-    return response;
+    return response?.data;
 }
 const getChaptersByNovelService = async(novelId: string) => {
     const response = await getChaptersByNovel(novelId);
-    return response;
+    return response?.data;
 }
 const getChapterContentService = async(novelId: string, chapterNumber: number) => {
     const response = await getChapterContent(novelId, chapterNumber);
-    return response;
+    return response?.data;
 }
 
 const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'published' | 'scheduled') => {
     try {
         const response = await updateChapterStatus(chapterId, status);
-        return response;
+        return response?.data;
     } catch (error) {
         console.error("Error updating chapter status:", error);
         return null;
@@ -76,7 +76,7 @@ const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'p
 const updateNovelStatusService = async(novelId: string, status: 'ongoing' | 'completed' | 'hiatus') => {
     try {
         const response = await updateNovelStatus(novelId, status);
-        return response;
+        return response?.data;
     } catch (error) {
         console.error("Error updating novel status:", error);
         return null;
