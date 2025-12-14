@@ -338,7 +338,7 @@ export const NovelList = ({
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger className="flex items-center gap-2 bg-amber-50 text-black p-2 rounded-xl"> <Plus className="h-4 w-4" /> Tạo truyện mới</DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Tạo truyện mới</DialogTitle>
                             <DialogDescription>
@@ -455,12 +455,13 @@ export const NovelList = ({
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {novels.map((novel, index) => {
                         // Convert backend data to NovelCard format
+                        const novelStatus = novel.status ? (statusMapToFrontend[novel.status] || novel.status) : "Đang viết";
                         const novelCardData: Novel = {
                             _id: novel._id,
                             id: novel.id,
                             title: novel.title,
                             coverImage: novel.coverImage || novel.image, // Mapping từ backend field 'image'
-                            status: statusMapToFrontend[novel.status] || novel.status || "Đang viết",
+                            status: novelStatus as Novel["status"],
                             chapters: novel.chapters || 0,
                             views: novel.views || 0,
                             likes: novel.likes || 0,

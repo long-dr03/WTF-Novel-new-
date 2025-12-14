@@ -18,7 +18,7 @@ interface ChapterData {
     contentJson: any
     wordCount: number
     charCount: number
-    status: 'draft'
+    status: 'draft' | 'published' | 'scheduled'
     chapterId?: string; // Optional - for updating existing chapters
     scheduledAt?: Date;
     publishedAt?: Date;

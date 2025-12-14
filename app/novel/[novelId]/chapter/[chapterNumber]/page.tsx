@@ -64,46 +64,34 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
-    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('sepia')
-
-    // Load theme từ localStorage
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('readingTheme') as 'light' | 'sepia' | 'dark' | null
-        if (savedTheme) {
-            setReadingTheme(savedTheme)
-        }
-        const savedFontSize = localStorage.getItem('readingFontSize')
-        if (savedFontSize) setFontSize(Number(savedFontSize))
-        const savedLineHeight = localStorage.getItem('readingLineHeight')
-        if (savedLineHeight) setLineHeight(Number(savedLineHeight))
-        const savedFontFamily = localStorage.getItem('readingFontFamily')
-        if (savedFontFamily) setFontFamily(savedFontFamily)
-    }, [])
-
-    // Lưu settings vào localStorage
-    const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
-        setReadingTheme(theme)
-        localStorage.setItem('readingTheme', theme)
-    }
-
-    useEffect(() => {
-        localStorage.setItem('readingFontSize', fontSize.toString())
-        localStorage.setItem('readingLineHeight', lineHeight.toString())
-        localStorage.setItem('readingFontFamily', fontFamily)
-    }, [fontSize, lineHeight, fontFamily])
-
     useEffect(() => {
         const fetchData = async () => {
             if (!novelId || !chapterNumber) return
             try {
-                const [chapterData, novelData, chaptersData] = await Promise.all([
+                const [chapterResponse, novelResponse, chaptersResponse] = await Promise.all([
                     getChapterContentService(novelId, chapterNumber),
                     getNovelByIdService(novelId),
                     getChaptersByNovelService(novelId)
                 ])
-                setChapter(chapterData)
-                setNovel(novelData)
-                setChapters(chaptersData || [])
+                // Xử lý chapter data
+                const chapterData = chapterResponse as unknown as Chapter
+                if (chapterData && chapterData._id) {
+                    setChapter(chapterData)
+                }
+                
+                // Xử lý novel data
+                const novelData = novelResponse as unknown as Novel
+                if (novelData && novelData._id) {
+                    setNovel(novelData)
+                }
+                
+                // Xử lý chapters list
+                const chaptersData = chaptersResponse as unknown as ChapterInfo[]
+                if (Array.isArray(chaptersData)) {
+                    setChapters(chaptersData)
+                } else {
+                    setChapters([])
+                }
             } catch (error) {
                 console.error("Error fetching chapter:", error)
             } finally {

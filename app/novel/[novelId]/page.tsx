@@ -72,8 +72,12 @@ export default function NovelDetailPage() {
                     getNovelByIdService(novelId),
                     getChaptersByNovelService(novelId)
                 ])
-                setNovel(novelData)
-                setChapters(chaptersData || [])
+                if (novelData) {
+                    setNovel(novelData as Novel)
+                }
+                if (chaptersData) {
+                    setChapters(chaptersData as Chapter[])
+                }
             } catch (error) {
                 console.error("Error fetching novel:", error)
             } finally {
