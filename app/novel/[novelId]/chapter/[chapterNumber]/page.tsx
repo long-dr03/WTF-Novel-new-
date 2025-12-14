@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import { 
     ChevronLeft, 
     ChevronRight, 
@@ -13,7 +14,9 @@ import {
     List,
     Settings,
     BookOpen,
-    ArrowLeft
+    ArrowLeft,
+    Sun,
+    Moon
 } from "lucide-react"
 import {
     DropdownMenu,
@@ -61,6 +64,33 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
+    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('sepia')
+
+    // Load theme từ localStorage
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('readingTheme') as 'light' | 'sepia' | 'dark' | null
+        if (savedTheme) {
+            setReadingTheme(savedTheme)
+        }
+        const savedFontSize = localStorage.getItem('readingFontSize')
+        if (savedFontSize) setFontSize(Number(savedFontSize))
+        const savedLineHeight = localStorage.getItem('readingLineHeight')
+        if (savedLineHeight) setLineHeight(Number(savedLineHeight))
+        const savedFontFamily = localStorage.getItem('readingFontFamily')
+        if (savedFontFamily) setFontFamily(savedFontFamily)
+    }, [])
+
+    // Lưu settings vào localStorage
+    const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
+        setReadingTheme(theme)
+        localStorage.setItem('readingTheme', theme)
+    }
+
+    useEffect(() => {
+        localStorage.setItem('readingFontSize', fontSize.toString())
+        localStorage.setItem('readingLineHeight', lineHeight.toString())
+        localStorage.setItem('readingFontFamily', fontFamily)
+    }, [fontSize, lineHeight, fontFamily])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -83,6 +113,33 @@ export default function ReadChapterPage() {
         fetchData()
     }, [novelId, chapterNumber])
 
+    // Theme colors - màu dịu mắt
+    const themeStyles = {
+        light: {
+            bg: 'bg-stone-50',
+            contentBg: 'bg-white',
+            text: 'text-stone-800',
+            border: 'border-stone-200',
+            header: 'bg-white/95'
+        },
+        sepia: {
+            bg: 'bg-[#f4f1ea]',
+            contentBg: 'bg-[#faf8f3]',
+            text: 'text-[#5f4b32]',
+            border: 'border-[#e8dcc8]',
+            header: 'bg-[#faf8f3]/95'
+        },
+        dark: {
+            bg: 'bg-[#1a1a1a]',
+            contentBg: 'bg-[#2d2d2d]',
+            text: 'text-[#e0e0e0]',
+            border: 'border-[#404040]',
+            header: 'bg-[#2d2d2d]/95'
+        }
+    }
+
+    const currentTheme = themeStyles[readingTheme]
+
     const hasPrevChapter = chapterNumber > 1
     const hasNextChapter = chapters.length > 0 && chapterNumber < Math.max(...chapters.map(c => c.chapterNumber))
 
@@ -99,37 +156,41 @@ export default function ReadChapterPage() {
     }
     if (loading) {
         return (
-            <div className="container max-w-4xl mx-auto px-4 py-8">
-                <Skeleton className="h-8 w-3/4 mb-4" />
-                <Skeleton className="h-6 w-1/4 mb-8" />
-                <div className="space-y-4">
-                    {[...Array(10)].map((_, i) => (
-                        <Skeleton key={i} className="h-4 w-full" />
-                    ))}
+            <div className={`min-h-screen ${currentTheme.bg}`}>
+                <div className="container max-w-4xl mx-auto px-4 py-8">
+                    <Skeleton className="h-8 w-3/4 mb-4" />
+                    <Skeleton className="h-6 w-1/4 mb-8" />
+                    <div className="space-y-4">
+                        {[...Array(10)].map((_, i) => (
+                            <Skeleton key={i} className="h-4 w-full" />
+                        ))}
+                    </div>
                 </div>
             </div>
         )
     }
     if (!chapter) {
         return (
-            <div className="container max-w-4xl mx-auto px-4 py-8">
-                <Card className="p-8 text-center">
-                    <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <h2 className="text-xl font-bold mb-2">Không tìm thấy chương</h2>
-                    <p className="text-muted-foreground mb-4">Chương này không tồn tại hoặc đã bị xóa</p>
-                    <Button onClick={() => router.push(`/novel/${novelId}`)}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Quay lại truyện
-                    </Button>
-                </Card>
+            <div className={`min-h-screen ${currentTheme.bg}`}>
+                <div className="container max-w-4xl mx-auto px-4 py-8">
+                    <Card className={`p-8 text-center ${currentTheme.contentBg}`}>
+                        <BookOpen className="h-16 w-16 mx-auto opacity-30 mb-4" />
+                        <h2 className={`text-xl font-bold mb-2 ${currentTheme.text}`}>Không tìm thấy chương</h2>
+                        <p className="opacity-60 mb-4">Chương này không tồn tại hoặc đã bị xóa</p>
+                        <Button onClick={() => router.push(`/novel/${novelId}`)}>
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Quay lại truyện
+                        </Button>
+                    </Card>
+                </div>
             </div>
         )
     }
     
     return (
-        <div className="min-h-screen bg-background">
+        <div className={`min-h-screen transition-colors duration-300 ${currentTheme.bg}`}>
             {/* Fixed Header */}
-            <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+            <header className={`sticky top-0 z-50 backdrop-blur border-b transition-colors ${currentTheme.header} ${currentTheme.border}`}>
                 <div className="container max-w-4xl mx-auto px-4">
                     <div className="flex items-center justify-between h-14">
                         <div className="flex items-center gap-2">
@@ -146,6 +207,46 @@ export default function ReadChapterPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {/* Theme Selector */}
+                            <div className="flex items-center gap-1 mr-2 p-1 rounded-lg bg-muted/30">
+                                <button
+                                    onClick={() => updateTheme('light')}
+                                    className={cn(
+                                        "p-2 rounded transition-all",
+                                        readingTheme === 'light' 
+                                            ? 'bg-white shadow-sm text-stone-800' 
+                                            : 'hover:bg-white/50 text-stone-600 hover:text-stone-800'
+                                    )}
+                                    title="Sáng"
+                                >
+                                    <Sun className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => updateTheme('sepia')}
+                                    className={cn(
+                                        "p-2 rounded transition-all",
+                                        readingTheme === 'sepia' 
+                                            ? 'bg-[#faf8f3] shadow-sm text-[#5f4b32]' 
+                                            : 'hover:bg-[#faf8f3]/50 text-stone-600 hover:text-[#5f4b32]'
+                                    )}
+                                    title="Sepia"
+                                >
+                                    <BookOpen className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => updateTheme('dark')}
+                                    className={cn(
+                                        "p-2 rounded transition-all",
+                                        readingTheme === 'dark' 
+                                            ? 'bg-[#2d2d2d] shadow-sm text-stone-300' 
+                                            : 'hover:bg-[#2d2d2d]/50 text-stone-600 hover:text-stone-300'
+                                    )}
+                                    title="Tối"
+                                >
+                                    <Moon className="h-4 w-4" />
+                                </button>
+                            </div>
+
                             {/* Chapter List Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -233,39 +334,43 @@ export default function ReadChapterPage() {
 
             {/* Chapter Content */}
             <main className="container max-w-4xl mx-auto px-4 py-8">
-                {/* Chapter Title */}
-                <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold mb-2">
-                        Chương {chapter.chapterNumber}: {chapter.title}
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        {chapter.wordCount?.toLocaleString() || 0} từ • {chapter.views?.toLocaleString() || 0} lượt xem
-                    </p>
+                <div className={`rounded-2xl p-8 shadow-sm transition-colors ${currentTheme.contentBg} ${currentTheme.border} border`}>
+                    {/* Chapter Title */}
+                    <div className="text-center mb-8 pb-6 border-b border-current/10">
+                        <h1 className={`text-2xl sm:text-3xl font-bold mb-3 ${currentTheme.text}`}>
+                            Chương {chapter.chapterNumber}: {chapter.title}
+                        </h1>
+                        <p className="text-sm opacity-60">
+                            {chapter.wordCount?.toLocaleString() || 0} từ • {chapter.views?.toLocaleString() || 0} lượt xem
+                        </p>
+                    </div>
+
+                    {/* Content */}
+                    <article 
+                        className={`prose prose-lg max-w-none transition-all ${currentTheme.text}`}
+                        style={{
+                            fontSize: `${fontSize}px`,
+                            lineHeight: lineHeight,
+                            fontFamily: fontFamily,
+                            color: readingTheme === 'light' ? '#1c1917' : readingTheme === 'sepia' ? '#5f4b32' : '#e0e0e0'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: chapter.content }}
+                    />
                 </div>
 
-                {/* Content */}
-                <article 
-                    className="prose prose-lg dark:prose-invert max-w-none"
-                    style={{
-                        fontSize: `${fontSize}px`,
-                        lineHeight: lineHeight,
-                        fontFamily: fontFamily,
-                    }}
-                    dangerouslySetInnerHTML={{ __html: chapter.content }}
-                />
-
                 {/* Navigation */}
-                <div className="flex justify-between items-center mt-12 pt-8 border-t">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-8">
                     <Button
                         variant="outline"
                         disabled={!hasPrevChapter}
                         onClick={goToPrevChapter}
+                        className="w-full sm:w-auto"
                     >
                         <ChevronLeft className="h-4 w-4 mr-2" />
                         Chương trước
                     </Button>
 
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" asChild className="w-full sm:w-auto">
                         <Link href={`/novel/${novelId}`}>
                             <List className="h-4 w-4 mr-2" />
                             Mục lục
@@ -276,6 +381,7 @@ export default function ReadChapterPage() {
                         variant="outline"
                         disabled={!hasNextChapter}
                         onClick={goToNextChapter}
+                        className="w-full sm:w-auto"
                     >
                         Chương sau
                         <ChevronRight className="h-4 w-4 ml-2" />

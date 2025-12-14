@@ -44,7 +44,8 @@ import {
     Send,
     Clock,
     FileEdit,
-    PencilLine  
+    PencilLine,  
+    BookUp
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import {uploadChapterService,getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService} from "@/services/novelService";
@@ -513,9 +514,9 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                             "focus:outline-none focus:ring-2 focus:ring-purple-500"
                                         )}
                                     >
-                                        <option value="draft"><PencilLine /> Bản nháp</option>
-                                        <option value="published"><BookUp /> Đã đăng</option>
-                                        <option value="scheduled"><Clock /> Hẹn giờ</option>
+                                        <option value="draft">📝 Bản nháp</option>
+                                        <option value="published">✅ Đã đăng</option>
+                                        <option value="scheduled">⏰ Hẹn giờ</option>
                                     </select>
                                 </div>
                             </>
