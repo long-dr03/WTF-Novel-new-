@@ -8,6 +8,7 @@ import Link from "next/link"
 import { BookOpen } from 'lucide-react'
 
 interface NovelCardProps {
+    novelId?: string
     title: string
     coverImage: string
     genres: Array<{ name: string; url: string }>
@@ -15,6 +16,7 @@ interface NovelCardProps {
 }
 
 const CardNovel = ({
+    novelId,
     title = "Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị",
     coverImage = "",
     genres = [
@@ -30,9 +32,11 @@ const CardNovel = ({
         setImageError(true)
     }
 
-    return (
+    const novelLink = novelId ? `/novel/${novelId}` : '#';
+
+    const CardContent = (
         <SpotlightCard
-            className={`custom-spotlight-card w-[100%] flex flex-col gap-4 ${className}`}
+            className={`custom-spotlight-card w-full flex flex-col gap-4 ${className}`}
             spotlightColor="rgba(0, 229, 255, 0.2)"
         >
             <div className="img_container w-full aspect-[2/3] rounded-xl overflow-hidden bg-muted relative">
@@ -55,14 +59,25 @@ const CardNovel = ({
                 <h3 className="text-xl font-bold line-clamp-2">{title}</h3>
                 <div className="bage_ctn flex gap-2 flex-wrap">
                     {genres.map((genre, index) => (
-                        <Badge key={index} variant="outline" className='w-[30%]' asChild>
-                            <Link href={genre.url}>{genre.name}</Link>
+                        <Badge key={index} variant="outline" className='w-[30%]'>
+                            {genre.name}
                         </Badge>
                     ))}
                 </div>
             </div>
         </SpotlightCard>
-    )
+    );
+
+    // Nếu có novelId thì wrap trong Link, không thì chỉ render card
+    if (novelId) {
+        return (
+            <Link href={novelLink} className="block">
+                {CardContent}
+            </Link>
+        );
+    }
+
+    return CardContent;
 }
 
 export default CardNovel

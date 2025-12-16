@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Banner_carousel } from "@/components/carousel";
 import CardNovel from "@/components/cardNovel";
 import GooeyNav from "@/components/GooeyNav/GooeyNav";
+import { getPopularNovelsService, Novel } from "@/services/novelService";
+import { Loader2 } from "lucide-react";
 
 // Các tab danh mục
 const categoryTabs = [
@@ -26,6 +28,43 @@ const rankingTabs = [
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeRanking, setActiveRanking] = useState(0);
+  
+  // State cho dữ liệu truyện
+  const [latestNovels, setLatestNovels] = useState<Novel[]>([]);
+  const [popularNovels, setPopularNovels] = useState<Novel[]>([]);
+  const [hotGenreNovels, setHotGenreNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data khi component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Sử dụng getPopularNovels cho tất cả sections (vì chưa có API riêng)
+        const novels = await getPopularNovelsService(20);
+        
+        if (novels) {
+          setLatestNovels(novels.slice(0, 8));
+          setPopularNovels(novels.slice(0, 8));
+          setHotGenreNovels(novels.slice(0, 6));
+        }
+      } catch (error) {
+        console.error("Error fetching novels:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Helper function để chuyển đổi genres từ string[] sang format cần thiết
+  const formatGenres = (genres?: string[]) => {
+    if (!genres || genres.length === 0) {
+      return [{ name: "Chưa phân loại", url: "/" }];
+    }
+    return genres.map(genre => ({ name: genre, url: `/genre/${encodeURIComponent(genre)}` }));
+  };
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -51,46 +90,25 @@ export default function Home() {
 
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
+          {loading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : latestNovels.length > 0 ? (
+            latestNovels.map((novel) => (
+              <CardNovel 
+                key={novel._id || novel.id}
+                novelId={novel._id || novel.id}
+                coverImage={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"} 
+                title={novel.title} 
+                genres={formatGenres(novel.genres)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Chưa có truyện nào
+            </div>
+          )}
         </div>
       </section>
 
@@ -112,26 +130,25 @@ export default function Home() {
 
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
+          {loading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : popularNovels.length > 0 ? (
+            popularNovels.slice(0, 4).map((novel) => (
+              <CardNovel 
+                key={novel._id || novel.id}
+                novelId={novel._id || novel.id}
+                coverImage={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"} 
+                title={novel.title} 
+                genres={formatGenres(novel.genres)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Chưa có truyện nào
+            </div>
+          )}
         </div>
       </section>
 
@@ -159,36 +176,25 @@ export default function Home() {
 
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
-          <CardNovel coverImage="/ANIMENETFLIX-FA.webp" title="Chàng trai mang trong mình ma công che giấu tu vi thoát khỏi xiềng nữ đế và cuộc tranh đoạt vương vị" genres={
-            [{ name: "Huyền huyễn", url: "/" },
-            { name: "Tu tiên", url: "/" },
-            { name: "Tiên hiệp", url: "/" }]
-          } />
+          {loading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : hotGenreNovels.length > 0 ? (
+            hotGenreNovels.slice(0, 6).map((novel) => (
+              <CardNovel 
+                key={novel._id || novel.id}
+                novelId={novel._id || novel.id}
+                coverImage={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"} 
+                title={novel.title} 
+                genres={formatGenres(novel.genres)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Chưa có truyện nào
+            </div>
+          )}
         </div>
       </section>
     </div>

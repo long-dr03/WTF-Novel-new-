@@ -50,6 +50,18 @@ const getPopularNovels = (limit: number = 10) => {
     return axios.get(`/novels/popular?limit=${limit}`);
 };
 
+const getAllNovels = (page: number = 1, limit: number = 12, genre?: string) => {
+    let url = `/novels?page=${page}&limit=${limit}`;
+    if (genre) {
+        url += `&genre=${genre}`;
+    }
+    return axios.get(url);
+};
+
+const getLatestNovels = (limit: number = 8) => {
+    return axios.get(`/novels/latest?limit=${limit}`);
+};
+
 const getChaptersByNovel = (novelId: string) => {
     return axios.get(`/novel/${novelId}/chapters`);
 };
@@ -71,7 +83,9 @@ export {
     uploadChapter, 
     getNovelById, 
     getNovelsByAuthor, 
-    getPopularNovels, 
+    getPopularNovels,
+    getAllNovels,
+    getLatestNovels,
     getChaptersByNovel, 
     getChapterContent,
     updateChapterStatus,

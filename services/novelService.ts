@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById , getPopularNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById , getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -121,6 +121,26 @@ const getPopularNovelsService = async(limit: number = 10): Promise<Novel[] | nul
     }
 }
 
+const getAllNovelsService = async(page: number = 1, limit: number = 12, genre?: string): Promise<{ novels: Novel[], total: number, page: number, totalPages: number } | null> => {
+    try {
+        const response = await getAllNovels(page, limit, genre);
+        return extractApiData(response);
+    } catch (error) {
+        console.error("Error fetching all novels:", error);
+        return null;
+    }
+}
+
+const getLatestNovelsService = async(limit: number = 8): Promise<Novel[] | null> => {
+    try {
+        const response = await getLatestNovels(limit);
+        return extractApiData<Novel[]>(response);
+    } catch (error) {
+        console.error("Error fetching latest novels:", error);
+        return null;
+    }
+}
+
 const getChaptersByNovelService = async(novelId: string): Promise<Chapter[] | null> => {
     try {
         const response = await getChaptersByNovel(novelId);
@@ -167,6 +187,8 @@ export {
     getNovelByIdService,
     getNovelsByAuthorService,
     getPopularNovelsService,
+    getAllNovelsService,
+    getLatestNovelsService,
     getChaptersByNovelService,
     getChapterContentService,
     updateChapterStatusService,

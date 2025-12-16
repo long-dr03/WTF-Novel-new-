@@ -64,6 +64,11 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
+    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
+
+    const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
+        setReadingTheme(theme)
+    }
     useEffect(() => {
         const fetchData = async () => {
             if (!novelId || !chapterNumber) return
