@@ -52,11 +52,13 @@ import {
     ChevronsRight,
     Search,
     Wand2,
+    Headphones,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
 import WordUploader from "./WordUploader";
 import StyleEditor from "./StyleEditor";
+import AudioManager from "./AudioManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -171,6 +173,9 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
     // Style editor state
     const [showStyleEditor, setShowStyleEditor] = useState(false);
+
+    // Audio manager state
+    const [showAudioManager, setShowAudioManager] = useState(false);
 
     // Lấy truyện được chọn
     const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
@@ -677,6 +682,19 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                     >
                                         <Upload className="w-3.5 h-3.5" />
                                         Upload Word
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowAudioManager(true)}
+                                        className={cn(
+                                            "gap-1.5",
+                                            isDarkMode && "border-stone-700 hover:bg-purple-500/20 hover:text-purple-400"
+                                        )}
+                                        title="Quản lý Audio TTS"
+                                    >
+                                        <Headphones className="w-3.5 h-3.5" />
+                                        Audio TTS
                                     </Button>
                                     <Button
                                         variant={editMode === 'new' ? "default" : "outline"}
@@ -1272,6 +1290,17 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                     }
                 }}
             />
+
+            {/* Audio Manager Dialog */}
+            {selectedNovelId && (
+                <AudioManager
+                    novelId={selectedNovelId}
+                    chapters={chapters}
+                    isDarkMode={isDarkMode}
+                    isOpen={showAudioManager}
+                    onClose={() => setShowAudioManager(false)}
+                />
+            )}
         </div>
     );
 };
