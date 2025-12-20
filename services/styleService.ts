@@ -59,7 +59,7 @@ export const adjustStyleService = async (
     maxRetries: number = 2
 ): Promise<StyleAdjustResult> => {
     try {
-        const response = await fetch('/api/gemini', {
+        const response = await fetch('/api/groq', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -118,13 +118,13 @@ export const batchAdjustStyleService = async (
 ): Promise<BatchStyleAdjustResult[]> => {
     const finalConfig = { ...DEFAULT_BATCH_CONFIG, ...config };
     const results: BatchStyleAdjustResult[] = [];
-    
+
     // Reset stop flag
     resetBatchStop();
-    
+
     // Chia chapters thành các phase
     const totalPhases = Math.ceil(chapters.length / finalConfig.chaptersPerPhase);
-    
+
     for (let phase = 0; phase < totalPhases; phase++) {
         // Kiểm tra nếu đã yêu cầu dừng
         if (batchStopRequested) {
@@ -134,13 +134,13 @@ export const batchAdjustStyleService = async (
             }
             return results;
         }
-        
+
         const startIdx = phase * finalConfig.chaptersPerPhase;
         const endIdx = Math.min(startIdx + finalConfig.chaptersPerPhase, chapters.length);
         const phaseChapters = chapters.slice(startIdx, endIdx);
-        
+
         console.log(`📚 Phase ${phase + 1}/${totalPhases}: Processing chapters ${startIdx + 1} to ${endIdx}`);
-        
+
         for (let i = 0; i < phaseChapters.length; i++) {
             // Kiểm tra nếu đã yêu cầu dừng
             if (batchStopRequested) {
@@ -150,10 +150,10 @@ export const batchAdjustStyleService = async (
                 }
                 return results;
             }
-            
+
             const globalIndex = startIdx + i;
             const chapter = phaseChapters[i];
-            
+
             // Báo trạng thái đang xử lý
             const processingResult: BatchStyleAdjustResult = {
                 chapterNumber: chapter.chapterNumber,
@@ -166,9 +166,9 @@ export const batchAdjustStyleService = async (
 
             try {
                 const result = await adjustStyleService(
-                    chapter.content, 
-                    mode, 
-                    0, 
+                    chapter.content,
+                    mode,
+                    0,
                     finalConfig.maxRetries
                 );
 
@@ -183,7 +183,7 @@ export const batchAdjustStyleService = async (
                     results.push(rateLimitResult);
                     onProgress(rateLimitResult, globalIndex, chapters.length, phase + 1, totalPhases);
                     onRateLimit(waitTime);
-                    
+
                     // Nếu config yêu cầu dừng khi lỗi, cho phép dừng và lưu kết quả
                     if (finalConfig.stopOnError) {
                         console.log('🛑 Stopping batch due to rate limit (stopOnError=true)');
@@ -192,10 +192,10 @@ export const batchAdjustStyleService = async (
                         }
                         return results;
                     }
-                    
+
                     // Đợi và tiếp tục
                     await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
-                    
+
                     // Kiểm tra nếu đã yêu cầu dừng trong thời gian đợi
                     if (batchStopRequested) {
                         console.log('🛑 Batch process stopped by user during rate limit wait');
@@ -204,7 +204,7 @@ export const batchAdjustStyleService = async (
                         }
                         return results;
                     }
-                    
+
                     // Retry chapter này
                     const retryResult = await adjustStyleService(chapter.content, mode, 0, 1);
                     if (retryResult.success && retryResult.adjusted) {
@@ -244,7 +244,7 @@ export const batchAdjustStyleService = async (
                     };
                     results.push(errorResult);
                     onProgress(errorResult, globalIndex, chapters.length, phase + 1, totalPhases);
-                    
+
                     // Nếu config yêu cầu dừng khi lỗi
                     if (finalConfig.stopOnError) {
                         console.log('🛑 Stopping batch due to error (stopOnError=true)');
@@ -268,7 +268,7 @@ export const batchAdjustStyleService = async (
                 };
                 results.push(errorResult);
                 onProgress(errorResult, globalIndex, chapters.length, phase + 1, totalPhases);
-                
+
                 // Nếu config yêu cầu dừng khi lỗi
                 if (finalConfig.stopOnError) {
                     console.log('🛑 Stopping batch due to exception (stopOnError=true)');
@@ -279,7 +279,7 @@ export const batchAdjustStyleService = async (
                 }
             }
         }
-        
+
         // Delay giữa các phase (trừ phase cuối)
         if (phase < totalPhases - 1) {
             onPhaseComplete(phase + 1, totalPhases, finalConfig.delayBetweenPhases / 1000);

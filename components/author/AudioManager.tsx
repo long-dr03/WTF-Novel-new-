@@ -72,7 +72,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     const [audioList, setAudioList] = useState<NovelAudioList | null>(null)
     const [loading, setLoading] = useState(false)
     const [ttsHealthy, setTtsHealthy] = useState<boolean | null>(null)
-    
+
     // Batch processing state
     const [batchMode, setBatchMode] = useState<'all' | 'range' | 'selected'>('all')
     const [fromChapter, setFromChapter] = useState(1)
@@ -80,15 +80,15 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     const [selectedChapters, setSelectedChapters] = useState<string[]>([])
     const [batchJob, setBatchJob] = useState<BatchJobStatus | null>(null)
     const [isBatchProcessing, setIsBatchProcessing] = useState(false)
-    
+
     // Single chapter processing
     const [processingChapter, setProcessingChapter] = useState<string | null>(null)
     const [uploadingChapter, setUploadingChapter] = useState<string | null>(null)
-    
+
     // Audio player
     const [playingAudio, setPlayingAudio] = useState<string | null>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
-    
+
     // File input ref
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploadTargetChapter, setUploadTargetChapter] = useState<string | null>(null)
@@ -109,7 +109,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
         try {
             const data = await getNovelAudioList(novelId)
             setAudioList(data)
-            
+
             // Set default range
             if (chapters.length > 0) {
                 setToChapter(chapters.length)
@@ -141,7 +141,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
             const status = await getBatchStatus(batchJob.job_id)
             if (status) {
                 setBatchJob(status)
-                
+
                 if (status.status === 'completed' || status.status === 'failed') {
                     setIsBatchProcessing(false)
                     loadAudioList() // Reload audio list
@@ -202,7 +202,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     // Handle delete audio
     const handleDeleteAudio = async (chapterId: string) => {
         if (!confirm('Bạn có chắc muốn xóa audio này?')) return
-        
+
         try {
             const success = await deleteChapterAudio(chapterId)
             if (success) {
@@ -220,7 +220,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
         setIsBatchProcessing(true)
         try {
             let options: any = {}
-            
+
             if (batchMode === 'range') {
                 options = { fromChapter, toChapter }
             } else if (batchMode === 'selected' && selectedChapters.length > 0) {
@@ -253,16 +253,20 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
             setPlayingAudio(null)
         } else {
             if (audioRef.current) {
-                audioRef.current.src = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${audioUrl}`
-                audioRef.current.play()
-                setPlayingAudio(audioUrl)
+                const fullUrl = audioUrl.startsWith('http')
+                    ? audioUrl
+                    : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${audioUrl}`;
+
+                audioRef.current.src = fullUrl;
+                audioRef.current.play();
+                setPlayingAudio(audioUrl);
             }
         }
     }
 
     // Toggle chapter selection
     const toggleChapterSelection = (chapterId: string) => {
-        setSelectedChapters(prev => 
+        setSelectedChapters(prev =>
             prev.includes(chapterId)
                 ? prev.filter(id => id !== chapterId)
                 : [...prev, chapterId]
@@ -514,7 +518,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
                         ) : (
                             chapters.map((chapter) => {
                                 const chapterId = chapter._id || chapter.id || ''
-                                const audio = audioList?.chapters.find(a => 
+                                const audio = audioList?.chapters.find(a =>
                                     a.chapterNumber === chapter.chapterNumber
                                 )
                                 const isProcessing = processingChapter === chapterId
