@@ -67,7 +67,7 @@ instance.interceptors.response.use(function (response) {
 
         // generic api error (server related) unexpected
         default: {
-            return error;
+            return Promise.reject(error);
         }
     }
     // return Promise.reject(error);
