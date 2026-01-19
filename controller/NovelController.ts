@@ -78,16 +78,21 @@ const updateNovelStatus = (novelId: string, status: 'ongoing' | 'completed' | 'h
     return axios.put(`/novel/${novelId}/status`, { status });
 };
 
-export { 
-    createNovel, 
-    uploadChapter, 
-    getNovelById, 
-    getNovelsByAuthor, 
+const updateNovel = (novelId: string, data: Partial<NovelData>) => {
+    return axios.put(`/novel/${novelId}`, data);
+};
+
+export {
+    createNovel,
+    uploadChapter,
+    getNovelById,
+    getNovelsByAuthor,
     getPopularNovels,
     getAllNovels,
     getLatestNovels,
-    getChaptersByNovel, 
+    getChaptersByNovel,
     getChapterContent,
     updateChapterStatus,
-    updateNovelStatus
+    updateNovelStatus,
+    updateNovel
 };

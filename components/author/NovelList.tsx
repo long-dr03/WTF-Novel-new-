@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Heart, Edit, Trash2, Plus, BookOpen, Loader2, ExternalLink } from "lucide-react"
+import { Eye, Heart, Edit, Trash2, Plus, BookOpen, Loader2, ExternalLink, Headphones } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -175,6 +175,16 @@ const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) 
                         onClick={() => onDelete?.(novel._id || novel.id || '')}
                     >
                         <Trash2 className="h-4 w-4" />
+                    </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 text-primary hover:text-primary hover:bg-primary/10"
+                        asChild
+                    >
+                         <Link href={`/novel/${novel._id || novel.id}/chapter/1`}>
+                             <Headphones className="h-4 w-4" />
+                         </Link>
                     </Button>
                 </div>
             </CardContent>

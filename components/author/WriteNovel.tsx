@@ -34,6 +34,7 @@ import {
     FileText,
     Eye,
     EyeOff,
+    Music,
     Maximize2,
     Minimize2,
     Type,
@@ -61,6 +62,8 @@ import StyleEditor from "./StyleEditor";
 import AudioManager from "./AudioManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NovelEditDialog } from "./NovelEditDialog";
+import { BackgroundMusicManager } from "./BackgroundMusicManager";
 
 // Toolbar Button Component
 const ToolbarButton = ({
@@ -176,6 +179,12 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
     // Audio manager state
     const [showAudioManager, setShowAudioManager] = useState(false);
+    
+    // Novel Edit Dialog state
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    
+    // Music Manager state
+    const [showMusicManager, setShowMusicManager] = useState(false);
 
     // Lấy truyện được chọn
     const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
@@ -542,6 +551,24 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                 </SelectContent>
                             </Select>
                         </div>
+                        {selectedNovel && (
+                            <div className="flex items-end mb-1">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setShowEditDialog(true)}
+                                    className={cn(
+                                        "h-10 w-10 rounded-xl border transition-all duration-200 shadow-sm",
+                                        isDarkMode
+                                            ? "bg-stone-800 border-stone-700 text-stone-200 hover:border-stone-600 hover:bg-stone-700"
+                                            : "bg-white border-stone-300 text-stone-800 hover:border-stone-400 hover:bg-stone-50"
+                                    )}
+                                    title="Chỉnh sửa thông tin truyện"
+                                >
+                                    <Edit3 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
                         {selectedNovel && (
                             <>
                                 <div className="flex-1">
@@ -1193,6 +1220,15 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                             >
                                 <Wand2 className="w-4 h-4" />
                             </ToolbarButton>
+
+                            {/* Music Manager */}
+                            <ToolbarButton
+                                onClick={() => setShowMusicManager(true)}
+                                title="Quản lý Nhạc nền"
+                                isDark={isDarkMode}
+                            >
+                                <Music className="w-4 h-4" />
+                            </ToolbarButton>
                         </div>
                     </div>
                 )}
@@ -1301,6 +1337,25 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                     onClose={() => setShowAudioManager(false)}
                 />
             )}
+            
+            {/* Novel Edit Dialog */}
+            {selectedNovel && (
+                <NovelEditDialog
+                    open={showEditDialog}
+                    onOpenChange={setShowEditDialog}
+                    novel={selectedNovel as any} 
+                    onSuccess={() => {
+                        window.location.reload(); 
+                    }}
+                />
+            )}
+
+            {/* Background Music Manager */}
+            <BackgroundMusicManager
+                isOpen={showMusicManager}
+                onClose={() => setShowMusicManager(false)}
+                isDarkMode={isDarkMode}
+            />
         </div>
     );
 };

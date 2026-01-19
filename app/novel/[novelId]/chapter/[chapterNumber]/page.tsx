@@ -27,6 +27,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getChapterContentService, getChaptersByNovelService, getNovelByIdService } from "@/services/novelService"
+import { AudioSidebar } from "@/components/reader/AudioSidebar"
+import { Headphones } from "lucide-react"
 
 interface Chapter {
     _id: string
@@ -38,11 +40,13 @@ interface Chapter {
     charCount: number
     views: number
     status: string
+    audioUrl?: string | null
 }
 
 interface Novel {
     _id: string
     title: string
+    coverImage?: string
 }
 
 interface ChapterInfo {
@@ -65,6 +69,8 @@ export default function ReadChapterPage() {
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
+    const [autoNext, setAutoNext] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
     const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
         setReadingTheme(theme)
@@ -181,7 +187,10 @@ export default function ReadChapterPage() {
     }
     
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${currentTheme.bg}`}>
+        <div className={cn(
+            "min-h-screen transition-all duration-300", 
+            currentTheme.bg
+        )}>
             {/* Fixed Header */}
             <header className={`sticky top-0 z-50 backdrop-blur border-b transition-colors ${currentTheme.header} ${currentTheme.border}`}>
                 <div className="container max-w-4xl mx-auto px-4">
@@ -326,8 +335,16 @@ export default function ReadChapterPage() {
             </header>
 
             {/* Chapter Content */}
-            <main className="container max-w-4xl mx-auto px-4 py-8">
-                <div className={`rounded-2xl p-8 shadow-sm transition-colors ${currentTheme.contentBg} ${currentTheme.border} border`}>
+            <main className={cn(
+                "container max-w-4xl mx-auto px-4 py-8 transition-all duration-300",
+                // Add right padding on desktop if audio exists
+                chapter.audioUrl && "lg:pr-[320px] lg:max-w-[none]" 
+            )}>
+                <div className={cn(
+                    "rounded-2xl p-8 shadow-sm transition-colors border max-w-4xl mx-auto", // Keep content centered within available space
+                    currentTheme.contentBg, 
+                    currentTheme.border
+                )}>
                     {/* Chapter Title */}
                     <div className="text-center mb-8 pb-6 border-b border-current/10">
                         <h1 className={`text-2xl sm:text-3xl font-bold mb-3 ${currentTheme.text}`}>
@@ -381,6 +398,37 @@ export default function ReadChapterPage() {
                     </Button>
                 </div>
             </main>
+
+
+            {/* Audio Toggle FAB - Mobile Only */}
+            {chapter.audioUrl && (
+                <Button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="fixed bottom-8 right-6 h-12 w-12 rounded-full shadow-xl z-40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 lg:hidden"
+                    size="icon"
+                >
+                    <Headphones className="w-5 h-5" />
+                </Button>
+            )}
+
+            {/* Audio Sidebar */}
+            {chapter.audioUrl && (
+                <AudioSidebar
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    audioUrl={chapter.audioUrl}
+                    title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
+                    novelTitle={novel?.title}
+                    coverUrl={novel?.coverImage}
+                    onNext={goToNextChapter}
+                    onPrev={goToPrevChapter}
+                    hasNext={hasNextChapter}
+                    hasPrev={hasPrevChapter}
+                    autoNext={autoNext}
+                    onAutoNextChange={setAutoNext}
+                    isDark={readingTheme === 'dark'}
+                />
+            )}
         </div>
     )
 }

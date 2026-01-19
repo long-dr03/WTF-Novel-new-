@@ -1,0 +1,222 @@
+<style>
+    #tree-widget-container {
+        position: relative;
+        width: 100%;
+        height: 600px;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #tree-widget-container svg {
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+        z-index: 1;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    #tree-widget-container .card-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    #tree-widget-container .value-card {
+        position: absolute;
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        max-width: 280px;
+        opacity: 0;
+        transform: scale(0.8);
+        animation: fadeInCard 0.6s ease forwards;
+        pointer-events: auto;
+        border: 2px solid #0068FF;
+    }
+
+    @keyframes fadeInCard {
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    #tree-widget-container .value-card h3 {
+        margin: 0 0 12px 0;
+        color: #0068FF;
+        font-size: 20px;
+        font-weight: bold;
+        border-bottom: 2px solid #0068FF;
+        padding-bottom: 8px;
+    }
+
+    #tree-widget-container .value-card p {
+        margin: 0;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+</style>
+
+<div id="tree-widget-container">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="card-container" id="cardContainer"></div>
+</div>
+
+<script>
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const MAX_BRANCHING = 8;
+    const BRANCH_COLOR = "rgb(101, 67, 33)";
+    const TRUNK_WIDTH = 12;
+    const BRANCH_SHRINKAGE = 0.8;
+    const MAX_ANGLE_DELTA = Math.PI / 2;
+    const DELAY = 100;
+
+    const values = [
+        {
+            title: "Minh bạch",
+            content: "Mọi hoạt động đều được công khai, có thể kiểm chứng và tuân thủ đúng cam kết đã đăng ký."
+        },
+        {
+            title: "Chuyên nghiệp",
+            content: "Áp dụng tư duy và phương thức quản trị doanh nghiệp vào hoạt động xã hội."
+        },
+        {
+            title: "Tác động thực chất",
+            content: "Tập trung vào kết quả đo lường được, không chạy theo phong trào."
+        },
+        {
+            title: "Bền vững",
+            content: "Xây dựng mô hình có khả năng hoạt động dài hạn và nhân rộng quy mô."
+        }
+    ];
+
+    (() => {
+        const container = document.getElementById("tree-widget-container");
+        const svg = document.getElementById("svg");
+        const cardContainer = document.getElementById("cardContainer");
+
+        const wrap = a => (Array.isArray(a) ? a : [a]);
+        const flatten = a => {
+            if (!Array.isArray(a)) {
+                return a;
+            }
+            const [left, right] = a;
+            return wrap(left).concat(wrap(right));
+        };
+
+        const growBranch = ({ x1, y1, length, angle, depth, branchWidth }) => {
+            const x2 = x1 + length * Math.cos(angle);
+            const y2 = y1 + length * Math.sin(angle);
+            renderBranch({ x1, y1, x2, y2, branchWidth });
+
+            const newDepth = depth - 1;
+            if (newDepth <= 0) {
+                return Promise.resolve({ x: x2, y: y2 });
+            }
+
+            const newBranchWidth = branchWidth * BRANCH_SHRINKAGE;
+            return Promise.all([-1, 1].map(direction => {
+                const newAngle = angle + MAX_ANGLE_DELTA * (Math.random() * 0.5 * direction);
+                const newLength = length * (BRANCH_SHRINKAGE + Math.random() * (1.0 - BRANCH_SHRINKAGE));
+                return new Promise(resolve => {
+                    setTimeout(
+                        () =>
+                            resolve(
+                                growBranch({
+                                    x1: x2,
+                                    y1: y2,
+                                    length: newLength,
+                                    angle: newAngle,
+                                    depth: newDepth,
+                                    branchWidth: newBranchWidth
+                                })
+                            ),
+                        DELAY
+                    );
+                });
+            })).then(flatten);
+        };
+
+        const growTree = () => {
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            return growBranch({
+                x1: Math.floor(containerWidth / 2),
+                y1: Math.floor(containerHeight / 1.02),
+                length: 60,
+                angle: -Math.PI / 2,
+                depth: MAX_BRANCHING,
+                branchWidth: TRUNK_WIDTH
+            });
+        };
+
+        const renderBranch = ({ x1, y1, x2, y2, branchWidth }) => {
+            const line = document.createElementNS(SVG_NS, "line");
+            const style = `stroke:${BRANCH_COLOR};stroke-width:${branchWidth};z-index:1;`;
+            line.setAttribute("x1", x1);
+            line.setAttribute("x2", x2);
+            line.setAttribute("y1", y1);
+            line.setAttribute("y2", y2);
+            line.setAttribute("style", style);
+            svg.appendChild(line);
+        };
+
+        const createCard = (value, position, index) => {
+            const card = document.createElement('div');
+            card.className = 'value-card';
+            card.style.animationDelay = `${index * 0.3 + 2}s`;
+
+            // ✅ RESPONSIVE - Dùng % thay vì px cố định
+            card.style.left = `${position.x}px`;
+            card.style.top = `${position.y}px`;
+
+            card.innerHTML = `
+        <h3>${value.title}</h3>
+        <p>${value.content}</p>
+      `;
+
+            cardContainer.appendChild(card);
+        };
+
+        const init = () => {
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            svg.setAttribute("width", containerWidth);
+            svg.setAttribute("height", containerHeight);
+
+            growTree().then(endPoints => {
+                // ✅ RESPONSIVE POSITIONS - Tính theo % của container
+                const positions = [
+                    { x: containerWidth * 0.25, y: containerHeight * 0.17 },  // Minh bạch (top-left)
+                    { x: containerWidth * 0.50, y: containerHeight * 0.08 },  // Chuyên nghiệp (top-right)
+                    { x: containerWidth * 0.14, y: containerHeight * 0.53 },  // Tác động (bottom-left)
+                    { x: containerWidth * 0.61, y: containerHeight * 0.42 }   // Bền vững (bottom-right)
+                ];
+
+                values.forEach((value, index) => {
+                    createCard(value, positions[index], index);
+                });
+            });
+        };
+
+        init();
+
+        // ✅ RESPONSIVE - Re-render khi resize window
+        window.addEventListener('resize', () => {
+            cardContainer.innerHTML = '';
+            svg.innerHTML = '';
+            init();
+        });
+    })();
+</script>

@@ -5,6 +5,11 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY || '',
 });
 
+/**
+ * Xử lý yêu cầu điều chỉnh văn phong bản dịch sử dụng Groq API
+ * @param request Request chứa nội dung cần điều chỉnh và chế độ biên tập
+ * @returns JSON response chứa kết quả điều chỉnh hoặc thông báo lỗi
+ */
 export async function POST(request: NextRequest) {
     try {
         const { content, mode } = await request.json();
@@ -23,7 +28,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Prompt điều chỉnh văn phong
         const systemPrompt = `Bạn là một biên tập viên chuyên nghiệp, chuyên biên tập truyện dịch từ tiếng Trung sang tiếng Việt.
 NHIỆM VỤ: Điều chỉnh văn phong đoạn văn được cung cấp để phù hợp với ngữ pháp và cách đọc tự nhiên của người Việt.
 
@@ -81,7 +85,6 @@ CHẾ ĐỘ: NHẸ NHÀNG
     } catch (error: any) {
         console.error('Groq API Error:', error);
 
-        // Handle Rate Limits
         if (error?.status === 429 || error?.message?.includes('429')) {
             return NextResponse.json(
                 {

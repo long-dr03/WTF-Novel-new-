@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-// Client lấy API key từ environment variable
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
+/**
+ * Xử lý yêu cầu điều chỉnh văn phong bản dịch sử dụng Google Gemini
+ * @param request Request chứa nội dung cần điều chỉnh và chế độ biên tập
+ * @returns JSON response chứa nội dung gốc và nội dung đã điều chỉnh hoặc thông báo lỗi
+ */
 export async function POST(request: NextRequest) {
     try {
         const { content, mode } = await request.json();
@@ -22,7 +26,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Prompt điều chỉnh văn phong cho truyện dịch từ tiếng Trung
         const prompt = `Bạn là một biên tập viên chuyên nghiệp, có nhiều năm kinh nghiệm biên tập truyện dịch từ tiếng Trung sang tiếng Việt.
 
 NHIỆM VỤ: Điều chỉnh văn phong của đoạn văn sau để phù hợp với cách đọc tự nhiên của người Việt.
@@ -62,7 +65,6 @@ ${content}
 
 KẾT QUẢ:`;
 
-        // Sử dụng API mới với model gemini-2.5-flash
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -81,18 +83,16 @@ KẾT QUẢ:`;
         console.error('Gemini API Error:', error);
         console.error('Gemini API Error:');
 
-        // Kiểm tra lỗi rate limit và parse retryAfter
         if (error.message?.includes('429') || error.message?.includes('quota') || error.message?.includes('rate')) {
-            // Cố gắng parse thời gian retry từ error message
-            let retryAfter = 30; // Mặc định 30 giây
+            let retryAfter = 30;
             const retryMatch = error.message?.match(/retry in (\d+\.?\d*)/i);
             if (retryMatch) {
                 retryAfter = Math.ceil(parseFloat(retryMatch[1]));
             }
 
             return NextResponse.json(
-                { 
-                    success: false, 
+                {
+                    success: false,
                     error: `Đã đạt giới hạn API. Vui lòng đợi ${retryAfter} giây rồi thử lại.`,
                     isRateLimit: true,
                     retryAfter: retryAfter

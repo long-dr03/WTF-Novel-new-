@@ -31,12 +31,21 @@ export const Header = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Nút Sáng tác - chỉ hiển thị cho tác giả */}
+                    {/* Nút Sáng tác - chỉ hiển thị cho tác giả hoặc admin */}
                     {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (
                         <Button variant="outline" asChild className="gap-2">
                             <Link href="/author">
                                 <PenLine className="h-4 w-4" />
                                 Sáng tác
+                            </Link>
+                        </Button>
+                    )}
+
+                    {/* Nút Admin - chỉ hiển thị cho admin */}
+                    {isAuthenticated && user && user.role === 'admin' && (
+                        <Button variant="default" asChild className="gap-2">
+                            <Link href="/admin">
+                                Admin
                             </Link>
                         </Button>
                     )}

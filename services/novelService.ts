@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById , getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -54,23 +54,28 @@ interface ChapterData {
     wordCount: number
     charCount: number
     status: 'draft' | 'published' | 'scheduled'
-    chapterId?: string; // Optional - for updating existing chapters
+    chapterId?: string;
     scheduledAt?: Date;
     publishedAt?: Date;
     views?: number;
     authorNote?: string;
 }
 
-// Helper function to extract data from API response
+/**
+ * Trích xuất dữ liệu từ API response
+ * @param response Phản hồi từ API
+ */
 const extractApiData = <T>(response: any): T | null => {
-    // Check if response has the new format { success, message, data }
     if (response?.data?.success !== undefined) {
         return response.data.success ? response.data.data : null;
     }
-    // Fallback for old format or direct data
     return response?.data ?? response ?? null;
 };
 
+/**
+ * Upload một chương mới (hoặc cập nhật)
+ * @param dataChapter Dữ liệu chương
+ */
 const uploadChapterService = async (dataChapter: ChapterData): Promise<any> => {
     try {
         const response = await uploadChapter(dataChapter);
@@ -81,6 +86,10 @@ const uploadChapterService = async (dataChapter: ChapterData): Promise<any> => {
     }
 }
 
+/**
+ * Tạo mới một tiểu thuyết
+ * @param novelData Dữ liệu tiểu thuyết
+ */
 const createNovelService = async (novelData: NovelData): Promise<any> => {
     try {
         const response = await createNovel(novelData);
@@ -91,6 +100,10 @@ const createNovelService = async (novelData: NovelData): Promise<any> => {
     }
 };
 
+/**
+ * Lấy danh sách tiểu thuyết của một tác giả
+ * @param authorId ID tác giả
+ */
 const getNovelsByAuthorService = async (authorId: string): Promise<Novel[] | null> => {
     try {
         const response = await getNovelsByAuthor(authorId);
@@ -101,7 +114,11 @@ const getNovelsByAuthorService = async (authorId: string): Promise<Novel[] | nul
     }
 }
 
-const getNovelByIdService = async(novelId: string): Promise<Novel | null> => {
+/**
+ * Lấy thông tin chi tiết tiểu thuyết theo ID
+ * @param novelId ID tiểu thuyết
+ */
+const getNovelByIdService = async (novelId: string): Promise<Novel | null> => {
     try {
         const response = await getNovelById(novelId);
         return extractApiData<Novel>(response);
@@ -111,7 +128,11 @@ const getNovelByIdService = async(novelId: string): Promise<Novel | null> => {
     }
 }
 
-const getPopularNovelsService = async(limit: number = 10): Promise<Novel[] | null> => {
+/**
+ * Lấy danh sách tiểu thuyết phổ biến
+ * @param limit Số lượng hiển thị (mặc định 10)
+ */
+const getPopularNovelsService = async (limit: number = 10): Promise<Novel[] | null> => {
     try {
         const response = await getPopularNovels(limit);
         return extractApiData<Novel[]>(response);
@@ -121,7 +142,13 @@ const getPopularNovelsService = async(limit: number = 10): Promise<Novel[] | nul
     }
 }
 
-const getAllNovelsService = async(page: number = 1, limit: number = 12, genre?: string): Promise<{ novels: Novel[], total: number, page: number, totalPages: number } | null> => {
+/**
+ * Lấy danh sách tất cả tiểu thuyết có phân trang và lọc theo thể loại
+ * @param page Trang hiện tại (mặc định 1)
+ * @param limit Số lượng mỗi trang (mặc định 12)
+ * @param genre Thể loại lọc (tùy chọn)
+ */
+const getAllNovelsService = async (page: number = 1, limit: number = 12, genre?: string): Promise<{ novels: Novel[], total: number, page: number, totalPages: number } | null> => {
     try {
         const response = await getAllNovels(page, limit, genre);
         return extractApiData(response);
@@ -131,7 +158,11 @@ const getAllNovelsService = async(page: number = 1, limit: number = 12, genre?: 
     }
 }
 
-const getLatestNovelsService = async(limit: number = 8): Promise<Novel[] | null> => {
+/**
+ * Lấy danh sách tiểu thuyết mới nhất
+ * @param limit Số lượng hiển thị (mặc định 8)
+ */
+const getLatestNovelsService = async (limit: number = 8): Promise<Novel[] | null> => {
     try {
         const response = await getLatestNovels(limit);
         return extractApiData<Novel[]>(response);
@@ -141,7 +172,11 @@ const getLatestNovelsService = async(limit: number = 8): Promise<Novel[] | null>
     }
 }
 
-const getChaptersByNovelService = async(novelId: string): Promise<Chapter[] | null> => {
+/**
+ * Lấy danh sách chương của một tiểu thuyết
+ * @param novelId ID tiểu thuyết
+ */
+const getChaptersByNovelService = async (novelId: string): Promise<Chapter[] | null> => {
     try {
         const response = await getChaptersByNovel(novelId);
         return extractApiData<Chapter[]>(response);
@@ -151,7 +186,12 @@ const getChaptersByNovelService = async(novelId: string): Promise<Chapter[] | nu
     }
 }
 
-const getChapterContentService = async(novelId: string, chapterNumber: number): Promise<Chapter | null> => {
+/**
+ * Lấy nội dung chi tiết của một chương
+ * @param novelId ID tiểu thuyết
+ * @param chapterNumber Số thứ tự chương
+ */
+const getChapterContentService = async (novelId: string, chapterNumber: number): Promise<Chapter | null> => {
     try {
         const response = await getChapterContent(novelId, chapterNumber);
         return extractApiData<Chapter>(response);
@@ -161,7 +201,12 @@ const getChapterContentService = async(novelId: string, chapterNumber: number): 
     }
 }
 
-const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'published' | 'scheduled'): Promise<any> => {
+/**
+ * Cập nhật trạng thái của chương
+ * @param chapterId ID chương
+ * @param status Trạng thái mới (draft, published, scheduled)
+ */
+const updateChapterStatusService = async (chapterId: string, status: 'draft' | 'published' | 'scheduled'): Promise<any> => {
     try {
         const response = await updateChapterStatus(chapterId, status);
         return extractApiData(response);
@@ -171,12 +216,32 @@ const updateChapterStatusService = async(chapterId: string, status: 'draft' | 'p
     }
 }
 
-const updateNovelStatusService = async(novelId: string, status: 'ongoing' | 'completed' | 'hiatus'): Promise<any> => {
+/**
+ * Cập nhật trạng thái của tiểu thuyết
+ * @param novelId ID tiểu thuyết
+ * @param status Trạng thái mới (ongoing, completed, hiatus)
+ */
+const updateNovelStatusService = async (novelId: string, status: 'ongoing' | 'completed' | 'hiatus'): Promise<any> => {
     try {
         const response = await updateNovelStatus(novelId, status);
         return extractApiData(response);
     } catch (error) {
         console.error("Error updating novel status:", error);
+        return null;
+    }
+}
+
+/**
+ * Cập nhật thông tin tiểu thuyết (tên, mô tả, ảnh bìa...)
+ * @param novelId ID tiểu thuyết
+ * @param data Dữ liệu cập nhật
+ */
+export const updateNovelService = async (novelId: string, data: Partial<NovelData>): Promise<any> => {
+    try {
+        const response = await updateNovel(novelId, data);
+        return extractApiData(response);
+    } catch (error) {
+        console.error("Error updating novel:", error);
         return null;
     }
 }

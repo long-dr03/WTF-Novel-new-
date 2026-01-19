@@ -1,5 +1,3 @@
-// Service để gọi Gemini API điều chỉnh văn phong
-
 export type StyleMode = 'light' | 'moderate' | 'aggressive';
 
 export interface StyleAdjustResult {
@@ -8,7 +6,7 @@ export interface StyleAdjustResult {
     adjusted?: string;
     error?: string;
     isRateLimit?: boolean;
-    retryAfter?: number; // Thời gian chờ (giây) trước khi retry
+    retryAfter?: number;
 }
 
 export interface BatchStyleAdjustResult {
@@ -21,36 +19,48 @@ export interface BatchStyleAdjustResult {
 }
 
 export interface BatchConfig {
-    chaptersPerPhase: number;      // Số chương mỗi phase (mặc định 3)
-    delayBetweenRequests: number;  // Delay giữa các request trong phase (ms)
-    delayBetweenPhases: number;    // Delay giữa các phase (ms)
-    maxRetries: number;            // Số lần retry khi gặp lỗi
-    stopOnError?: boolean;         // Dừng khi gặp lỗi
+    chaptersPerPhase: number;
+    delayBetweenRequests: number;
+    delayBetweenPhases: number;
+    maxRetries: number;
+    stopOnError?: boolean;
 }
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
-    chaptersPerPhase: 3,           // 3 chương mỗi phase
-    delayBetweenRequests: 5000,    // 5 giây giữa mỗi request
-    delayBetweenPhases: 30000,     // 30 giây giữa mỗi phase
-    maxRetries: 2,                 // Retry 2 lần
-    stopOnError: false,            // Mặc định không dừng khi lỗi
+    chaptersPerPhase: 3,
+    delayBetweenRequests: 5000,
+    delayBetweenPhases: 30000,
+    maxRetries: 2,
+    stopOnError: false,
 };
 
-// Controller để dừng batch process
 let batchStopRequested = false;
 
+/**
+ * Yêu cầu dừng batch process
+ */
 export const requestBatchStop = () => {
     batchStopRequested = true;
 };
 
+/**
+ * Reset trạng thái dừng batch
+ */
 export const resetBatchStop = () => {
     batchStopRequested = false;
 };
 
+/**
+ * Kiểm tra xem có yêu cầu dừng không
+ */
 export const isBatchStopRequested = () => batchStopRequested;
 
 /**
- * Điều chỉnh văn phong cho một đoạn nội dung với retry
+ * Điều chỉnh văn phong cho một đoạn nội dung với retry cơ chế
+ * @param content Nội dung cần điều chỉnh
+ * @param mode Chế độ điều chỉnh (light, moderate, aggressive)
+ * @param retryCount Số lần đã retry
+ * @param maxRetries Số lần retry tối đa
  */
 export const adjustStyleService = async (
     content: string,
@@ -70,7 +80,6 @@ export const adjustStyleService = async (
         const data = await response.json();
 
         if (!response.ok) {
-            // Nếu rate limit và còn retry
             if (data.isRateLimit && retryCount < maxRetries) {
                 const retryAfter = data.retryAfter || 30;
                 console.log(`Rate limited, waiting ${retryAfter}s before retry ${retryCount + 1}/${maxRetries}`);
@@ -102,6 +111,13 @@ export const adjustStyleService = async (
 
 /**
  * Điều chỉnh văn phong hàng loạt theo từng phase
+ * @param chapters Danh sách chương cần xử lý
+ * @param mode Chế độ điều chỉnh
+ * @param onProgress Callback cập nhật tiến độ
+ * @param onRateLimit Callback khi gặp rate limit
+ * @param onPhaseComplete Callback khi hoàn thành phase
+ * @param config Cấu hình batch
+ * @param onStopped Callback khi bị dừng
  */
 export const batchAdjustStyleService = async (
     chapters: Array<{
@@ -119,14 +135,11 @@ export const batchAdjustStyleService = async (
     const finalConfig = { ...DEFAULT_BATCH_CONFIG, ...config };
     const results: BatchStyleAdjustResult[] = [];
 
-    // Reset stop flag
     resetBatchStop();
 
-    // Chia chapters thành các phase
     const totalPhases = Math.ceil(chapters.length / finalConfig.chaptersPerPhase);
 
     for (let phase = 0; phase < totalPhases; phase++) {
-        // Kiểm tra nếu đã yêu cầu dừng
         if (batchStopRequested) {
             console.log('🛑 Batch process stopped by user');
             if (onStopped) {
@@ -142,7 +155,6 @@ export const batchAdjustStyleService = async (
         console.log(`📚 Phase ${phase + 1}/${totalPhases}: Processing chapters ${startIdx + 1} to ${endIdx}`);
 
         for (let i = 0; i < phaseChapters.length; i++) {
-            // Kiểm tra nếu đã yêu cầu dừng
             if (batchStopRequested) {
                 console.log('🛑 Batch process stopped by user');
                 if (onStopped) {
@@ -154,7 +166,6 @@ export const batchAdjustStyleService = async (
             const globalIndex = startIdx + i;
             const chapter = phaseChapters[i];
 
-            // Báo trạng thái đang xử lý
             const processingResult: BatchStyleAdjustResult = {
                 chapterNumber: chapter.chapterNumber,
                 chapterTitle: chapter.chapterTitle,
@@ -173,7 +184,6 @@ export const batchAdjustStyleService = async (
                 );
 
                 if (result.isRateLimit) {
-                    // Gặp rate limit sau khi đã retry - dừng nếu config yêu cầu
                     const waitTime = result.retryAfter || 60;
                     const rateLimitResult: BatchStyleAdjustResult = {
                         ...processingResult,
@@ -184,7 +194,6 @@ export const batchAdjustStyleService = async (
                     onProgress(rateLimitResult, globalIndex, chapters.length, phase + 1, totalPhases);
                     onRateLimit(waitTime);
 
-                    // Nếu config yêu cầu dừng khi lỗi, cho phép dừng và lưu kết quả
                     if (finalConfig.stopOnError) {
                         console.log('🛑 Stopping batch due to rate limit (stopOnError=true)');
                         if (onStopped) {
@@ -193,10 +202,8 @@ export const batchAdjustStyleService = async (
                         return results;
                     }
 
-                    // Đợi và tiếp tục
                     await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
 
-                    // Kiểm tra nếu đã yêu cầu dừng trong thời gian đợi
                     if (batchStopRequested) {
                         console.log('🛑 Batch process stopped by user during rate limit wait');
                         if (onStopped) {
@@ -205,7 +212,6 @@ export const batchAdjustStyleService = async (
                         return results;
                     }
 
-                    // Retry chapter này
                     const retryResult = await adjustStyleService(chapter.content, mode, 0, 1);
                     if (retryResult.success && retryResult.adjusted) {
                         const completedResult: BatchStyleAdjustResult = {
@@ -215,11 +221,9 @@ export const batchAdjustStyleService = async (
                             adjusted: retryResult.adjusted,
                             status: 'completed',
                         };
-                        // Cập nhật result
                         results[results.length - 1] = completedResult;
                         onProgress(completedResult, globalIndex, chapters.length, phase + 1, totalPhases);
                     } else if (finalConfig.stopOnError) {
-                        // Retry thất bại và stopOnError = true
                         console.log('🛑 Stopping batch due to retry failure (stopOnError=true)');
                         if (onStopped) {
                             onStopped(results, `Không thể xử lý chương ${chapter.chapterNumber} sau khi retry`);
@@ -245,7 +249,6 @@ export const batchAdjustStyleService = async (
                     results.push(errorResult);
                     onProgress(errorResult, globalIndex, chapters.length, phase + 1, totalPhases);
 
-                    // Nếu config yêu cầu dừng khi lỗi
                     if (finalConfig.stopOnError) {
                         console.log('🛑 Stopping batch due to error (stopOnError=true)');
                         if (onStopped) {
@@ -255,7 +258,6 @@ export const batchAdjustStyleService = async (
                     }
                 }
 
-                // Delay giữa các request trong phase
                 if (i < phaseChapters.length - 1) {
                     await new Promise(resolve => setTimeout(resolve, finalConfig.delayBetweenRequests));
                 }
@@ -269,7 +271,6 @@ export const batchAdjustStyleService = async (
                 results.push(errorResult);
                 onProgress(errorResult, globalIndex, chapters.length, phase + 1, totalPhases);
 
-                // Nếu config yêu cầu dừng khi lỗi
                 if (finalConfig.stopOnError) {
                     console.log('🛑 Stopping batch due to exception (stopOnError=true)');
                     if (onStopped) {
@@ -280,7 +281,6 @@ export const batchAdjustStyleService = async (
             }
         }
 
-        // Delay giữa các phase (trừ phase cuối)
         if (phase < totalPhases - 1) {
             onPhaseComplete(phase + 1, totalPhases, finalConfig.delayBetweenPhases / 1000);
             console.log(`⏳ Phase ${phase + 1} complete. Waiting ${finalConfig.delayBetweenPhases / 1000}s before next phase...`);

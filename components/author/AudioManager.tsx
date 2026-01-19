@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
+import { useUploadThing } from "@/lib/uploadthing"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -37,7 +38,7 @@ import {
 } from "lucide-react"
 import {
     getNovelAudioList,
-    uploadChapterAudio,
+    updateChapterAudioUrl,
     generateChapterAudio,
     deleteChapterAudio,
     batchGenerateAudio,
@@ -178,24 +179,45 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
         fileInputRef.current?.click()
     }
 
+    // UploadThing hook
+    const { startUpload } = useUploadThing("chapterAudio", {
+        onClientUploadComplete: async (res) => {
+            if (res && res[0] && uploadTargetChapter) {
+                 try {
+                    const uploadedUrl = res[0].ufsUrl || res[0].url
+                    const result = await updateChapterAudioUrl(uploadTargetChapter, uploadedUrl, 0) // Duration 0 as placeholder
+                    if (result) {
+                        await loadAudioList()
+                    }
+                } catch (error) {
+                    console.error('Error updating audio URL:', error)
+                } finally {
+                    setUploadingChapter(null)
+                    setUploadTargetChapter(null)
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
+                    }
+                }
+            }
+        },
+        onUploadError: (error) => {
+             console.error('UploadThing error:', error)
+             setUploadingChapter(null)
+             setUploadTargetChapter(null)
+        }
+    })
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !uploadTargetChapter) return
 
         setUploadingChapter(uploadTargetChapter)
         try {
-            const result = await uploadChapterAudio(uploadTargetChapter, file)
-            if (result) {
-                await loadAudioList()
-            }
+            await startUpload([file])
         } catch (error) {
-            console.error('Error uploading audio:', error)
-        } finally {
+            console.error('Error starting upload:', error)
             setUploadingChapter(null)
             setUploadTargetChapter(null)
-            if (fileInputRef.current) {
-                fileInputRef.current.value = ''
-            }
         }
     }
 
