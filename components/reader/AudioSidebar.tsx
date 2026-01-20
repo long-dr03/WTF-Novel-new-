@@ -129,18 +129,31 @@ export function AudioSidebar({
 
     // --- Main Audio Effects ---
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.pause()
-            setIsPlaying(false)
-            setCurrentTime(0)
-            
-            if (audioUrl) {
-                audioRef.current.load()
-                if (autoNext) {
-                    audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error)
+        let isMounted = true;
+        const playAudio = async () => {
+            if (audioRef.current && audioUrl && autoNext) {
+                try {
+                    await audioRef.current.play();
+                    if (isMounted) setIsPlaying(true);
+                } catch (err: any) {
+                    if (err.name !== 'AbortError') {
+                        console.error(err);
+                    }
                 }
             }
+        };
+
+        if (audioRef.current) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+            setCurrentTime(0);
+            
+            if (audioUrl) {
+                audioRef.current.load();
+                playAudio();
+            }
         }
+        return () => { isMounted = false; };
     }, [audioUrl])
 
     useEffect(() => {

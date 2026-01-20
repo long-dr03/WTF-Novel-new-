@@ -74,11 +74,18 @@ export default function Home() {
   }, []);
 
   // Helper function để chuyển đổi genres từ string[] sang format cần thiết
-  const formatGenres = (genres?: string[]) => {
+  const formatGenres = (genres?: any[]) => {
     if (!genres || genres.length === 0) {
       return [{ name: "Chưa phân loại", url: "/" }];
     }
-    return genres.map(genre => ({ name: genre, url: `/genre/${encodeURIComponent(genre)}` }));
+    return genres.map(genre => {
+        const name = typeof genre === 'string' ? genre : genre.name;
+        const slug = typeof genre === 'string' ? genre : (genre.slug || genre.name);
+        return { 
+            name: name, 
+            url: `/genre/${encodeURIComponent(slug)}` 
+        };
+    });
   };
 
   return (

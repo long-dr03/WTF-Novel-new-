@@ -127,8 +127,12 @@ export default function GenresPage() {
                         <Card key={genre._id} className="relative group overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 hover:border-primary/50 transition-colors">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
-                                    <div className="p-2 bg-primary/10 rounded-lg text-primary mb-2">
-                                        <Book className="w-6 h-6" />
+                                    <div className="p-2 bg-primary/10 rounded-lg text-primary mb-2 overflow-hidden w-10 h-10 flex items-center justify-center p-0">
+                                        {genre.image ? (
+                                            <img src={genre.image} alt={genre.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Book className="w-6 h-6 m-2" />
+                                        )}
                                     </div>
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-primary" onClick={() => openEdit(genre)}>
@@ -191,6 +195,10 @@ export default function GenresPage() {
                         <div className="grid gap-2">
                             <Label htmlFor="desc">Mô tả</Label>
                             <Textarea id="desc" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="image">Link ảnh minh họa</Label>
+                            <Input id="image" value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} placeholder="https://..." />
                         </div>
                     </div>
                     <DialogFooter>

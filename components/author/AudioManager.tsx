@@ -183,7 +183,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     const { startUpload } = useUploadThing("chapterAudio", {
         onClientUploadComplete: async (res) => {
             if (res && res[0] && uploadTargetChapter) {
-                 try {
+                try {
                     const uploadedUrl = res[0].ufsUrl || res[0].url
                     const result = await updateChapterAudioUrl(uploadTargetChapter, uploadedUrl, 0) // Duration 0 as placeholder
                     if (result) {
@@ -201,9 +201,9 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
             }
         },
         onUploadError: (error) => {
-             console.error('UploadThing error:', error)
-             setUploadingChapter(null)
-             setUploadTargetChapter(null)
+            console.error('UploadThing error:', error)
+            setUploadingChapter(null)
+            setUploadTargetChapter(null)
         }
     })
 
@@ -269,19 +269,27 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     }
 
     // Handle play/pause audio
-    const handlePlayAudio = (audioUrl: string) => {
+    const handlePlayAudio = async (audioUrl: string) => {
         if (playingAudio === audioUrl) {
-            audioRef.current?.pause()
-            setPlayingAudio(null)
+            audioRef.current?.pause();
+            setPlayingAudio(null);
         } else {
             if (audioRef.current) {
                 const fullUrl = audioUrl.startsWith('http')
                     ? audioUrl
                     : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${audioUrl}`;
 
-                audioRef.current.src = fullUrl;
-                audioRef.current.play();
-                setPlayingAudio(audioUrl);
+                try {
+                    audioRef.current.pause(); // Stop any current playback first
+                    audioRef.current.src = fullUrl;
+                    await audioRef.current.play();
+                    setPlayingAudio(audioUrl);
+                } catch (error: any) {
+                    // Ignore AbortError - happens when play() is interrupted
+                    if (error.name !== 'AbortError') {
+                        console.error('Audio playback error:', error);
+                    }
+                }
             }
         }
     }

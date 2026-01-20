@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Calculator, Calendar, CreditCard, Loader2, Search, Settings, Smile, User } from "lucide-react"
+import { BookOpen, Loader2, Search, Settings, User } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import {
     Command,
@@ -18,33 +19,41 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
+import { getPublicNovelsService } from "@/services/novelService"
+
+interface SearchResult {
+    _id: string;
+    title: string;
+    author?: { username: string };
+    image?: string;
+}
+
 export function HeaderSearch() {
+    const router = useRouter()
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState("")
-    const [data, setData] = React.useState<any[]>([])
+    const [data, setData] = React.useState<SearchResult[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
-    // Dữ liệu giả
-    const FAKE_DATA = [
-        { id: "1", title: "Trọng sinh đô thị tu tiên", type: "Course" },
-        { id: "2", title: "Địa ngục à ta hay ngủ ở đó", type: "Article" },
-        { id: "3", title: "Lạng nha kỳ duyên", type: "Article" },
-        { id: "4", title: "Kẻ khủng bố", type: "Course" },
-        { id: "5", title: "Nhất phẩm bố y", type: "Setting" },
-        { id: "6", title: "Quái vật 18", type: "Article" },
-    ]
 
-    // Hàm giả lập gọi API (delay 500ms)
-    const searchAPI = async (query: string) => {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        if (!query) return []
+    // Search API call
+    const searchAPI = async (searchQuery: string): Promise<SearchResult[]> => {
+        if (!searchQuery || searchQuery.length < 2) return []
 
-        return FAKE_DATA.filter((item) =>
-            item.title.toLowerCase().includes(query.toLowerCase())
-        )
+        try {
+            const result = await getPublicNovelsService({
+                search: searchQuery,
+                limit: 6
+            })
+            return result?.novels || []
+        } catch (error) {
+            console.error("Search error:", error)
+            return []
+        }
     }
-    // Xử lý việc gọi API khi user nhập liệu (Debounce đơn giản)
+
+    // Debounced search
     React.useEffect(() => {
-        if (query.length === 0) {
+        if (query.length < 2) {
             setData([])
             return
         }
@@ -54,7 +63,7 @@ export function HeaderSearch() {
             const results = await searchAPI(query)
             setData(results)
             setIsLoading(false)
-        }, 500) // Delay 0.5s để giả lập mạng
+        }, 400)
 
         return () => clearTimeout(timer)
     }, [query])
@@ -62,7 +71,7 @@ export function HeaderSearch() {
     return (
         <div className="flex items-center">
             <Popover open={open} onOpenChange={setOpen}>
-                {/* Trigger: Nút bấm nhìn giống Input */}
+                {/* Trigger */}
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
@@ -71,22 +80,22 @@ export function HeaderSearch() {
                         className="w-[300px] justify-between text-muted-foreground"
                     >
                         <span className="truncate">
-                            {query ? query : "Tìm kiếm bài viết, khóa học..."}
+                            {query ? query : "Tìm kiếm truyện..."}
                         </span>
                         <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
 
-                {/* Content: Phần nhập liệu và kết quả */}
+                {/* Content */}
                 <PopoverContent className="w-[300px] p-0" align="start">
-                    <Command shouldFilter={false}> {/* QUAN TRỌNG: Tắt lọc mặc định */}
+                    <Command shouldFilter={false}>
                         <CommandInput
-                            placeholder="Nhập từ khóa..."
+                            placeholder="Nhập tên truyện..."
                             value={query}
                             onValueChange={setQuery}
                         />
                         <CommandList>
-                            {/* Hiển thị Loading */}
+                            {/* Loading */}
                             {isLoading && (
                                 <div className="flex cursor-default select-none items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -94,26 +103,34 @@ export function HeaderSearch() {
                                 </div>
                             )}
 
-                            {/* Hiển thị khi không có kết quả */}
-                            {!isLoading && query && data.length === 0 && (
-                                <CommandEmpty>Không tìm thấy kết quả.</CommandEmpty>
+                            {/* No results */}
+                            {!isLoading && query.length >= 2 && data.length === 0 && (
+                                <CommandEmpty>Không tìm thấy truyện.</CommandEmpty>
                             )}
 
-                            {/* Hiển thị kết quả từ API */}
+                            {/* Results */}
                             {!isLoading && data.length > 0 && (
                                 <CommandGroup heading="Kết quả tìm kiếm">
-                                    {data.map((item) => (
+                                    {data.map((novel) => (
                                         <CommandItem
-                                            key={item.id}
-                                            value={item.title}
+                                            key={novel._id}
+                                            value={novel.title}
                                             onSelect={() => {
-                                                console.log("Đã chọn:", item)
+                                                router.push(`/novel/${novel._id}`)
                                                 setOpen(false)
+                                                setQuery("")
                                             }}
+                                            className="cursor-pointer"
                                         >
-                                            {item.type === "Course" ? <Calculator className="mr-2 h-4 w-4" /> : <Smile className="mr-2 h-4 w-4" />}
-                                            <span>{item.title}</span>
-                                            <span className="ml-auto text-xs text-muted-foreground">{item.type}</span>
+                                            <BookOpen className="mr-2 h-4 w-4 text-primary" />
+                                            <div className="flex-1 truncate">
+                                                <span className="font-medium">{novel.title}</span>
+                                                {novel.author?.username && (
+                                                    <span className="ml-2 text-xs text-muted-foreground">
+                                                        - {novel.author.username}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </CommandItem>
                                     ))}
                                 </CommandGroup>
@@ -121,15 +138,15 @@ export function HeaderSearch() {
 
                             <CommandSeparator />
 
-                            {/* Các gợi ý tĩnh (luôn hiện) */}
+                            {/* Quick access */}
                             <CommandGroup heading="Truy cập nhanh">
-                                <CommandItem>
-                                    <User className="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
+                                <CommandItem onSelect={() => { router.push('/search'); setOpen(false); }}>
+                                    <Search className="mr-2 h-4 w-4" />
+                                    <span>Tìm kiếm nâng cao</span>
                                 </CommandItem>
-                                <CommandItem>
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Settings</span>
+                                <CommandItem onSelect={() => { router.push('/profile'); setOpen(false); }}>
+                                    <User className="mr-2 h-4 w-4" />
+                                    <span>Trang cá nhân</span>
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>

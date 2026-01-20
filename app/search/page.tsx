@@ -30,11 +30,11 @@ interface Genre {
 export default function SearchPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
-    
+
     const [novels, setNovels] = useState<Novel[]>([])
     const [genres, setGenres] = useState<Genre[]>([])
     const [loading, setLoading] = useState(true)
-    
+
     // Filters
     const [query, setQuery] = useState(searchParams.get('q') || '')
     const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || 'all')
@@ -57,11 +57,11 @@ export default function SearchPage() {
                 limit: 20
             }
             if (selectedGenre !== 'all') params.genre = selectedGenre
-            
+
             // Call public endpoint
             const res = await axios.get('/novels', { params })
             const data: any = res;
-            setNovels(data.novels)
+            setNovels(data?.novels || [])
         } catch (error) {
             console.error("Search error", error)
         } finally {
@@ -98,9 +98,9 @@ export default function SearchPage() {
                     <label className="text-sm font-medium">Tìm kiếm</label>
                     <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Tên truyện..." 
-                            className="pl-9" 
+                        <Input
+                            placeholder="Tên truyện..."
+                            className="pl-9"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -121,16 +121,16 @@ export default function SearchPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="w-full md:w-[200px] space-y-2">
+                <div className="w-full md:w-[200px] space-y-2">
                     <label className="text-sm font-medium">Sắp xếp</label>
-                     <Select value={sort} onValueChange={setSort}>
+                    <Select value={sort} onValueChange={setSort}>
                         <SelectTrigger>
                             <SelectValue placeholder="Mới nhất" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="newest">Mới nhất</SelectItem>
                             <SelectItem value="views">Lượt xem</SelectItem>
-                             <SelectItem value="featured">Nổi bật</SelectItem>
+                            <SelectItem value="featured">Nổi bật</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -141,16 +141,16 @@ export default function SearchPage() {
                 <div className="flex justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
                 </div>
-            ) : novels.length > 0 ? (
+            ) : novels?.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {novels.map(novel => (
                         <Link href={`/reader/${novel._id}`} key={novel._id} className="group">
                             <Card className="overflow-hidden border-none bg-transparent shadow-none hover:scale-[1.02] transition-transform">
                                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-3">
-                                    <Image 
-                                        src={novel.image} 
-                                        alt={novel.title} 
-                                        fill 
+                                    <Image
+                                        src={novel.image}
+                                        alt={novel.title}
+                                        fill
                                         className="object-cover group-hover:brightness-110 transition-all"
                                     />
                                     {novel.isFeatured && (

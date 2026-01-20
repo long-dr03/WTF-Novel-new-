@@ -103,6 +103,9 @@ const checkLibraryStatus = (novelId: string) => {
     return axios.get(`/library/check/${novelId}`);
 };
 
+const removeFromLibrary = (novelId: string, type: 'history' | 'favorite') => {
+    return axios.delete(`/library/${novelId}`, { params: { type } });
+};
 
 export {
     createNovel,
@@ -121,5 +124,6 @@ export {
     updateNovel,
     addToLibrary,
     getLibrary,
-    checkLibraryStatus
+    checkLibraryStatus,
+    removeFromLibrary
 };

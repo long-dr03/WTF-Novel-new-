@@ -26,9 +26,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getChapterContentService, getChaptersByNovelService, getNovelByIdService } from "@/services/novelService"
+import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService } from "@/services/novelService"
 import { AudioSidebar } from "@/components/reader/AudioSidebar"
 import { Headphones } from "lucide-react"
+import { useAuth } from "@/components/providers/AuthProvider"
 
 interface Chapter {
     _id: string
@@ -58,6 +59,7 @@ interface ChapterInfo {
 export default function ReadChapterPage() {
     const params = useParams()
     const router = useRouter()
+    const { user } = useAuth()
     const novelId = params.novelId as string
     const chapterNumber = parseInt(params.chapterNumber as string)
 
@@ -71,7 +73,13 @@ export default function ReadChapterPage() {
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
     const [autoNext, setAutoNext] = useState(true)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+useEffect(() => {
+        if (user && chapter && chapter._id) {
+             addToLibraryService(novelId, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
+        }
+    }, [user, chapter, novelId])
 
+    
     const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
         setReadingTheme(theme)
     }

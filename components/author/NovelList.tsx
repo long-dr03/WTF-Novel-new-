@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createNovelService, updateNovelStatusService } from "@/services/novelService"
+import { createNovelService, updateNovelStatusService, getPublicGenresService } from "@/services/novelService"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { CoverImageUpload } from "@/components/ui/CoverImageUpload"
 
@@ -29,6 +29,7 @@ const createNovelSchema = z.object({
     description: z.string().min(10, "Mô tả ít nhất 10 ký tự").max(2000, "Mô tả tối đa 2000 ký tự"),
     image: z.string().optional(), // URL string from UploadThing
     status: z.enum(["Đang viết", "Hoàn thành", "Tạm dừng"]),
+    genres: z.array(z.string()).min(1, "Chọn ít nhất 1 thể loại"),
 })
 
 type CreateNovelFormValues = z.infer<typeof createNovelSchema>
@@ -69,7 +70,7 @@ const statusMapToFrontend: Record<string, "Đang viết" | "Hoàn thành" | "T�
 
 const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) => {
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
-    
+
     const getStatusColor = (status: Novel["status"]) => {
         switch (status) {
             case "Đang viết":
@@ -84,7 +85,7 @@ const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) 
     const handleStatusChange = async (newStatus: string) => {
         const backendStatus = statusMapToBackend[newStatus]
         if (!backendStatus) return
-        
+
         setIsUpdatingStatus(true)
         try {
             const novelId = novel._id || novel.id
@@ -176,15 +177,15 @@ const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) 
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
-                     <Button
+                    <Button
                         variant="outline"
                         size="sm"
                         className="gap-2 text-primary hover:text-primary hover:bg-primary/10"
                         asChild
                     >
-                         <Link href={`/novel/${novel._id || novel.id}/chapter/1`}>
-                             <Headphones className="h-4 w-4" />
-                         </Link>
+                        <Link href={`/novel/${novel._id || novel.id}/chapter/1`}>
+                            <Headphones className="h-4 w-4" />
+                        </Link>
                     </Button>
                 </div>
             </CardContent>
@@ -211,6 +212,16 @@ export const NovelList = ({
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { user } = useAuth();
     const [imageError, setImageError] = useState<string>("")
+    const [availableGenres, setAvailableGenres] = useState<any[]>([])
+
+    // Fetch genres when component mounts
+    useEffect(() => {
+        const fetchGenres = async () => {
+            const res = await getPublicGenresService();
+            if (res) setAvailableGenres(res);
+        }
+        fetchGenres();
+    }, [])
 
     // Handler khi status novel thay đổi
     const handleNovelStatusChange = (novelId: string, newStatus: 'ongoing' | 'completed' | 'hiatus') => {
@@ -226,6 +237,7 @@ export const NovelList = ({
             description: "",
             image: undefined,
             status: "Đang viết",
+            genres: [],
         },
     })
 
@@ -234,12 +246,12 @@ export const NovelList = ({
         try {
             // values.image is now a URL string from UploadThing
             const imageUrl = values.image || ""
-            
+
             const novelData = {
                 title: values.title,
                 description: values.description,
                 author: user?.id || "Unknown",
-                genres: [""],
+                genres: values.genres,
                 image: imageUrl,
                 status: values.status,
                 views: 0,
@@ -377,10 +389,10 @@ export const NovelList = ({
                                         <FormItem>
                                             <FormLabel>Mô tả *</FormLabel>
                                             <FormControl>
-                                                <Textarea 
-                                                    placeholder="Mô tả ngắn về truyện của bạn..." 
+                                                <Textarea
+                                                    placeholder="Mô tả ngắn về truyện của bạn..."
                                                     className="min-h-[100px]"
-                                                    {...field} 
+                                                    {...field}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -412,6 +424,47 @@ export const NovelList = ({
                                 />
                                 <FormField
                                     control={form.control}
+                                    name="genres"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Thể loại *</FormLabel>
+                                            <FormControl>
+                                                <div className="border rounded-md p-3 max-h-48 overflow-y-auto">
+                                                    {availableGenres.length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground">Đang tải thể loại...</p>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {availableGenres.map((genre) => (
+                                                                <label
+                                                                    key={genre._id}
+                                                                    className="flex items-center space-x-2 cursor-pointer hover:bg-accent p-2 rounded"
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        value={genre._id}
+                                                                        checked={field.value?.includes(genre._id)}
+                                                                        onChange={(e) => {
+                                                                            const value = e.target.value
+                                                                            const newValue = e.target.checked
+                                                                                ? [...(field.value || []), value]
+                                                                                : (field.value || []).filter((v) => v !== value)
+                                                                            field.onChange(newValue)
+                                                                        }}
+                                                                        className="rounded border-gray-300"
+                                                                    />
+                                                                    <span className="text-sm">{genre.name}</span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
                                     name="status"
                                     render={({ field }) => (
                                         <FormItem>
@@ -431,9 +484,9 @@ export const NovelList = ({
                                     )}
                                 />
                                 <div className="flex justify-end gap-3 pt-4">
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
+                                    <Button
+                                        type="button"
+                                        variant="outline"
                                         onClick={() => setIsDialogOpen(false)}
                                     >
                                         Hủy

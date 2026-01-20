@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-    BookOpen, 
-    Eye, 
-    Heart, 
-    Clock, 
-    User, 
+import {
+    BookOpen,
+    Eye,
+    Heart,
+    Clock,
+    User,
     ChevronRight,
     ArrowLeft,
     List,
@@ -22,7 +22,9 @@ import {
     SortAsc,
     SortDesc
 } from "lucide-react"
-import { getNovelByIdService, getChaptersByNovelService } from "@/services/novelService"
+import { getNovelByIdService, getChaptersByNovelService, checkLibraryStatusService, addToLibraryService, removeFromLibraryService } from "@/services/novelService"
+import { useAuth } from "@/components/providers/AuthProvider"
+import { toast } from "sonner"
 
 interface Novel {
     _id: string
@@ -56,6 +58,7 @@ interface Chapter {
 export default function NovelDetailPage() {
     const params = useParams()
     const router = useRouter()
+    const { user } = useAuth()
     const novelId = params.novelId as string
 
     const [novel, setNovel] = useState<Novel | null>(null)
@@ -63,6 +66,8 @@ export default function NovelDetailPage() {
     const [loading, setLoading] = useState(true)
     const [imageError, setImageError] = useState(false)
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+    const [isFavorite, setIsFavorite] = useState(false)
+    const [libLoading, setLibLoading] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -84,14 +89,47 @@ export default function NovelDetailPage() {
                 setLoading(false)
             }
         }
+        
         fetchData()
     }, [novelId])
+
+    useEffect(() => {
+        if (novelId && user) {
+             checkLibraryStatusService(novelId).then(res => {
+                 // checkLibraryStatus returns { inHistory: boolean, isFavorite: boolean }
+                 if (res && res.isFavorite) setIsFavorite(true)
+             })
+        }
+    }, [novelId, user])
+
+    const toggleFavorite = async () => {
+        if (!user) {
+            toast.error("Vui lòng đăng nhập để thêm vào yêu thích")
+            return
+        }
+        setLibLoading(true)
+        try {
+            if (isFavorite) {
+                await removeFromLibraryService(novelId, 'favorite')
+                setIsFavorite(false)
+                toast.success("Đã xóa khỏi danh sách yêu thích")
+            } else {
+                await addToLibraryService(novelId, 'favorite')
+                setIsFavorite(true)
+                toast.success("Đã thêm vào danh sách yêu thích")
+            }
+        } catch (e) {
+            toast.error("Có lỗi xảy ra")
+        } finally {
+            setLibLoading(false)
+        }
+    }
 
     // Tính toán thống kê
     const stats = useMemo(() => {
         const totalWords = chapters.reduce((sum, ch) => sum + (ch.wordCount || 0), 0)
         const totalViews = chapters.reduce((sum, ch) => sum + (ch.views || 0), 0)
-        const latestChapter = chapters.length > 0 
+        const latestChapter = chapters.length > 0
             ? chapters.reduce((latest, ch) => ch.chapterNumber > latest.chapterNumber ? ch : latest)
             : null
         return { totalWords, totalViews, latestChapter }
@@ -99,9 +137,9 @@ export default function NovelDetailPage() {
 
     // Sắp xếp chapters
     const sortedChapters = useMemo(() => {
-        return [...chapters].sort((a, b) => 
-            sortOrder === "asc" 
-                ? a.chapterNumber - b.chapterNumber 
+        return [...chapters].sort((a, b) =>
+            sortOrder === "asc"
+                ? a.chapterNumber - b.chapterNumber
                 : b.chapterNumber - a.chapterNumber
         )
     }, [chapters, sortOrder])
@@ -186,7 +224,7 @@ export default function NovelDetailPage() {
                 {/* Novel Details */}
                 <div className="flex-1 bg-zinc-900 p-4 rounded-xl">
                     <h1 className="text-3xl font-bold mb-3">{novel.title}</h1>
-                    
+
                     <div className="flex flex-wrap items-center gap-4 mb-4">
                         <Badge className={statusInfo.className} variant="outline">
                             {statusInfo.label}
@@ -223,11 +261,28 @@ export default function NovelDetailPage() {
                     {/* Genres */}
                     {novel.genres && novel.genres.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                            {novel.genres.filter(g => g).map((genre, index) => (
-                                <Badge key={index} variant="secondary">
-                                    {genre}
-                                </Badge>
-                            ))}
+                            {novel.genres.filter(g => g).map((genre: any, index) => {
+                                // Handle both string and object formats
+                                const genreName = typeof genre === 'string' ? genre : genre.name;
+                                const genreSlug = typeof genre === 'string'
+                                    ? genre.toLowerCase().replace(/\s+/g, '-')
+                                    : genre.slug;
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={`/genre/${genreSlug}`}
+                                        className="hover:scale-105 transition-transform"
+                                    >
+                                        <Badge
+                                            variant="secondary"
+                                            className="cursor-pointer hover:bg-primary/20"
+                                        >
+                                            {genreName}
+                                        </Badge>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
 
@@ -254,9 +309,13 @@ export default function NovelDetailPage() {
                                 </Link>
                             </Button>
                         )}
-                        <Button variant="outline">
-                            <Heart className="h-4 w-4 mr-2" />
-                            Yêu thích
+                        <Button 
+                            variant={isFavorite ? "default" : "outline"} 
+                            onClick={toggleFavorite}
+                            disabled={libLoading}
+                        >
+                            <Heart className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
+                            {isFavorite ? "Đã yêu thích" : "Yêu thích"}
                         </Button>
                     </div>
                 </div>
@@ -269,7 +328,7 @@ export default function NovelDetailPage() {
                         <div className="flex items-center justify-between flex-wrap gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground mb-1">Chương mới nhất</p>
-                                <Link 
+                                <Link
                                     href={`/novel/${novelId}/chapter/${stats.latestChapter.chapterNumber}`}
                                     className="font-medium hover:text-primary transition-colors"
                                 >

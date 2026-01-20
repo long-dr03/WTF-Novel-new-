@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -305,6 +305,15 @@ const checkLibraryStatusService = async (novelId: string) => {
     }
 }
 
+const removeFromLibraryService = async (novelId: string, type: 'history' | 'favorite') => {
+    try {
+        const response = await removeFromLibrary(novelId, type);
+        return extractApiData(response);
+    } catch (error) {
+        return null;
+    }
+}
+
 export {
     createNovelService,
     uploadChapterService,
@@ -321,7 +330,8 @@ export {
     getPublicGenresService,
     addToLibraryService,
     getLibraryService,
-    checkLibraryStatusService
+    checkLibraryStatusService,
+    removeFromLibraryService
 }
 
 export type { Novel, Chapter, ChapterData, NovelData }
