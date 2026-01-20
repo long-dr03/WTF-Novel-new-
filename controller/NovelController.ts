@@ -58,6 +58,14 @@ const getAllNovels = (page: number = 1, limit: number = 12, genre?: string) => {
     return axios.get(url);
 };
 
+const getPublicGenres = () => {
+    return axios.get('/genres');
+};
+
+const getPublicNovels = (params: any) => {
+    return axios.get('/novels', { params });
+};
+
 const getLatestNovels = (limit: number = 8) => {
     return axios.get(`/novels/latest?limit=${limit}`);
 };
@@ -82,6 +90,20 @@ const updateNovel = (novelId: string, data: Partial<NovelData>) => {
     return axios.put(`/novel/${novelId}`, data);
 };
 
+// Library / History
+const addToLibrary = (novelId: string, type: 'history' | 'favorite', lastReadChapter?: string) => {
+    return axios.post('/library', { novelId, type, lastReadChapter });
+};
+
+const getLibrary = (type: 'history' | 'favorite') => {
+    return axios.get('/library', { params: { type } });
+};
+
+const checkLibraryStatus = (novelId: string) => {
+    return axios.get(`/library/check/${novelId}`);
+};
+
+
 export {
     createNovel,
     uploadChapter,
@@ -89,10 +111,15 @@ export {
     getNovelsByAuthor,
     getPopularNovels,
     getAllNovels,
+    getPublicNovels,
+    getPublicGenres,
     getLatestNovels,
     getChaptersByNovel,
     getChapterContent,
     updateChapterStatus,
     updateNovelStatus,
-    updateNovel
+    updateNovel,
+    addToLibrary,
+    getLibrary,
+    checkLibraryStatus
 };

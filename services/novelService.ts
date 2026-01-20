@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -246,18 +246,82 @@ export const updateNovelService = async (novelId: string, data: Partial<NovelDat
     }
 }
 
+
+
+/**
+ * Lấy danh sách tiểu thuyết công khai (có lọc, sort, search)
+ * @param params Filters
+ */
+const getPublicNovelsService = async (params: any): Promise<{ novels: Novel[], total: number, page: number, totalPages: number } | null> => {
+    try {
+        const response = await getPublicNovels(params);
+        return extractApiData(response);
+    } catch (error) {
+        console.error("Error fetching public novels:", error);
+        return null;
+    }
+}
+
+
+const getPublicGenresService = async () => {
+    try {
+        const response = await getPublicGenres();
+        return extractApiData(response);
+    } catch (error) {
+        return [];
+    }
+}
+
+const addToLibraryService = async (novelId: string, type: 'history' | 'favorite', lastReadChapter?: string) => {
+    try {
+        const response = await addToLibrary(novelId, type, lastReadChapter);
+        return extractApiData(response);
+    } catch (error) {
+        return null;
+    }
+}
+
+const getLibraryService = async (type: 'history' | 'favorite') => {
+    try {
+        const response = await getLibrary(type);
+        // Library endpoints usually return array directly or wrapped.
+        // Backend controller: res.status(200).json(library); -> array.
+        // check extractApiData logic: if response.data.success undefined, return response.data ?? response
+        // if response is array, response.data is undefined? axios response.data is the body.
+        // extractApiData handles (response) which is axios response object.
+        // response.data is the body.
+        return extractApiData(response);
+    } catch (error) {
+        return [];
+    }
+}
+
+const checkLibraryStatusService = async (novelId: string) => {
+    try {
+        const response = await checkLibraryStatus(novelId);
+        return extractApiData(response);
+    } catch (error) {
+        return { inHistory: false, isFavorite: false };
+    }
+}
+
 export {
     createNovelService,
     uploadChapterService,
     getNovelByIdService,
     getNovelsByAuthorService,
     getPopularNovelsService,
+    getPublicNovelsService,
     getAllNovelsService,
     getLatestNovelsService,
     getChaptersByNovelService,
     getChapterContentService,
     updateChapterStatusService,
-    updateNovelStatusService
+    updateNovelStatusService,
+    getPublicGenresService,
+    addToLibraryService,
+    getLibraryService,
+    checkLibraryStatusService
 }
 
 export type { Novel, Chapter, ChapterData, NovelData }

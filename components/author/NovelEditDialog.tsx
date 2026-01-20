@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,22 +8,20 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { CoverImageUpload } from "@/components/ui/CoverImageUpload"
-import { updateNovelStatusService, updateNovelService } from "@/services/novelService" 
-// Note: Need a general updateNovelService for title/desc/image, assuming updateNovelStatusService might be limited or we need to add new service function.
-// Checking available services, we might need to add updateNovelService. 
-// For now using updateNovelStatusService as placeholder or custom request if needed via fetchUtils?
-// Ideally we should check novelService.ts. 
-
-// Update: I will create the component assuming an `updateNovelInfoService` exists or I will verify service file first.
-// Let's assume standard CRUD.
+import { updateNovelService, getPublicGenresService } from "@/services/novelService"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const updateNovelSchema = z.object({
     title: z.string().min(1, "Tiêu đề không được để trống").max(200, "Tiêu đề tối đa 200 ký tự"),
     description: z.string().min(10, "Mô tả ít nhất 10 ký tự").max(2000, "Mô tả tối đa 2000 ký tự"),
     image: z.string().optional(),
     status: z.enum(["Đang viết", "Hoàn thành", "Tạm dừng"]),
+    genres: z.array(z.string()).min(1, "Chọn ít nhất 1 thể loại"),
 })
 
 type UpdateNovelFormValues = z.infer<typeof updateNovelSchema>
@@ -39,6 +37,7 @@ interface NovelEditDialogProps {
         image?: string
         coverImage?: string
         status?: string
+        genres?: any[] // strings or objects
     } | null
     onSuccess: () => void
 }
@@ -46,6 +45,17 @@ interface NovelEditDialogProps {
 export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelEditDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [imageError, setImageError] = useState<string>("")
+    const [availableGenres, setAvailableGenres] = useState<any[]>([])
+    const [openCombobox, setOpenCombobox] = useState(false)
+
+    // Fetch genres
+    useEffect(() => {
+        const fetchGenres = async () => {
+             const res = await getPublicGenresService();
+             if (res) setAvailableGenres(res);
+        }
+        fetchGenres();
+    }, []);
 
     const form = useForm<UpdateNovelFormValues>({
         resolver: zodResolver(updateNovelSchema),
@@ -54,12 +64,14 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
             description: novel?.description || "",
             image: novel?.image || novel?.coverImage || "",
             status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
+            genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
         },
-        values: { // Update form when novel prop changes
+        values: {
             title: novel?.title || "",
             description: novel?.description || "",
             image: novel?.image || novel?.coverImage || "",
             status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
+            genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
         }
     })
 
@@ -69,38 +81,16 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
         try {
             const novelId = novel._id || novel.id;
             
-            // Call API to update novel
-            // Map status correctly if typed strictly
-            const novelData = {
-                title: values.title,
-                description: values.description,
-                image: values.image || "",
-                status: values.status,
-                // These fields are required by interface but we are doing partial update ideally
-                // Type assertion or checking service definition needed
-                author: "", // Service might need updating to accept Partial<NovelData> properly
-                genres: [],
-                views: 0,
-                likes: 0
-            };
-            
-            // Note: Our service interface NovelData is strict, but controller likely accepts partial.
-            // Let's cast to any or fix service interface later if needed.
-            // Assuming backend handles partial updates.
-            
-            const result = await updateNovelService(novelId, {
+            await updateNovelService(novelId, {
                 title: values.title,
                 description: values.description,
                 image: values.image,
-                status: values.status
+                status: values.status,
+                genres: values.genres
             });
 
-            if (result) {
-                 onSuccess();
-                 onOpenChange(false);
-            } else {
-                console.error("Failed to update novel");
-            }
+            onSuccess();
+            onOpenChange(false);
 
         } catch (error) {
             console.error("Error updating novel:", error);
@@ -133,6 +123,80 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                                 </FormItem>
                             )}
                         />
+                        
+                         <FormField
+                            control={form.control}
+                            name="genres"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Thể loại *</FormLabel>
+                                    <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={openCombobox}
+                                                    className={cn(
+                                                        "w-full justify-between",
+                                                        !field.value?.length && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {field.value?.length > 0
+                                                        ? `${field.value.length} thể loại đã chọn`
+                                                        : "Chọn thể loại"}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[400px] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Tìm thể loại..." />
+                                                <CommandGroup className="max-h-[300px] overflow-auto">
+                                                     {availableGenres.map((genre) => (
+                                                        <CommandItem
+                                                            value={genre.name} // Filter by name
+                                                            key={genre._id}
+                                                            onSelect={() => {
+                                                                const current = field.value || [] // ensure array
+                                                                const isSelected = current.includes(genre._id)
+                                                                if (isSelected) {
+                                                                    field.onChange(current.filter((id) => id !== genre._id))
+                                                                } else {
+                                                                    field.onChange([...current, genre._id])
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    (field.value || []).includes(genre._id)
+                                                                        ? "opacity-100"
+                                                                        : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {genre.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {(field.value || []).map((genreId) => {
+                                            const genre = availableGenres.find(g => g._id === genreId)
+                                            return genre ? (
+                                                <Badge variant="secondary" key={genreId}>
+                                                    {genre.name}
+                                                </Badge>
+                                            ) : null
+                                        })}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
                         <FormField
                             control={form.control}
                             name="description"

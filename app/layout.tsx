@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ConditionalLayout } from "@/components/providers/ConditionalLayout";
 
 export default function RootLayout({
   children,
@@ -42,19 +43,9 @@ export default function RootLayout({
         }}
       >
         <AuthProvider>
-          <Header />
-          <ClickSpark
-            sparkColor='#fff'
-            sparkSize={10}
-            sparkRadius={15}
-            sparkCount={8}
-            duration={400}
-          >
-            <main className="flex-1 z-10">
-              {children}
-            </main>
-          </ClickSpark>
-          <Footer />
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
           <Toaster />
         </AuthProvider>
       </body>

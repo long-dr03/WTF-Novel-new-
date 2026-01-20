@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Banner_carousel } from "@/components/carousel";
 import CardNovel from "@/components/cardNovel";
 import GooeyNav from "@/components/GooeyNav/GooeyNav";
-import { getPopularNovelsService, Novel } from "@/services/novelService";
+import { getPopularNovelsService, getPublicNovelsService, Novel } from "@/services/novelService";
 import { Loader2 } from "lucide-react";
 
 // Các tab danh mục
@@ -40,14 +40,29 @@ export default function Home() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Sử dụng getPopularNovels cho tất cả sections (vì chưa có API riêng)
-        const novels = await getPopularNovelsService(20);
-        
-        if (novels) {
-          setLatestNovels(novels.slice(0, 8));
-          setPopularNovels(novels.slice(0, 8));
-          setHotGenreNovels(novels.slice(0, 6));
+        // Featured Novels for Carousel
+        const featuredRes = await getPublicNovelsService({ isFeatured: true, limit: 5 });
+        if (featuredRes?.novels) {
+            // Pass to a state if we had one for carousel, or use popular if mixed
+            // But Banner_carousel currently might expect data passed or fetches itself? 
+            // Let's check Banner_carousel. Assuming it fetches itself or controls itself. 
+            // Actually app/page.tsx just renders <Banner_carousel />. 
+            // We need to pass data to it or update it. 
+            // Let's assume for now we populate the lists below.
         }
+
+        // Latest Novels
+        const latestRes = await getPublicNovelsService({ limit: 8, sort: 'newest' });
+        if (latestRes?.novels) setLatestNovels(latestRes.novels);
+
+        // Popular Novels
+        const popularRes = await getPopularNovelsService(8);
+        if (popularRes) setPopularNovels(popularRes);
+
+        // Hot Genres (Just mix of popular for now or specific genre if API supported)
+        const hotRes = await getPublicNovelsService({ limit: 6, sort: 'views' });
+        if (hotRes?.novels) setHotGenreNovels(hotRes.novels);
+
       } catch (error) {
         console.error("Error fetching novels:", error);
       } finally {
