@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-    baseURL: process.env.BACKEND_URL || "http://localhost:6969",
+    baseURL: process.env.BACKEND_URL || "https://wtfnovel.wtfdev.qzz.io/",
     withCredentials: true
 });
 
