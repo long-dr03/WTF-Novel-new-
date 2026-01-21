@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -31,7 +31,7 @@ interface Genre {
     name: string
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
 
@@ -250,5 +250,13 @@ export default function SearchPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <SearchPageContent />
+        </Suspense>
     )
 }

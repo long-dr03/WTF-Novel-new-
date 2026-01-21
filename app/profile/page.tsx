@@ -22,7 +22,7 @@ const LibraryTab = ({ type }: { type: 'history' | 'favorite' }) => {
         const fetchLibrary = async () => {
             setLoading(true)
             const res = await getLibraryService(type)
-            if (res) setNovels(res)
+            if (res) setNovels(res as any[])
             setLoading(false)
         }
         fetchLibrary()

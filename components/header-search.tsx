@@ -44,7 +44,7 @@ export function HeaderSearch() {
                 search: searchQuery,
                 limit: 6
             })
-            return result?.novels || []
+            return (result?.novels || []).map((novel: any) => ({ ...novel, _id: novel._id || novel.id || '' }))
         } catch (error) {
             console.error("Search error:", error)
             return []

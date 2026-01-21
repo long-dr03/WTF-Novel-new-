@@ -81,6 +81,8 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
         try {
             const novelId = novel._id || novel.id;
             
+            if (!novelId) throw new Error("Novel ID is missing");
+
             await updateNovelService(novelId, {
                 title: values.title,
                 description: values.description,
@@ -142,8 +144,8 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                                                         !field.value?.length && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    {field.value?.length > 0
-                                                        ? `${field.value.length} thể loại đã chọn`
+                                                    {(field.value?.length || 0) > 0
+                                                        ? `${field.value?.length} thể loại đã chọn`
                                                         : "Chọn thể loại"}
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>

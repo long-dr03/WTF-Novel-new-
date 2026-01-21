@@ -97,7 +97,7 @@ export default function NovelDetailPage() {
         if (novelId && user) {
              checkLibraryStatusService(novelId).then(res => {
                  // checkLibraryStatus returns { inHistory: boolean, isFavorite: boolean }
-                 if (res && res.isFavorite) setIsFavorite(true)
+                 if (res && (res as any).isFavorite) setIsFavorite(true)
              })
         }
     }, [novelId, user])

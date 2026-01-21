@@ -28,6 +28,7 @@ export default function LoginPage() {
                     // Sử dụng login từ AuthProvider để cập nhật state ngay lập tức
                     login(result.token, {
                         id: userData.id || userData._id || '',
+                        _id: userData._id || userData.id || '',
                         username: userData.username || data.email.split('@')[0],
                         email: userData.email || data.email,
                         avatar: userData.avatar,
