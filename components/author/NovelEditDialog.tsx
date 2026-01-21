@@ -13,7 +13,7 @@ import { CoverImageUpload } from "@/components/ui/CoverImageUpload"
 import { updateNovelService, getPublicGenresService } from "@/services/novelService"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const updateNovelSchema = z.object({
@@ -152,33 +152,36 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                                         <PopoverContent className="w-[400px] p-0">
                                             <Command>
                                                 <CommandInput placeholder="Tìm thể loại..." />
-                                                <CommandGroup className="max-h-[300px] overflow-auto">
-                                                     {availableGenres.map((genre) => (
-                                                        <CommandItem
-                                                            value={genre.name} // Filter by name
-                                                            key={genre._id}
-                                                            onSelect={() => {
-                                                                const current = field.value || [] // ensure array
-                                                                const isSelected = current.includes(genre._id)
-                                                                if (isSelected) {
-                                                                    field.onChange(current.filter((id) => id !== genre._id))
-                                                                } else {
-                                                                    field.onChange([...current, genre._id])
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    (field.value || []).includes(genre._id)
-                                                                        ? "opacity-100"
-                                                                        : "opacity-0"
-                                                                )}
-                                                            />
-                                                            {genre.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
+                                                <CommandList>
+                                                    <CommandEmpty>Không tìm thấy thể loại.</CommandEmpty>
+                                                    <CommandGroup>
+                                                         {availableGenres.map((genre) => (
+                                                            <CommandItem
+                                                                value={genre.name} // Filter by name
+                                                                key={genre._id}
+                                                                onSelect={() => {
+                                                                    const current = field.value || [] // ensure array
+                                                                    const isSelected = current.includes(genre._id)
+                                                                    if (isSelected) {
+                                                                        field.onChange(current.filter((id) => id !== genre._id))
+                                                                    } else {
+                                                                        field.onChange([...current, genre._id])
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        (field.value || []).includes(genre._id)
+                                                                            ? "opacity-100"
+                                                                            : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {genre.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
                                             </Command>
                                         </PopoverContent>
                                     </Popover>

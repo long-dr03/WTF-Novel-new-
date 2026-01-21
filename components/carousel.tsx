@@ -24,44 +24,64 @@ const bannerData = [
         title: "Khám Phá Thế Giới Tiểu Thuyết",
         subtitle: "Hàng ngàn truyện hay đang chờ bạn",
         badge: "Hot",
+        id: ""
     },
     {
         src: "https://picsum.photos/1200/400?random=2",
         title: "Truyện Mới Cập Nhật",
         subtitle: "Cập nhật liên tục mỗi ngày",
         badge: "New",
+        id: ""
     },
     {
         src: "https://picsum.photos/1200/400?random=3",
         title: "Tiên Hiệp Huyền Ảo",
         subtitle: "Thế giới tu tiên kỳ ảo",
         badge: "Trending",
+        id: ""
     },
     {
         src: "https://picsum.photos/1200/400?random=4",
         title: "Ngôn Tình Lãng Mạn",
         subtitle: "Những câu chuyện tình yêu đẹp",
         badge: "Popular",
+        id: ""
     },
     {
         src: "https://picsum.photos/1200/400?random=5",
         title: "Đô Thị Hiện Đại",
         subtitle: "Cuộc sống đô thị sôi động",
         badge: "Featured",
+        id: ""
     },
 ]
 
-export function Banner_carousel() {
+interface BannerCarouselProps {
+    novels?: any[];
+}
+
+export function Banner_carousel({ novels }: BannerCarouselProps) {
     const [api, setApi] = useState<CarouselApi>()
     const [current, setCurrent] = useState(0)
     const [count, setCount] = useState(0)
     const [progress, setProgress] = useState(0)
     const [isHovered, setIsHovered] = useState(false)
 
+    // Use passed novels or fallback (or empty)
+    const slides = novels && novels.length > 0 ? novels.map(n => ({
+        src: n.bannerUrl || n.bannerImage || n.image || n.coverImage || "https://picsum.photos/1200/400?random=1",
+        title: n.title,
+        subtitle: n.author?.username ? `Tác giả: ${n.author.username}` : "Truyện Hot",
+        badge: "Featured",
+        id: n._id || n.id
+    })) : bannerData;
+
     const plugin = React.useRef(
         Autoplay({ delay: 5000, stopOnInteraction: false })
     )
     const fadePlugin = React.useRef(Fade())
+
+    // ... (keep existing effects)
 
     // Cập nhật progress bar
     useEffect(() => {
@@ -121,11 +141,13 @@ export function Banner_carousel() {
                 }}
             >
                 <CarouselContent>
-                    {bannerData.map((banner, index) => (
+                    {slides.map((banner, index) => (
                         <CarouselItem key={index}>
                             <div className="p-1">
                                 <Card className="border-0 shadow-none bg-transparent">
-                                    <CardContent className="flex aspect-[3/1] items-center justify-center p-0 relative overflow-hidden rounded-2xl group/card cursor-pointer">
+                                    <CardContent className="flex aspect-[3/1] items-center justify-center p-0 relative overflow-hidden rounded-2xl group/card cursor-pointer" onClick={() => {
+                                        if(banner.id) window.location.href = `/reader/${banner.id}`
+                                    }}>
                                         {/* Background Image với hiệu ứng zoom khi hover */}
                                         <Image
                                             src={banner.src}
@@ -196,7 +218,7 @@ export function Banner_carousel() {
                                                     ? "opacity-100 translate-y-0" 
                                                     : "opacity-0 translate-y-4"
                                             )}>
-                                                Khám phá ngay →
+                                                Đọc ngay →
                                             </button>
                                         </div>
 
@@ -237,7 +259,7 @@ export function Banner_carousel() {
 
             {/* Progress Dots với Animation */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-                {bannerData.map((_, index) => (
+                {slides.map((_, index) => (
                     <button
                         key={index}
                         onClick={() => scrollTo(index)}

@@ -263,10 +263,10 @@ const getPublicNovelsService = async (params: any): Promise<{ novels: Novel[], t
 }
 
 
-const getPublicGenresService = async () => {
+const getPublicGenresService = async (): Promise<any[]> => {
     try {
         const response = await getPublicGenres();
-        return extractApiData(response);
+        return extractApiData<any[]>(response) || [];
     } catch (error) {
         return [];
     }

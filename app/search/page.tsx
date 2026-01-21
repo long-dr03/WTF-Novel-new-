@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { Loader2, Search, Filter } from "lucide-react"
+import { Loader2, Search, Filter, Check, ChevronsUpDown, X } from "lucide-react"
 import axios from "@/setup/axios"
 import Image from "next/image"
 import Link from "next/link"
 import { getPublicGenresService } from "@/services/novelService"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 interface Novel {
     _id: string
@@ -37,17 +41,22 @@ export default function SearchPage() {
 
     // Filters
     const [query, setQuery] = useState(searchParams.get('q') || '')
-    const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || 'all')
+    // Parse initial genres from URL (comma separated)
+    const initialGenres = searchParams.get('genre') ? searchParams.get('genre')!.split(',') : []
+    const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres)
     const [sort, setSort] = useState('newest')
+    
+    const [openGenre, setOpenGenre] = useState(false)
 
     const fetchGenres = async () => {
         try {
             const res = await getPublicGenresService()
-            if (res) setGenres(res)
+            if (res) setGenres(res as Genre[])
         } catch (e) {
             console.error("Failed filters", e)
         }
     }
+
 
     const fetchNovels = async () => {
         setLoading(true)
@@ -56,12 +65,17 @@ export default function SearchPage() {
                 search: query,
                 limit: 20
             }
-            if (selectedGenre !== 'all') params.genre = selectedGenre
+            if (selectedGenres.length > 0) {
+                params.genre = selectedGenres.join(',')
+            }
 
             // Call public endpoint
             const res = await axios.get('/novels', { params })
             const data: any = res;
             setNovels(data?.novels || [])
+            // Note: backend response structure: { novels: [], total... } or just [] depending on endpoint?
+            // getPublicNovels returns { novels, total, page, pages }
+            // client code was: setNovels(data?.novels || []) -> Correct.
         } catch (error) {
             console.error("Search error", error)
         } finally {
@@ -70,9 +84,6 @@ export default function SearchPage() {
     }
 
     useEffect(() => {
-        // Fetch genre list once
-        // If /admin/genres is protected, we must make a public one.
-        // Let's assume for now.
         fetchGenres()
     }, [])
 
@@ -82,13 +93,19 @@ export default function SearchPage() {
             fetchNovels()
         }, 500)
         return () => clearTimeout(timer)
-    }, [query, selectedGenre, sort])
+    }, [query, selectedGenres, sort])
 
     const handleSearch = () => {
         const params = new URLSearchParams()
         if (query) params.set('q', query)
-        if (selectedGenre !== 'all') params.set('genre', selectedGenre)
+        if (selectedGenres.length > 0) params.set('genre', selectedGenres.join(','))
         router.push(`/search?${params.toString()}`)
+    }
+
+    const toggleGenre = (genreId: string) => {
+        setSelectedGenres(prev => 
+            prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId]
+        )
     }
 
     return (
@@ -107,19 +124,48 @@ export default function SearchPage() {
                         />
                     </div>
                 </div>
-                <div className="w-full md:w-[200px] space-y-2">
+                <div className="w-full md:w-[300px] space-y-2">
                     <label className="text-sm font-medium">Thể loại</label>
-                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Tất cả" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Tất cả</SelectItem>
-                            {genres.map(g => (
-                                <SelectItem key={g._id} value={g._id}>{g.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Popover open={openGenre} onOpenChange={setOpenGenre}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openGenre}
+                                className="w-full justify-between"
+                            >
+                                {selectedGenres.length > 0
+                                    ? `${selectedGenres.length} thể loại`
+                                    : "Chọn thể loại"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                            <Command>
+                                <CommandInput placeholder="Tìm thể loại..." />
+                                <CommandList>
+                                    <CommandEmpty>Không tìm thấy.</CommandEmpty>
+                                    <CommandGroup>
+                                        {genres.map((genre) => (
+                                            <CommandItem
+                                                key={genre._id}
+                                                value={genre.name}
+                                                onSelect={() => toggleGenre(genre._id)}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedGenres.includes(genre._id) ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                {genre.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
                 <div className="w-full md:w-[200px] space-y-2">
                     <label className="text-sm font-medium">Sắp xếp</label>
@@ -136,6 +182,29 @@ export default function SearchPage() {
                 </div>
                 <Button onClick={handleSearch} className="mb-[2px]">Lọc</Button>
             </div>
+            
+            {/* Selected Genres Badges */}
+            {selectedGenres.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {selectedGenres.map(id => {
+                        const g = genres.find(item => item._id === id);
+                        return g ? (
+                            <Badge key={id} variant="secondary" className="pl-2 pr-1 h-7">
+                                {g.name}
+                                <button 
+                                    className="ml-1 hover:bg-muted rounded-full p-0.5"
+                                    onClick={() => toggleGenre(id)}
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ) : null;
+                    })}
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedGenres([])}>
+                        Xóa hết
+                    </Button>
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex justify-center py-12">
@@ -148,9 +217,10 @@ export default function SearchPage() {
                             <Card className="overflow-hidden border-none bg-transparent shadow-none hover:scale-[1.02] transition-transform">
                                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-3">
                                     <Image
-                                        src={novel.image}
-                                        alt={novel.title}
+                                        src={novel.image ? novel.image : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                        alt={novel.title || "Novel Image"}
                                         fill
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         className="object-cover group-hover:brightness-110 transition-all"
                                     />
                                     {novel.isFeatured && (

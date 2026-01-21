@@ -36,34 +36,36 @@ const CardNovel = ({
 
     const CardContent = (
         <SpotlightCard
-            className={`custom-spotlight-card w-full flex flex-col gap-4 ${className}`}
+            className={`custom-spotlight-card w-full h-full flex flex-col justify-between gap-4 ${className}`}
             spotlightColor="rgba(0, 229, 255, 0.2)"
         >
-            <div className="img_container w-full aspect-[2/3] rounded-xl overflow-hidden bg-muted relative">
-                {coverImage && !imageError ? (
-                    <Image
-                        src={coverImage}
-                        alt={title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className='object-cover'
-                        onError={handleImageError}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                        <BookOpen className="h-16 w-16 text-muted-foreground/30" />
-                    </div>
-                )}
-            </div>
-            <div className="text_container flex flex-col gap-4">
-                <h3 className="text-xl font-bold line-clamp-2">{title}</h3>
-                <div className="bage_ctn flex gap-2 flex-wrap">
-                    {genres.map((genre, index) => (
-                        <Badge key={index} variant="outline" className='w-[30%]'>
-                            {genre.name}
-                        </Badge>
-                    ))}
+            <div className="flex flex-col gap-4">
+                <div className="img_container w-full aspect-[2/3] rounded-xl overflow-hidden bg-muted relative">
+                    {coverImage && !imageError ? (
+                        <Image
+                            src={coverImage}
+                            alt={title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className='object-cover transition-transform duration-300 group-hover:scale-105'
+                            onError={handleImageError}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                            <BookOpen className="h-16 w-16 text-muted-foreground/30" />
+                        </div>
+                    )}
                 </div>
+                <div className="text_container flex flex-col gap-2">
+                    <h3 className="text-lg font-bold line-clamp-2 leading-tight min-h-[3rem]" title={title}>{title}</h3>
+                </div>
+            </div>
+            <div className="bage_ctn flex gap-1 flex-wrap content-end">
+                {genres.slice(0, 3).map((genre, index) => (
+                    <Badge key={index} variant="secondary" className='text-[10px] px-1.5 h-5 truncate max-w-full'>
+                        {genre.name}
+                    </Badge>
+                ))}
             </div>
         </SpotlightCard>
     );

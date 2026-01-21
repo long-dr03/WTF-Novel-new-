@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService } from "@/services/novelService"
 import { AudioSidebar } from "@/components/reader/AudioSidebar"
+import { CommentSection } from "@/components/CommentSection"
 import { Headphones } from "lucide-react"
 import { useAuth } from "@/components/providers/AuthProvider"
 
@@ -404,6 +405,11 @@ useEffect(() => {
                         Chương sau
                         <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
+                </div>
+
+                {/* Comment Section */}
+                <div className="mt-12">
+                     <CommentSection />
                 </div>
             </main>
 

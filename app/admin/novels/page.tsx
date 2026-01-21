@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import {
   Table,
   TableBody,
@@ -16,7 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Loader2, CheckCircle, XCircle, Trash2, Eye } from "lucide-react"
 import axios from "@/setup/axios"
 import { toast } from "sonner"
-import Image from "next/image"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Novel {
     _id: string
@@ -40,6 +42,15 @@ export default function NovelsPage() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [activeTab, setActiveTab] = useState('all')
+
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+    const [selectedNovelId, setSelectedNovelId] = useState<string>("")
+    const [rejectReason, setRejectReason] = useState("")
+
+    // Slider/Banner Config State
+    const [bannerDialogOpen, setBannerDialogOpen] = useState(false)
+    const [bannerUrl, setBannerUrl] = useState("")
+    const [selectedNovelForBanner, setSelectedNovelForBanner] = useState<Novel | null>(null)
 
     const fetchNovels = async () => {
         setLoading(true)
@@ -77,11 +88,14 @@ export default function NovelsPage() {
         }
     }
 
-    const handleReject = async (id: string) => {
+    const confirmReject = async () => {
+        if (!selectedNovelId) return;
         try {
-            await axios.put(`/admin/novels/${id}/reject`)
+            await axios.put(`/admin/novels/${selectedNovelId}/reject`, { reason: rejectReason })
             toast.success("Đã từ chối truyện")
             fetchNovels()
+            setRejectDialogOpen(false)
+            setRejectReason("")
         } catch (error) {
             toast.error("Lỗi khi từ chối truyện")
         }
@@ -95,6 +109,31 @@ export default function NovelsPage() {
             fetchNovels()
         } catch (error) {
             toast.error("Lỗi khi xóa truyện")
+        }
+    }
+
+    const handleUpdateBanner = async () => {
+        if (!selectedNovelForBanner) return;
+        try {
+             // Assuming we can update the novel's bannerImage via a generic update endpoint 
+             // or the featured endpoint supports body. 
+             // Using generic update endpoint for now if available, otherwise falling back to a hypothetical one.
+             // Checking NovelController, updateNovel calls PUT /novel/:id.
+             // Admin route might be different. I'll try to use the generic /novel/:id update wrapper or the admin one.
+             // Let's use axios directly with the admin pattern or the generic one.
+             // Attempting generic update pattern:
+             await axios.put(`/novel/${selectedNovelForBanner._id}`, { bannerImage: bannerUrl, bannerUrl: bannerUrl });
+             
+             // Also ensure it is featured if not already? User didn't say, but usually slider items are featured.
+             if (!selectedNovelForBanner.isFeatured) {
+                 await axios.put(`/admin/novels/${selectedNovelForBanner._id}/featured`);
+             }
+
+             toast.success("Đã cập nhật banner và đưa lên slider")
+             setBannerDialogOpen(false)
+             fetchNovels()
+        } catch (error) {
+            toast.error("Lỗi cập nhật banner")
         }
     }
 
@@ -155,6 +194,7 @@ export default function NovelsPage() {
                                 <TableHead className="text-right">Hành động</TableHead>
                             </TableRow>
                         </TableHeader>
+
                         <TableBody>
                             {loading ? (
                                 <TableRow>
@@ -176,9 +216,10 @@ export default function NovelsPage() {
                                         <TableCell>
                                             <div className="relative h-10 w-8 overflow-hidden rounded bg-muted">
                                                  <Image 
-                                                    src={novel.image || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-                                                    alt={novel.title}
+                                                    src={novel.image ? novel.image : "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+                                                    alt={novel.title || "Novel Cover"}
                                                     fill
+                                                    sizes="32px"
                                                     className="object-cover" 
                                                  />
                                             </div>
@@ -187,37 +228,59 @@ export default function NovelsPage() {
                                         <TableCell>{novel.author?.username || "Unknown"}</TableCell>
                                         <TableCell>{getStatusBadge(novel.publishStatus)}</TableCell>
                                         <TableCell>
-                                            <Button 
-                                                variant={novel.isFeatured ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={async () => {
-                                                    try {
-                                                        await axios.put(`/admin/novels/${novel._id}/featured`);
-                                                        toast.success(novel.isFeatured ? "Đã bỏ nổi bật" : "Đã thêm vào nổi bật");
-                                                        fetchNovels();
-                                                    } catch (e) {
-                                                        toast.error("Lỗi cập nhật trạng thái");
-                                                    }
-                                                }}
-                                                className={novel.isFeatured ? "bg-yellow-500 hover:bg-yellow-600 text-black" : ""}
-                                            >
-                                                {novel.isFeatured ? "Nổi bật" : "Thường"}
-                                            </Button>
+                                            <div className="flex flex-col gap-2">
+                                                <Button 
+                                                    variant={novel.isFeatured ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await axios.put(`/admin/novels/${novel._id}/featured`);
+                                                            toast.success(novel.isFeatured ? "Đã bỏ nổi bật" : "Đã thêm vào nổi bật");
+                                                            fetchNovels();
+                                                        } catch (e) {
+                                                            toast.error("Lỗi cập nhật trạng thái");
+                                                        }
+                                                    }}
+                                                    className={novel.isFeatured ? "bg-yellow-500 hover:bg-yellow-600 text-black mb-1 w-full" : "w-full"}
+                                                >
+                                                    {novel.isFeatured ? "Nổi bật" : "Thường"}
+                                                </Button>
+                                                {novel.isFeatured && (
+                                                    <Button 
+                                                        variant="secondary" 
+                                                        size="sm" 
+                                                        className="h-6 text-xs w-full"
+                                                        onClick={() => {
+                                                            setSelectedNovelForBanner(novel)
+                                                            // @ts-ignore
+                                                            setBannerUrl(novel.bannerUrl || novel.bannerImage || "")
+                                                            setBannerDialogOpen(true)
+                                                        }}
+                                                    >
+                                                        Cấu hình Banner
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>{novel.views?.toLocaleString() || 0}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             {/* Preview Link (TODO) */}
                                             {/* <Button size="icon" variant="ghost" title="Xem"><Eye className="w-4 h-4" /></Button> */}
                                             
-                                            {novel.publishStatus === 'pending' && (
-                                                <>
-                                                    <Button size="icon" variant="ghost" className="text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={() => handleApprove(novel._id)} title="Duyệt">
-                                                        <CheckCircle className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleReject(novel._id)} title="Từ chối">
-                                                        <XCircle className="w-4 h-4" />
-                                                    </Button>
-                                                </>
+                                            {(novel.publishStatus === 'pending' || novel.publishStatus === 'rejected') && (
+                                                <Button size="icon" variant="ghost" className="text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={() => handleApprove(novel._id)} title="Duyệt">
+                                                    <CheckCircle className="w-4 h-4" />
+                                                </Button>
+                                            )}
+                                            
+                                            {novel.publishStatus !== 'rejected' && (
+                                                <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                                                    setSelectedNovelId(novel._id);
+                                                    setRejectReason("");
+                                                    setRejectDialogOpen(true);
+                                                }} title="Từ chối">
+                                                    <XCircle className="w-4 h-4" />
+                                                </Button>
                                             )}
                                             
                                             <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(novel._id)} title="Xóa">
@@ -236,6 +299,63 @@ export default function NovelsPage() {
                     <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Sau</Button>
                  </div>
             </div>
+
+            <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Từ chối truyện</DialogTitle>
+                        <DialogDescription>
+                            Vui lòng nhập lý do từ chối để tác giả biết và chỉnh sửa.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Textarea 
+                            placeholder="Nhập lý do..." 
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Hủy</Button>
+                        <Button variant="destructive" onClick={confirmReject} disabled={!rejectReason.trim()}>
+                            Xác nhận từ chối
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={bannerDialogOpen} onOpenChange={setBannerDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cấu hình Slider</DialogTitle>
+                        <DialogDescription>
+                            Nhập URL ảnh banner cho truyện <b>{selectedNovelForBanner?.title}</b>.
+                            Ảnh này sẽ hiển thị trên Slider trang chủ.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div>
+                            <label className="text-sm font-medium mb-1 block">URL Ảnh Banner (Kích thước khuyến nghị: 1200x400)</label>
+                            <Input 
+                                placeholder="https://example.com/banner.jpg" 
+                                value={bannerUrl}
+                                onChange={(e) => setBannerUrl(e.target.value)}
+                            />
+                        </div>
+                        {bannerUrl && (
+                             <div className="relative w-full aspect-[3/1] rounded overflow-hidden border">
+                                <Image src={bannerUrl} alt="Preview" fill className="object-cover" />
+                             </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setBannerDialogOpen(false)}>Hủy</Button>
+                        <Button onClick={handleUpdateBanner}>
+                            Lưu cấu hình
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
