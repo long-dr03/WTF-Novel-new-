@@ -58,7 +58,6 @@ import {
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getNovelsByAuthorService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
 import WordUploader from "./WordUploader";
-import StyleEditor from "./StyleEditor";
 import AudioManager from "./AudioManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,9 +172,6 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
     // Word uploader state
     const [showWordUploader, setShowWordUploader] = useState(false);
-
-    // Style editor state
-    const [showStyleEditor, setShowStyleEditor] = useState(false);
 
     // Audio manager state
     const [showAudioManager, setShowAudioManager] = useState(false);
@@ -1210,16 +1206,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                                 {isPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </ToolbarButton>
 
-                            <ToolbarDivider isDark={isDarkMode} />
 
-                            {/* AI Style Editor */}
-                            <ToolbarButton
-                                onClick={() => setShowStyleEditor(true)}
-                                title="Điều chỉnh văn phong AI"
-                                isDark={isDarkMode}
-                            >
-                                <Wand2 className="w-4 h-4" />
-                            </ToolbarButton>
 
                             {/* Music Manager */}
                             <ToolbarButton
@@ -1301,31 +1288,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                 />
             )}
 
-            {/* Style Editor Modal */}
-            <StyleEditor
-                isOpen={showStyleEditor}
-                onClose={() => setShowStyleEditor(false)}
-                isDark={isDarkMode}
-                currentContent={editor?.getHTML() || ''}
-                onApply={(adjustedContent) => {
-                    if (editor) {
-                        editor.commands.setContent(adjustedContent);
-                    }
-                }}
-                chapters={chapters}
-                novelId={selectedNovelId || undefined}
-                getChapterContent={async (novelId: string, chapterNumber: number) => {
-                    return await getChapterContentService(novelId, chapterNumber);
-                }}
-                onBatchComplete={async (results) => {
-                    // Có thể xử lý kết quả batch ở đây nếu cần
-                    console.log('Batch style adjustment completed:', results.length, 'chapters');
-                    // Reload chapters để cập nhật
-                    if (selectedNovelId) {
-                        await loadChapters(selectedNovelId);
-                    }
-                }}
-            />
+
 
             {/* Audio Manager Dialog */}
             {selectedNovelId && (

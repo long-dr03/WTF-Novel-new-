@@ -25,21 +25,6 @@ export interface NovelAudioList {
     };
 }
 
-export interface BatchJobStatus {
-    job_id: string;
-    status: 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
-    total: number;
-    current: number;
-    progress: number;
-    current_chapter?: string;
-    results?: Array<{
-        chapter_id: string;
-        success: boolean;
-        output_file?: string;
-        duration?: number;
-        error?: string;
-    }>;
-}
 
 // Helper function to extract API data
 const extractApiData = <T>(response: any): T | null => {
@@ -49,19 +34,7 @@ const extractApiData = <T>(response: any): T | null => {
     return response?.data ?? response ?? null;
 };
 
-/**
- * Kiểm tra trạng thái hoạt động của TTS Service
- * @returns Promise<boolean> trả về true nếu service hoạt động tốt
- */
-export const checkTTSHealth = async (): Promise<boolean> => {
-    try {
-        const response: any = await axios.get('/audio/health');
-        return response?.success ?? false;
-    } catch (error) {
-        console.error('TTS Health check failed:', error);
-        return false;
-    }
-};
+
 
 /**
  * Lấy thông tin audio của một chapter
@@ -137,20 +110,7 @@ export const updateChapterAudioUrl = async (
     }
 };
 
-/**
- * Yêu cầu TTS AI tạo audio cho nội dung text của chapter
- * @param chapterId ID của chapter cần tạo audio
- * @returns Promise<AudioInfo | null> thông tin task tạo audio
- */
-export const generateChapterAudio = async (chapterId: string): Promise<AudioInfo | null> => {
-    try {
-        const response: any = await axios.post(`/audio/chapter/${chapterId}/audio/generate`);
-        return extractApiData<AudioInfo>(response);
-    } catch (error) {
-        console.error('Error generating chapter audio:', error);
-        return null;
-    }
-};
+
 
 /**
  * Xóa dữ liệu audio của một chapter
@@ -182,43 +142,7 @@ export const getNovelAudioList = async (novelId: string): Promise<NovelAudioList
     }
 };
 
-/**
- * Kích hoạt tạo audio hàng loạt cho danh sách chapter
- * @param novelId ID của tiểu thuyết
- * @param options Các tùy chọn lọc (chapterIds, fromChapter, toChapter)
- * @returns Promise chứa job_id để theo dõi tiến độ
- */
-export const batchGenerateAudio = async (
-    novelId: string,
-    options?: {
-        chapterIds?: string[];
-        fromChapter?: number;
-        toChapter?: number;
-    }
-): Promise<{ job_id: string; total_chapters: number } | null> => {
-    try {
-        const response: any = await axios.post(`/audio/novel/${novelId}/audio/batch-generate`, options || {});
-        return extractApiData(response);
-    } catch (error) {
-        console.error('Error starting batch audio generation:', error);
-        return null;
-    }
-};
 
-/**
- * Kiểm tra trạng thái tiến độ của một job tạo audio hàng loạt
- * @param jobId ID của job cần kiểm tra
- * @returns Promise<BatchJobStatus | null> thông tin trạng thái job
- */
-export const getBatchStatus = async (jobId: string): Promise<BatchJobStatus | null> => {
-    try {
-        const response: any = await axios.get(`/audio/batch-status/${jobId}`);
-        return extractApiData<BatchJobStatus>(response);
-    } catch (error) {
-        console.error('Error fetching batch status:', error);
-        return null;
-    }
-};
 
 /**
  * Định dạng thời gian từ giây sang chuỗi MM:SS

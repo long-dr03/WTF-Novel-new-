@@ -15,12 +15,11 @@ import {
     Highlighter, Sun, Moon, Save, FileText, Eye, EyeOff, Music,
     Maximize2, Minimize2, Type, Pilcrow, Plus, Edit3, RefreshCw,
     Send, Clock, FileEdit, Upload, ChevronLeft, ChevronRight,
-    ChevronsLeft, ChevronsRight, Search, Wand2, Headphones, CheckCircle2, Circle
+    ChevronsLeft, ChevronsRight, Search, Headphones, CheckCircle2, Circle
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
 import WordUploader from "./WordUploader";
-import StyleEditor from "./StyleEditor";
 import AudioManager from "./AudioManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,7 +99,6 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
 
     // Modals
     const [showWordUploader, setShowWordUploader] = useState(false);
-    const [showStyleEditor, setShowStyleEditor] = useState(false);
     const [showAudioManager, setShowAudioManager] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showMusicManager, setShowMusicManager] = useState(false);
@@ -490,7 +488,6 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                         
                         <div className="flex-1" />
                         
-                        <ToolbarButton onClick={() => setShowStyleEditor(true)} title="AI Style" isDark={isDarkMode}><Wand2 className="w-4 h-4 text-purple-400"/></ToolbarButton>
                         <ToolbarButton onClick={() => setShowMusicManager(true)} title="Ambient Music" isDark={isDarkMode}><Music className="w-4 h-4"/></ToolbarButton>
                     </div>
                 )}
@@ -525,14 +522,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                     uploadChapterFn={uploadChapterService}
                 />
             )}
-            <StyleEditor
-                isOpen={showStyleEditor} onClose={() => setShowStyleEditor(false)} isDark={isDarkMode}
-                currentContent={editor?.getHTML() || ''}
-                onApply={(c) => editor && editor.commands.setContent(c)}
-                chapters={chapters} novelId={selectedNovelId || undefined}
-                getChapterContent={getChapterContentService}
-                onBatchComplete={async () => selectedNovelId && await loadChapters(selectedNovelId)}
-            />
+
             {selectedNovelId && (
                 <AudioManager
                     novelId={selectedNovelId} chapters={chapters} isDarkMode={isDarkMode}
