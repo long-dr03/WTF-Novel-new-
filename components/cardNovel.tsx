@@ -36,11 +36,11 @@ const CardNovel = ({
 
     const CardContent = (
         <SpotlightCard
-            className={`custom-spotlight-card w-full h-full flex flex-col justify-between gap-4 ${className}`}
+            className={`custom-spotlight-card w-full h-full flex flex-col justify-between gap-3 ${className}`}
             spotlightColor="rgba(0, 229, 255, 0.2)"
         >
-            <div className="flex flex-col gap-4">
-                <div className="img_container w-full aspect-[2/3] rounded-xl overflow-hidden bg-muted relative">
+            <div className="flex flex-col gap-3">
+                <div className="img_container w-full aspect-[2/3] overflow-hidden bg-muted relative">
                     {coverImage && !imageError ? (
                         <Image
                             src={coverImage}
@@ -52,17 +52,17 @@ const CardNovel = ({
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                            <BookOpen className="h-16 w-16 text-muted-foreground/30" />
+                            <BookOpen className="h-12 w-12 text-muted-foreground/30" />
                         </div>
                     )}
                 </div>
-                <div className="text_container flex flex-col gap-2">
-                    <h3 className="text-lg font-bold line-clamp-2 leading-tight min-h-[3rem]" title={title}>{title}</h3>
+                <div className="text_container flex flex-col gap-1.5 px-3.5">
+                    <h3 className="text-base font-bold line-clamp-2 leading-tight min-h-[2.5rem]" title={title}>{title}</h3>
                 </div>
             </div>
-            <div className="bage_ctn flex gap-1 flex-wrap content-end">
+            <div className="bage_ctn flex gap-1 flex-wrap content-end px-3.5 pb-3.5 pt-1">
                 {genres.slice(0, 3).map((genre, index) => (
-                    <Badge key={index} variant="secondary" className='text-[10px] px-1.5 h-5 truncate max-w-full'>
+                    <Badge key={index} variant="secondary" className='text-[10px] px-1.5 h-5 truncate max-w-full font-medium'>
                         {genre.name}
                     </Badge>
                 ))}

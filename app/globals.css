@@ -44,47 +44,45 @@
 
 :root {
   --radius: 0.625rem;
-  /* Light Mode (Optional - User prefers generic dark override usually, but we keep light for flexibility or set same as dark if requested strict single theme) */
-  /* User request: "only black white and purple gradient" -> implying a Dark-first or Dark-only aesthetic essentially. 
-     We will make default variables Dark-themed to ensure "Premium" look by default. */
-  --background: oklch(0.1 0 0); /* Blackish #1a1a1a */
-  --foreground: oklch(0.985 0 0); /* White */
-  --card: oklch(0.12 0 0); /* Slightly lighter black */
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: oklch(0.979 0.004 77.06); /* stone-50 #fafaf9 */
+  --foreground: oklch(0.25 0.005 77.06); /* stone-800 #292524 */
+  --card: oklch(1 0 0); /* white #ffffff */
+  --card-foreground: oklch(0.25 0.005 77.06);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.005 77.06);
   --primary: oklch(0.58 0.233 277.1); /* Purple #9333ea */
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.2 0 0); /* Dark Grey */
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.93 0.005 77.06); /* stone-200 #e7e5e4 */
+  --secondary-foreground: oklch(0.25 0.005 77.06);
+  --muted: oklch(0.93 0.005 77.06);
+  --muted-foreground: oklch(0.55 0.005 77.06); /* stone-500 #78716c */
+  --accent: oklch(0.93 0.005 77.06);
+  --accent-foreground: oklch(0.25 0.005 77.06);
   --destructive: oklch(0.577 0.245 27.325); /* Red */
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.25 0 0);
+  --border: oklch(0.89 0.005 77.06); /* stone-300 #d6d3d1 */
+  --input: oklch(0.89 0.005 77.06);
   --ring: oklch(0.58 0.233 277.1); /* Purple */
-  --chart-1: oklch(0.58 0.233 277.1); /* Purple */
-  --chart-2: oklch(0.6 0.118 184.704); /* Teal? Keep/Change */
+  --chart-1: oklch(0.58 0.233 277.1);
+  --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.12 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.005 77.06);
   --sidebar-primary: oklch(0.58 0.233 277.1);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.2 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-accent: oklch(0.93 0.005 77.06);
+  --sidebar-accent-foreground: oklch(0.25 0.005 77.06);
+  --sidebar-border: oklch(0.89 0.005 77.06);
   --sidebar-ring: oklch(0.58 0.233 277.1);
+  --grid-color: rgba(120, 113, 108, 0.12);
 }
 
 .dark {
-  --background: oklch(0.1 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.12 0 0);
+  --background: oklch(0.1 0 0); /* Blackish #1a1a1a */
+  --foreground: oklch(0.985 0 0); /* White */
+  --card: oklch(0.12 0 0); /* Slightly lighter black */
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.985 0 0);
@@ -96,7 +94,7 @@
   --muted-foreground: oklch(0.7 0 0);
   --accent: oklch(0.2 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.6 0.2 20); /* Red */
+  --destructive: oklch(0.6 0.2 20);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.25 0 0);
   --input: oklch(0.25 0 0);
@@ -114,6 +112,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.25 0 0);
   --sidebar-ring: oklch(0.58 0.233 277.1);
+  --grid-color: rgba(75, 85, 99, 0.35);
 }
 
 @layer base {
@@ -121,7 +120,11 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+    background-image: 
+      linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
 

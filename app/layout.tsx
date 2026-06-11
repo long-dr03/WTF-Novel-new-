@@ -4,6 +4,8 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import ClickSpark from "../components/ui/ClickSpark/ClickSpark";
+import Script from "next/script";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -22,6 +24,7 @@ export const metadata: Metadata = {
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalLayout } from "@/components/providers/ConditionalLayout";
+import { ThemeProvider } from "next-themes";
 
 export default function RootLayout({
   children,
@@ -29,25 +32,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         suppressHydrationWarning
-        style={{
-          background: "#000000",
-          backgroundImage: `
-        linear-gradient(to right, rgba(75, 85, 99, 0.4) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(75, 85, 99, 0.4) 1px, transparent 1px)
-      `,
-          backgroundSize: "40px 40px",
-        }}
       >
-        <AuthProvider>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
-          <Toaster />
-        </AuthProvider>
+        {process.env.NODE_ENV === "development" && (
+          <Script 
+            src="//unpkg.com/react-grab/dist/index.global.js" 
+            crossOrigin="anonymous" 
+            strategy="beforeInteractive" 
+          />
+        )}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <AuthProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
