@@ -6,26 +6,75 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2, Globe, Bell, Shield, Book, Save } from "lucide-react"
+import { Loader2, Globe, Bell, Shield, Save, Megaphone, Sparkles } from "lucide-react"
 import axios from "@/setup/axios"
 import { toast } from "sonner"
+import { MediaUpload } from "@/components/ui/MediaUpload"
+
+type AdSlot = { enabled: boolean; imageUrl: string; link: string }
+
+type SettingsState = {
+    siteName: string
+    siteDescription: string
+    maintenanceMode: boolean
+    emailNotification: boolean
+    autoApproveNovels: boolean
+    minWordsPerChapter: number
+    ads: {
+        enabled: boolean
+        left: AdSlot
+        right: AdSlot
+    }
+    popup: {
+        enabled: boolean
+        title: string
+        description: string
+        imageUrl: string
+        link: string
+    }
+}
+
+const defaultSettings: SettingsState = {
+    siteName: '',
+    siteDescription: '',
+    maintenanceMode: false,
+    emailNotification: true,
+    autoApproveNovels: false,
+    minWordsPerChapter: 1000,
+    ads: {
+        enabled: false,
+        left: { enabled: false, imageUrl: '', link: '' },
+        right: { enabled: false, imageUrl: '', link: '' },
+    },
+    popup: {
+        enabled: false,
+        title: '',
+        description: '',
+        imageUrl: '',
+        link: '',
+    },
+}
 
 export default function SettingsPage() {
-    const [settings, setSettings] = useState({
-        siteName: '',
-        siteDescription: '',
-        maintenanceMode: false,
-        emailNotification: true,
-        autoApproveNovels: false,
-        minWordsPerChapter: 1000
-    })
+    const [settings, setSettings] = useState<SettingsState>(defaultSettings)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await axios.get('/admin/settings')
-                setSettings(res as any)
+                const res = await axios.get('/admin/settings') as any
+                // Merge với giá trị mặc định để các object lồng nhau luôn tồn tại
+                setSettings({
+                    ...defaultSettings,
+                    ...res,
+                    ads: {
+                        ...defaultSettings.ads,
+                        ...res?.ads,
+                        left: { ...defaultSettings.ads.left, ...res?.ads?.left },
+                        right: { ...defaultSettings.ads.right, ...res?.ads?.right },
+                    },
+                    popup: { ...defaultSettings.popup, ...res?.popup },
+                })
             } catch (error) {
                 toast.error("Không thể tải cài đặt")
             } finally {
@@ -34,6 +83,13 @@ export default function SettingsPage() {
         }
         fetchSettings()
     }, [])
+
+    const updateAdSlot = (side: 'left' | 'right', patch: Partial<AdSlot>) => {
+        setSettings((s) => ({
+            ...s,
+            ads: { ...s.ads, [side]: { ...s.ads[side], ...patch } },
+        }))
+    }
 
     const handleSave = async () => {
         try {
@@ -116,6 +172,81 @@ export default function SettingsPage() {
                         <Label>Số từ tối thiểu/chương</Label>
                         <Input type="number" value={settings.minWordsPerChapter} onChange={(e) => setSettings({...settings, minWordsPerChapter: Number(e.target.value)})} />
                         <p className="text-xs text-muted-foreground">Yêu cầu số từ tối thiểu cho mỗi chương</p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary"><Megaphone className="w-5 h-5"/></div>
+                        <div>
+                            <CardTitle>Quảng cáo 2 bên</CardTitle>
+                            <CardDescription>Banner hiển thị cố định ở lề trái và phải (chỉ hiện trên màn hình rộng).</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <Label className="text-base">Bật quảng cáo 2 bên</Label>
+                            <p className="text-sm text-muted-foreground">Công tắc tổng cho cả 2 banner</p>
+                        </div>
+                        <Switch checked={settings.ads.enabled} onCheckedChange={(checked) => setSettings({...settings, ads: {...settings.ads, enabled: checked}})} />
+                    </div>
+
+                    {(['left', 'right'] as const).map((side) => (
+                        <div key={side} className="space-y-3 rounded-lg border p-4">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-base">Banner {side === 'left' ? 'bên trái' : 'bên phải'}</Label>
+                                <Switch checked={settings.ads[side].enabled} onCheckedChange={(checked) => updateAdSlot(side, { enabled: checked })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Ảnh / GIF / Video quảng cáo</Label>
+                                <MediaUpload value={settings.ads[side].imageUrl} onChange={(url) => updateAdSlot(side, { imageUrl: url })} previewClassName="aspect-[3/4]" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Link đích khi click (tracking link Shopee)</Label>
+                                <Input placeholder="https://..." value={settings.ads[side].link} onChange={(e) => updateAdSlot(side, { link: e.target.value })} />
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary"><Sparkles className="w-5 h-5"/></div>
+                        <div>
+                            <CardTitle>Popup chào mừng</CardTitle>
+                            <CardDescription>Hiện ngay khi người dùng vào web (1 lần mỗi phiên), có nút tắt.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <Label className="text-base">Bật popup</Label>
+                            <p className="text-sm text-muted-foreground">Hiển thị popup khi truy cập trang</p>
+                        </div>
+                        <Switch checked={settings.popup.enabled} onCheckedChange={(checked) => setSettings({...settings, popup: {...settings.popup, enabled: checked}})} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Tiêu đề</Label>
+                        <Input value={settings.popup.title} onChange={(e) => setSettings({...settings, popup: {...settings.popup, title: e.target.value}})} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Mô tả</Label>
+                        <Input value={settings.popup.description} onChange={(e) => setSettings({...settings, popup: {...settings.popup, description: e.target.value}})} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Ảnh / GIF / Video popup</Label>
+                        <MediaUpload value={settings.popup.imageUrl} onChange={(url) => setSettings({...settings, popup: {...settings.popup, imageUrl: url}})} previewClassName="aspect-video" />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Link đích khi click (tracking link Shopee)</Label>
+                        <Input placeholder="https://..." value={settings.popup.link} onChange={(e) => setSettings({...settings, popup: {...settings.popup, link: e.target.value}})} />
                     </div>
                 </CardContent>
             </Card>

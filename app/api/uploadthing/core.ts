@@ -45,6 +45,24 @@ export const ourFileRouter = {
             return { url: file.ufsUrl };
         }),
 
+    adMedia: f({
+        image: {
+            maxFileSize: "16MB",
+            maxFileCount: 1,
+        },
+        video: {
+            maxFileSize: "64MB",
+            maxFileCount: 1,
+        },
+    })
+        .middleware(async () => {
+            return {};
+        })
+        .onUploadComplete(async ({ file }) => {
+            console.log("Ad media uploaded:", file.ufsUrl);
+            return { url: file.ufsUrl };
+        }),
+
     chapterAudio: f({
         audio: {
             maxFileSize: "32MB",
