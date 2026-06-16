@@ -21,19 +21,19 @@ export default function WelcomePopup() {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
 
-    // Chỉ hiện ở trang chi tiết truyện và trang đọc chương (đều bắt đầu bằng /novel/)
-    const isNovelPage = Boolean(pathname?.startsWith("/novel/"));
+    // Hiện ở trang chủ ("/") và trang chi tiết truyện / đọc chương ("/novel/*")
+    const isPopupPage = pathname === "/" || Boolean(pathname?.startsWith("/novel/"));
 
     useEffect(() => {
-        // Rời khỏi trang truyện thì đóng popup
-        if (!popup?.enabled || !isNovelPage) {
+        // Rời khỏi các trang trên thì đóng popup
+        if (!popup?.enabled || !isPopupPage) {
             setOpen(false);
             return;
         }
-        // Hiện lại mỗi lần vào / chuyển trang truyện (KHÔNG giới hạn 1 lần/phiên)
+        // Hiện lại mỗi lần vào / chuyển trang (KHÔNG giới hạn 1 lần/phiên)
         const timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
         return () => clearTimeout(timer);
-    }, [popup?.enabled, isNovelPage, pathname]);
+    }, [popup?.enabled, isPopupPage, pathname]);
 
     if (!popup?.enabled) return null;
 
