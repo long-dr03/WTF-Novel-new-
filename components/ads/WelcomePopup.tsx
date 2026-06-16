@@ -12,7 +12,6 @@ import {
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import { AdMedia } from "@/components/ads/AdMedia";
 
-const SESSION_KEY = "welcome_popup_seen";
 // Hoãn nhẹ trước khi hiện (tránh "intrusive interstitial" mà Google phạt SEO
 // khi popup che nội dung ngay lúc vừa vào trang trên mobile).
 const SHOW_DELAY_MS = 1500;
@@ -26,17 +25,15 @@ export default function WelcomePopup() {
     const isNovelPage = Boolean(pathname?.startsWith("/novel/"));
 
     useEffect(() => {
-        if (!popup?.enabled || !isNovelPage || typeof window === "undefined") return;
-        // Chỉ hiện 1 lần mỗi phiên truy cập để tránh làm phiền người dùng
-        if (sessionStorage.getItem(SESSION_KEY)) return;
-
-        const timer = setTimeout(() => {
-            setOpen(true);
-            sessionStorage.setItem(SESSION_KEY, "1");
-        }, SHOW_DELAY_MS);
-
+        // Rời khỏi trang truyện thì đóng popup
+        if (!popup?.enabled || !isNovelPage) {
+            setOpen(false);
+            return;
+        }
+        // Hiện lại mỗi lần vào / chuyển trang truyện (KHÔNG giới hạn 1 lần/phiên)
+        const timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
         return () => clearTimeout(timer);
-    }, [popup?.enabled, isNovelPage]);
+    }, [popup?.enabled, isNovelPage, pathname]);
 
     if (!popup?.enabled) return null;
 
