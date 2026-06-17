@@ -16,7 +16,9 @@ import {
     BookOpen,
     ArrowLeft,
     Sun,
-    Moon
+    Moon,
+    Flag,
+    ArrowDown
 } from "lucide-react"
 import {
     DropdownMenu,
@@ -26,11 +28,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService } from "@/services/novelService"
+import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService, createReportService } from "@/services/novelService"
 import { AudioSidebar } from "@/components/reader/AudioSidebar"
 import { CommentSection } from "@/components/CommentSection"
 import { Headphones } from "lucide-react"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
 interface Chapter {
     _id: string
@@ -43,6 +49,8 @@ interface Chapter {
     views: number
     status: string
     audioUrl?: string | null
+    publishedAt?: string
+    createdAt?: string
 }
 
 interface Novel {
@@ -84,6 +92,89 @@ useEffect(() => {
     const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
         setReadingTheme(theme)
     }
+
+    // Auto Scroll State
+    const [autoScrollSpeed, setAutoScrollSpeed] = useState<number>(0) // 0 is stopped, 1-10 speed
+    const [isScrollPanelOpen, setIsScrollPanelOpen] = useState(false)
+
+    // Report State
+    const [reportReason, setReportReason] = useState("Lỗi chính tả")
+    const [reportDescription, setReportDescription] = useState("")
+    const [isReportOpen, setIsReportOpen] = useState(false)
+    const [reportLoading, setReportLoading] = useState(false)
+
+    const handleReportSubmit = async () => {
+        if (!user) {
+            toast.error("Vui lòng đăng nhập để gửi báo cáo")
+            return
+        }
+        if (!reportDescription.trim()) {
+            toast.error("Vui lòng nhập mô tả chi tiết lỗi/vi phạm")
+            return
+        }
+        setReportLoading(true)
+        try {
+            const res = await createReportService(novelId, chapter?._id, reportReason, reportDescription)
+            if (res) {
+                toast.success("Báo cáo lỗi chương đã được gửi thành công")
+                setIsReportOpen(false)
+                setReportDescription("")
+            } else {
+                toast.error("Không thể gửi báo cáo")
+            }
+        } catch (e) {
+            toast.error("Có lỗi xảy ra khi gửi báo cáo")
+        } finally {
+            setReportLoading(false)
+        }
+    }
+
+    // Auto Scroll Logic
+    useEffect(() => {
+        if (autoScrollSpeed === 0) return;
+        
+        let lastTime = performance.now();
+        let frameId: number;
+        
+        const scroll = (time: number) => {
+            const delta = time - lastTime;
+            lastTime = time;
+            
+            // Speed formula: speed * factor (e.g. 0.03 pixels per millisecond)
+            const pixelsToScroll = autoScrollSpeed * 0.03 * delta;
+            window.scrollBy(0, pixelsToScroll);
+            
+            // Stop if we hit the bottom of the page
+            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+                setAutoScrollSpeed(0);
+                return;
+            }
+            
+            frameId = requestAnimationFrame(scroll);
+        };
+        
+        frameId = requestAnimationFrame(scroll);
+        return () => cancelAnimationFrame(frameId);
+    }, [autoScrollSpeed]);
+
+    // Pause Auto Scroll on user interactions
+    useEffect(() => {
+        if (autoScrollSpeed === 0) return;
+        
+        const handleUserInteraction = () => {
+            setAutoScrollSpeed(0);
+        };
+        
+        window.addEventListener('wheel', handleUserInteraction, { passive: true });
+        window.addEventListener('touchmove', handleUserInteraction, { passive: true });
+        window.addEventListener('keydown', handleUserInteraction, { passive: true });
+        
+        return () => {
+            window.removeEventListener('wheel', handleUserInteraction);
+            window.removeEventListener('touchmove', handleUserInteraction);
+            window.removeEventListener('keydown', handleUserInteraction);
+        };
+    }, [autoScrollSpeed]);
     useEffect(() => {
         const fetchData = async () => {
             if (!novelId || !chapterNumber) return
@@ -333,6 +424,17 @@ useEffect(() => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
+                            {/* Report Chapter Button */}
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                onClick={() => setIsReportOpen(true)}
+                                title="Báo lỗi chương"
+                            >
+                                <Flag className="h-4 w-4" />
+                            </Button>
+
                             <Button variant="ghost" size="icon" asChild>
                                 <Link href="/">
                                     <Home className="h-4 w-4" />
@@ -441,6 +543,130 @@ useEffect(() => {
                     autoNext={autoNext}
                     onAutoNextChange={setAutoNext}
                     isDark={readingTheme === 'dark'}
+                />
+            )}
+
+            {/* Auto-Scroll Float Panel */}
+            <div className="fixed bottom-24 right-6 z-40 flex flex-col items-center gap-2">
+                {isScrollPanelOpen && (
+                    <div className="bg-background/95 backdrop-blur border rounded-full p-2 shadow-2xl flex flex-col items-center gap-2 mb-2 animate-in slide-in-from-bottom-5 duration-200">
+                        <span className="text-[10px] font-semibold opacity-70 px-2">Cuộn: V{autoScrollSpeed}</span>
+                        <div className="flex flex-col gap-1">
+                            {[10, 8, 6, 4, 2].map((speed) => (
+                                <Button
+                                    key={speed}
+                                    size="icon"
+                                    variant={autoScrollSpeed === speed ? "default" : "ghost"}
+                                    className="h-8 w-8 rounded-full text-xs"
+                                    onClick={() => setAutoScrollSpeed(speed)}
+                                >
+                                    {speed}
+                                </Button>
+                            ))}
+                        </div>
+                        <DropdownMenuSeparator />
+                        <Button
+                            size="icon"
+                            variant="destructive"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => setAutoScrollSpeed(0)}
+                        >
+                            ✕
+                        </Button>
+                    </div>
+                )}
+                <Button
+                    onClick={() => setIsScrollPanelOpen(!isScrollPanelOpen)}
+                    className={cn(
+                        "h-12 w-12 rounded-full shadow-xl bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800 transition-all active:scale-95",
+                        autoScrollSpeed > 0 && "animate-pulse border-primary"
+                    )}
+                    size="icon"
+                    title="Tự động cuộn"
+                >
+                    <ArrowDown className="w-5 h-5" />
+                </Button>
+            </div>
+
+            {/* Report Dialog Modal */}
+            <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Flag className="h-5 w-5 text-red-500" />
+                            Báo lỗi chương
+                        </DialogTitle>
+                        <DialogDescription>
+                            Giúp tác giả sửa lỗi dịch thuật, lỗi chính tả hoặc lỗi hiển thị của chương này.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Lỗi gặp phải</label>
+                            <Select value={reportReason} onValueChange={setReportReason}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn lỗi" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Lỗi chính tả">Lỗi chính tả / Lặp từ</SelectItem>
+                                    <SelectItem value="Lỗi dịch thuật">Lỗi dịch thuật / Khó hiểu</SelectItem>
+                                    <SelectItem value="Lỗi hiển thị / Định dạng">Lỗi hiển thị / Định dạng</SelectItem>
+                                    <SelectItem value="Chương trống / Trùng chương">Chương trống / Trùng chương</SelectItem>
+                                    <SelectItem value="Khác">Lý do khác</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Mô tả chi tiết</label>
+                            <Textarea 
+                                placeholder="Hãy mô tả chi tiết lỗi để tác giả dễ dàng sửa đổi..." 
+                                value={reportDescription}
+                                onChange={(e) => setReportDescription(e.target.value)}
+                                className="min-h-[100px]"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsReportOpen(false)} disabled={reportLoading}>Hủy</Button>
+                        <Button onClick={handleReportSubmit} disabled={reportLoading} className="bg-red-600 hover:bg-red-700 text-white">
+                            {reportLoading ? "Đang gửi..." : "Gửi báo cáo"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* SEO JSON-LD Article/BlogPosting Schema Markup */}
+            {chapter && novel && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "BlogPosting",
+                            "headline": `Chương ${chapter.chapterNumber}: ${chapter.title} - ${novel.title}`,
+                            "description": `Đọc truyện ${novel.title} chương ${chapter.chapterNumber} bản dịch mới nhất, mượt mà nhất.`,
+                            "articleBody": chapter.content.replace(/<[^>]*>/g, '').substring(0, 150),
+                            "wordCount": chapter.wordCount,
+                            "datePublished": chapter.publishedAt || chapter.createdAt || new Date().toISOString(),
+                            "author": {
+                                "@type": "Person",
+                                "name": "WTF Novel"
+                            },
+                            "publisher": {
+                                "@type": "Organization",
+                                "name": "WTF Novel",
+                                "logo": {
+                                    "@type": "ImageObject",
+                                    "url": "/favicon.ico"
+                                }
+                            },
+                            "isPartOf": {
+                                "@type": "Book",
+                                "name": novel.title,
+                                "url": `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/novel/${novelId}`
+                            }
+                        })
+                    }}
                 />
             )}
         </div>

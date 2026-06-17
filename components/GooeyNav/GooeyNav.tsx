@@ -15,6 +15,7 @@ export interface GooeyNavProps {
   timeVariance?: number;
   colors?: number[];
   initialActiveIndex?: number;
+  onChange?: (index: number) => void;
 }
 
 const GooeyNav: React.FC<GooeyNavProps> = ({
@@ -25,7 +26,8 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
   particleR = 100,
   timeVariance = 300,
   colors = [1, 2, 3, 1, 2, 3, 1, 4],
-  initialActiveIndex = 0
+  initialActiveIndex = 0,
+  onChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLUListElement>(null);
@@ -115,6 +117,10 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
 
     setActiveIndex(index);
     updateEffectPosition(liEl);
+
+    if (onChange) {
+      onChange(index);
+    }
 
     if (filterRef.current) {
       const particles = filterRef.current.querySelectorAll('.particle');

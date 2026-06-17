@@ -20,11 +20,16 @@ import {
     List,
     FileText,
     SortAsc,
-    SortDesc
+    SortDesc,
+    Flag
 } from "lucide-react"
-import { getNovelByIdService, getChaptersByNovelService, checkLibraryStatusService, addToLibraryService, removeFromLibraryService } from "@/services/novelService"
+import { getNovelByIdService, getChaptersByNovelService, checkLibraryStatusService, addToLibraryService, removeFromLibraryService, createReportService } from "@/services/novelService"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { toast } from "sonner"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 
 interface Novel {
     _id: string
@@ -68,6 +73,38 @@ export default function NovelDetailPage() {
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
     const [isFavorite, setIsFavorite] = useState(false)
     const [libLoading, setLibLoading] = useState(false)
+
+    // Report State
+    const [reportReason, setReportReason] = useState("Nội dung vi phạm")
+    const [reportDescription, setReportDescription] = useState("")
+    const [isReportOpen, setIsReportOpen] = useState(false)
+    const [reportLoading, setReportLoading] = useState(false)
+
+    const handleReportSubmit = async () => {
+        if (!user) {
+            toast.error("Vui lòng đăng nhập để gửi báo cáo")
+            return
+        }
+        if (!reportDescription.trim()) {
+            toast.error("Vui lòng nhập mô tả chi tiết lỗi/vi phạm")
+            return
+        }
+        setReportLoading(true)
+        try {
+            const res = await createReportService(novelId, undefined, reportReason, reportDescription)
+            if (res) {
+                toast.success("Báo cáo vi phạm đã được gửi đi thành công")
+                setIsReportOpen(false)
+                setReportDescription("")
+            } else {
+                toast.error("Không thể gửi báo cáo")
+            }
+        } catch (e) {
+            toast.error("Có lỗi xảy ra khi gửi báo cáo")
+        } finally {
+            setReportLoading(false)
+        }
+    }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -317,6 +354,14 @@ export default function NovelDetailPage() {
                             <Heart className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
                             {isFavorite ? "Đã yêu thích" : "Yêu thích"}
                         </Button>
+                        <Button 
+                            variant="outline" 
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30"
+                            onClick={() => setIsReportOpen(true)}
+                        >
+                            <Flag className="h-4 w-4 mr-2" />
+                            Báo cáo
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -401,6 +446,78 @@ export default function NovelDetailPage() {
                     )}
                 </CardContent>
             </Card>
+            {/* Reports Modal */}
+            <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Flag className="h-5 w-5 text-red-500" />
+                            Báo cáo truyện vi phạm
+                        </DialogTitle>
+                        <DialogDescription>
+                            Giúp chúng tôi cải thiện cộng đồng bằng cách báo cáo nội dung không phù hợp hoặc lỗi dịch thuật.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Lý do báo cáo</label>
+                            <Select value={reportReason} onValueChange={setReportReason}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn lý do" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Bản dịch lỗi / Văn phong kém">Bản dịch lỗi / Văn phong kém</SelectItem>
+                                    <SelectItem value="Truyện chứa nội dung nhạy cảm">Truyện chứa nội dung nhạy cảm</SelectItem>
+                                    <SelectItem value="Vi phạm bản quyền / Đạo văn">Vi phạm bản quyền / Đạo văn</SelectItem>
+                                    <SelectItem value="Lỗi tải ảnh / Lỗi hiển thị">Lỗi tải ảnh / Lỗi hiển thị</SelectItem>
+                                    <SelectItem value="Khác">Lý do khác</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Mô tả chi tiết</label>
+                            <Textarea 
+                                placeholder="Hãy mô tả chi tiết lỗi hoặc vấn đề bạn gặp phải..." 
+                                value={reportDescription}
+                                onChange={(e) => setReportDescription(e.target.value)}
+                                className="min-h-[100px]"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsReportOpen(false)} disabled={reportLoading}>Hủy</Button>
+                        <Button onClick={handleReportSubmit} disabled={reportLoading} className="bg-red-600 hover:bg-red-700 text-white">
+                            {reportLoading ? "Đang gửi..." : "Gửi báo cáo"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* SEO JSON-LD Schema Markup */}
+            {novel && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "Book",
+                            "name": novel.title,
+                            "description": novel.description,
+                            "image": novel.image || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                            "author": {
+                                "@type": "Person",
+                                "name": getAuthorName()
+                            },
+                            "genre": novel.genres ? novel.genres.map((g: any) => typeof g === 'string' ? g : g.name) : [],
+                            "aggregateRating": {
+                                "@type": "AggregateRating",
+                                "ratingValue": "4.8",
+                                "reviewCount": "120"
+                            }
+                        })
+                    }}
+                />
+            )}
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary, createReport, getReports, updateReportStatus, getAuthorStats } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -314,6 +314,42 @@ const removeFromLibraryService = async (novelId: string, type: 'history' | 'favo
     }
 }
 
+const createReportService = async (novelId?: string, chapterId?: string, reason?: string, description?: string) => {
+    try {
+        const response = await createReport(novelId, chapterId, reason, description);
+        return extractApiData(response);
+    } catch (error) {
+        return null;
+    }
+}
+
+const getReportsService = async () => {
+    try {
+        const response = await getReports();
+        return extractApiData(response);
+    } catch (error) {
+        return [];
+    }
+}
+
+const updateReportStatusService = async (reportId: string, status: 'resolved' | 'dismissed') => {
+    try {
+        const response = await updateReportStatus(reportId, status);
+        return extractApiData(response);
+    } catch (error) {
+        return null;
+    }
+}
+
+const getAuthorStatsService = async () => {
+    try {
+        const response = await getAuthorStats();
+        return extractApiData(response);
+    } catch (error) {
+        return null;
+    }
+}
+
 export {
     createNovelService,
     uploadChapterService,
@@ -331,7 +367,11 @@ export {
     addToLibraryService,
     getLibraryService,
     checkLibraryStatusService,
-    removeFromLibraryService
+    removeFromLibraryService,
+    createReportService,
+    getReportsService,
+    updateReportStatusService,
+    getAuthorStatsService
 }
 
 export type { Novel, Chapter, ChapterData, NovelData }

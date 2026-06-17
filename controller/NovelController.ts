@@ -107,6 +107,22 @@ const removeFromLibrary = (novelId: string, type: 'history' | 'favorite') => {
     return axios.delete(`/library/${novelId}`, { params: { type } });
 };
 
+const createReport = (novelId?: string, chapterId?: string, reason?: string, description?: string) => {
+    return axios.post('/reports', { novelId, chapterId, reason, description });
+};
+
+const getReports = () => {
+    return axios.get('/admin/reports');
+};
+
+const updateReportStatus = (reportId: string, status: 'resolved' | 'dismissed') => {
+    return axios.put(`/admin/reports/${reportId}`, { status });
+};
+
+const getAuthorStats = () => {
+    return axios.get('/author/stats');
+};
+
 export {
     createNovel,
     uploadChapter,
@@ -125,5 +141,9 @@ export {
     addToLibrary,
     getLibrary,
     checkLibraryStatus,
-    removeFromLibrary
+    removeFromLibrary,
+    createReport,
+    getReports,
+    updateReportStatus,
+    getAuthorStats
 };

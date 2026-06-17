@@ -45,6 +45,7 @@ function SearchPageContent() {
     const initialGenres = searchParams.get('genre') ? searchParams.get('genre')!.split(',') : []
     const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres)
     const [sort, setSort] = useState('newest')
+    const [statusFilter, setStatusFilter] = useState('all')
     
     const [openGenre, setOpenGenre] = useState(false)
 
@@ -63,10 +64,14 @@ function SearchPageContent() {
         try {
             const params: any = {
                 search: query,
-                limit: 20
+                limit: 20,
+                sort: sort
             }
             if (selectedGenres.length > 0) {
                 params.genre = selectedGenres.join(',')
+            }
+            if (statusFilter && statusFilter !== 'all') {
+                params.status = statusFilter
             }
 
             // Call public endpoint
@@ -93,12 +98,14 @@ function SearchPageContent() {
             fetchNovels()
         }, 500)
         return () => clearTimeout(timer)
-    }, [query, selectedGenres, sort])
+    }, [query, selectedGenres, sort, statusFilter])
 
     const handleSearch = () => {
         const params = new URLSearchParams()
         if (query) params.set('q', query)
         if (selectedGenres.length > 0) params.set('genre', selectedGenres.join(','))
+        if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
+        if (sort) params.set('sort', sort)
         router.push(`/search?${params.toString()}`)
     }
 
@@ -167,7 +174,21 @@ function SearchPageContent() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <div className="w-full md:w-[200px] space-y-2">
+                <div className="w-full md:w-[150px] space-y-2">
+                    <label className="text-sm font-medium">Trạng thái</label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Tất cả" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả</SelectItem>
+                            <SelectItem value="ongoing">Đang ra</SelectItem>
+                            <SelectItem value="completed">Hoàn thành</SelectItem>
+                            <SelectItem value="hiatus">Tạm ngưng</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="w-full md:w-[180px] space-y-2">
                     <label className="text-sm font-medium">Sắp xếp</label>
                     <Select value={sort} onValueChange={setSort}>
                         <SelectTrigger>
@@ -175,8 +196,8 @@ function SearchPageContent() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="newest">Mới nhất</SelectItem>
-                            <SelectItem value="views">Lượt xem</SelectItem>
-                            <SelectItem value="featured">Nổi bật</SelectItem>
+                            <SelectItem value="popular">Đọc nhiều</SelectItem>
+                            <SelectItem value="updated">Mới cập nhật</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -213,7 +234,7 @@ function SearchPageContent() {
             ) : novels?.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {novels.map(novel => (
-                        <Link href={`/reader/${novel._id}`} key={novel._id} className="group">
+                        <Link href={`/novel/${novel._id}`} key={novel._id} className="group">
                             <Card className="overflow-hidden border-none bg-transparent shadow-none hover:scale-[1.02] transition-transform">
                                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-3">
                                     <Image
