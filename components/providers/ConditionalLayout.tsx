@@ -4,6 +4,9 @@ import { usePathname } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import ClickSpark from "@/components/ui/ClickSpark/ClickSpark";
+import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
+import SideAds from "@/components/ads/SideAds";
+import WelcomePopup from "@/components/ads/WelcomePopup";
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,7 +17,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <SiteSettingsProvider>
       <Header />
       <ClickSpark
         sparkColor='#fff'
@@ -28,6 +31,8 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
         </main>
       </ClickSpark>
       <Footer />
-    </>
+      <SideAds />
+      <WelcomePopup />
+    </SiteSettingsProvider>
   );
 }

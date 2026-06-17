@@ -1,7 +1,13 @@
 import axios from "axios";
 
+// QUAN TRỌNG: chỉ biến có tiền tố NEXT_PUBLIC_ mới được expose ra trình duyệt.
+// Vì axios này chạy ở client nên phải dùng NEXT_PUBLIC_BACKEND_URL, nếu không
+// nó sẽ rơi về URL production và gọi sai backend.
 const instance = axios.create({
-    baseURL: process.env.BACKEND_URL || "https://wtfnovel.wtfdev.qzz.io/",
+    baseURL:
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        process.env.BACKEND_URL ||
+        "https://wtfnovel.wtfdev.qzz.io/",
     withCredentials: true
 });
 
