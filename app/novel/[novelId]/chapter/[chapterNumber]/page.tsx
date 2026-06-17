@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { InlineAd } from "@/components/ads/InlineAd"
 
 interface Chapter {
     _id: string
@@ -477,6 +478,11 @@ useEffect(() => {
                         }}
                         dangerouslySetInnerHTML={{ __html: chapter.content }}
                     />
+                </div>
+
+                {/* Quảng cáo tài trợ */}
+                <div className="my-8 max-w-4xl mx-auto">
+                    <InlineAd />
                 </div>
 
                 {/* Navigation */}

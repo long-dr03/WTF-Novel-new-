@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { InlineAd } from "@/components/ads/InlineAd";
 
 // Các tab danh mục
 const categoryTabs = [
@@ -428,6 +429,11 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Quảng cáo tài trợ */}
+      <section className="w-full max-w-[1300px] px-4 py-4">
+        <InlineAd />
+      </section>
       
       {/* Section Mới cập nhật (using existing API for now) */}
        <section className="w-full max-w-[1300px] px-4 py-12">
