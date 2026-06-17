@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Banner_carousel } from "@/components/carousel";
 import CardNovel from "@/components/cardNovel";
-import GooeyNav from "@/components/GooeyNav/GooeyNav";
+import { SectionHeader } from "@/components/SectionHeader";
 import { getPopularNovelsService, getPublicNovelsService, getLibraryService, createReportService, Novel } from "@/services/novelService";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Loader2, Clock, ChevronRight, Headphones, Volume2 } from "lucide-react";
@@ -200,21 +200,21 @@ export default function Home() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <section className="w-full max-w-[1300px] py-8 px-4">
+      <section className="container mx-auto py-8 px-4">
         <Banner_carousel novels={featuredNovels} />
       </section>
 
       {/* Lịch sử đọc gần đây */}
       {history.length > 0 && (
-        <section className="w-full max-w-[1300px] px-4 py-6">
-          <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur">
+        <section className="container mx-auto px-4 py-6">
+          <div className="bg-zinc-100/50 border border-zinc-200/80 dark:bg-zinc-900/40 dark:border-zinc-800/80 rounded-2xl p-6 backdrop-blur">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary animate-pulse" />
               Đọc tiếp gần đây
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {history.map((item) => (
-                <div key={item._id} className="flex gap-3 bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/30 hover:border-primary/30 transition-all hover:scale-[1.02] group">
+                <div key={item._id} className="flex gap-3 bg-white/80 dark:bg-zinc-950/40 p-3 rounded-xl border border-zinc-200/60 dark:border-zinc-800/30 hover:border-primary/30 transition-all hover:scale-[1.02] group">
                   <div className="relative w-12 h-18 rounded overflow-hidden flex-shrink-0 bg-muted">
                     <Image
                       src={item.novel?.image || "/ANIMENETFLIX-FA.webp"}
@@ -248,27 +248,23 @@ export default function Home() {
       )}
 
       {/* Section Danh mục với GooeyNav */}
-      <section className="w-full max-w-[1300px] px-4 py-12">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <h2 className="text-3xl font-bold">Truyện mới nhất</h2>
-
-          <GooeyNav
-            items={categoryTabs}
-            animationTime={600}
-            particleCount={15}
-            particleDistances={[90, 10]}
-            particleR={100}
-            timeVariance={300}
-            colors={[1, 2, 3]}
-            initialActiveIndex={activeCategory}
-            onChange={(idx) => {
-              setActiveCategory(idx);
-              fetchCategoryNovels(categoryTabs[idx].slug);
-            }}
-          />
-
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <section className="container mx-auto px-4 py-12">
+        <SectionHeader
+          title="Truyện mới nhất"
+          items={categoryTabs}
+          animationTime={600}
+          particleCount={15}
+          particleDistances={[90, 10]}
+          particleR={100}
+          timeVariance={300}
+          colors={[1, 2, 3]}
+          activeIndex={activeCategory}
+          onChange={(idx) => {
+            setActiveCategory(idx);
+            fetchCategoryNovels(categoryTabs[idx].slug);
+          }}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {loadingCategory ? (
             <div className="col-span-full flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -292,27 +288,23 @@ export default function Home() {
       </section>
 
       {/* Section Xếp hạng với GooeyNav */}
-      <section className="w-full max-w-[1300px] px-4 py-12 bg-gradient-to-b from-transparent via-slate-900/50 to-transparent">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <h2 className="text-3xl font-bold">Bảng xếp hạng</h2>
-
-          <GooeyNav
-            items={rankingTabs}
-            animationTime={500}
-            particleCount={20}
-            particleDistances={[80, 15]}
-            particleR={80}
-            timeVariance={250}
-            colors={[2, 3, 4, 2, 3, 4, 2, 1]}
-            initialActiveIndex={activeRanking}
-            onChange={(idx) => {
-              setActiveRanking(idx);
-              fetchRankingNovels(rankingTabs[idx].sort);
-            }}
-          />
-
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <section className="container mx-auto px-4 py-12 bg-gradient-to-b from-transparent via-slate-100/40 dark:via-slate-900/50 to-transparent">
+        <SectionHeader
+          title="Bảng xếp hạng"
+          items={rankingTabs}
+          animationTime={500}
+          particleCount={20}
+          particleDistances={[80, 15]}
+          particleR={80}
+          timeVariance={250}
+          colors={[2, 3, 4, 2, 3, 4, 2, 1]}
+          activeIndex={activeRanking}
+          onChange={(idx) => {
+            setActiveRanking(idx);
+            fetchRankingNovels(rankingTabs[idx].sort);
+          }}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {loadingRanking ? (
             <div className="col-span-full flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -336,27 +328,23 @@ export default function Home() {
       </section>
 
       {/* Section Thể loại hot */}
-      <section className="w-full max-w-[1300px] px-4 py-12">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <h2 className="text-3xl font-bold">Thể loại hot</h2>
-
-          <GooeyNav
-            items={hotGenreTabs}
-            animationTime={550}
-            particleCount={18}
-            particleDistances={[85, 12]}
-            particleR={90}
-            timeVariance={280}
-            colors={[3, 1, 4, 3, 1, 4, 3, 2]}
-            initialActiveIndex={activeHotGenre}
-            onChange={(idx) => {
-              setActiveHotGenre(idx);
-              fetchHotGenreNovels(hotGenreTabs[idx].slug);
-            }}
-          />
-
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <section className="container mx-auto px-4 py-12">
+        <SectionHeader
+          title="Thể loại hot"
+          items={hotGenreTabs}
+          animationTime={550}
+          particleCount={18}
+          particleDistances={[85, 12]}
+          particleR={90}
+          timeVariance={280}
+          colors={[3, 1, 4, 3, 1, 4, 3, 2]}
+          activeIndex={activeHotGenre}
+          onChange={(idx) => {
+            setActiveHotGenre(idx);
+            fetchHotGenreNovels(hotGenreTabs[idx].slug);
+          }}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {loadingHotGenre ? (
             <div className="col-span-full flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -381,7 +369,7 @@ export default function Home() {
 
       {/* Section Thế giới Audio */}
       {audioNovels.length > 0 && (
-        <section className="w-full max-w-[1300px] px-4 py-12">
+        <section className="container mx-auto px-4 py-12">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-2.5 bg-primary/10 rounded-xl text-primary animate-pulse border border-primary/20">
               <Headphones className="w-6 h-6" />
@@ -398,7 +386,7 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {audioNovels.map((novel) => (
               <Link href={`/novel/${novel._id || novel.id}`} key={novel._id || novel.id} className="group">
-                <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl overflow-hidden p-3 hover:border-primary/40 transition-all hover:scale-[1.02] shadow-xl">
+                <div className="bg-zinc-50 border border-zinc-200 dark:bg-zinc-900/40 dark:border-zinc-800/80 rounded-xl overflow-hidden p-3 hover:border-primary/40 transition-all hover:scale-[1.02] shadow-xl">
                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-3">
                     <Image
                       src={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"}
@@ -431,16 +419,16 @@ export default function Home() {
       )}
 
       {/* Quảng cáo tài trợ */}
-      <section className="w-full max-w-[1300px] px-4 py-4">
+      <section className="container mx-auto px-4 py-4">
         <InlineAd />
       </section>
       
       {/* Section Mới cập nhật (using existing API for now) */}
-       <section className="w-full max-w-[1300px] px-4 py-12">
+       <section className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <h2 className="text-3xl font-bold">Mới cập nhật</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {loading ? (
              <div className="col-span-full flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -465,7 +453,7 @@ export default function Home() {
 
       {/* Section Góp ý / Báo lỗi */}
       <section className="w-full bg-muted/30 py-16 mt-8">
-          <div className="max-w-[1300px] mx-auto px-4 text-center">
+          <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl font-bold mb-4">Bạn có ý kiến đóng góp?</h2>
               <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
                   Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện trải nghiệm đọc truyện. 

@@ -110,9 +110,9 @@ const Page = () => {
     }
 
     return (
-        <div className="author-layout my-8 flex gap-6 min-h-[600px] container mx-auto px-4">
-            <div className="author-sidebar rounded-2xl w-64 shrink-0 flex flex-col gap-2 bg-card border shadow-sm h-fit">
-                <div className="author-sidebar-header p-4 flex items-center gap-3 border-b">
+        <div className="author-layout my-8 flex flex-col lg:flex-row gap-6 min-h-[600px] container mx-auto px-4">
+            <div className="author-sidebar rounded-2xl w-full lg:w-64 shrink-0 flex flex-col gap-2 bg-card border shadow-sm h-fit">
+                <div className="hidden lg:flex author-sidebar-header p-4 items-center gap-3 border-b">
                     <Avatar className="author-avatar w-10 h-10 rounded-full overflow-hidden">
                         <AvatarImage src={user.avatar || "https://github.com/shadcn.png"} />
                         <AvatarFallback>{user.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
@@ -123,7 +123,7 @@ const Page = () => {
                     </div>
                 </div>
 
-                <nav className="author-nav flex-1 p-2 space-y-1">
+                <nav className="author-nav flex-1 p-2 flex flex-row lg:flex-col gap-1 overflow-x-auto scrollbar-hidden w-full">
                     {menuItems.map((item) => {
                         const Icon = item.icon
                         return (
@@ -131,7 +131,7 @@ const Page = () => {
                                 key={item.id}
                                 onClick={() => setActiveTab(item.id)}
                                 className={cn(
-                                    "author-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                    "author-nav-item w-auto lg:w-full flex items-center gap-2 lg:gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                                     activeTab === item.id 
                                         ? "bg-primary text-primary-foreground shadow-sm" 
                                         : "hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -144,7 +144,7 @@ const Page = () => {
                     })}
                 </nav>
 
-                <div className="author-sidebar-footer p-2 border-t">
+                <div className="hidden lg:block author-sidebar-footer p-2 border-t">
                     <button className="author-nav-item logout w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
                         <LogOut className="h-4 w-4" />
                         <span>Đăng xuất</span>

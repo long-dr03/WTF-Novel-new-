@@ -45,6 +45,13 @@ export default function WelcomePopup() {
             <DialogContent
                 aria-describedby={undefined}
                 className="overflow-hidden p-0 sm:max-w-md"
+                onPointerDownOutside={(e) => {
+                    if (popup.link) {
+                        e.preventDefault();
+                        window.open(popup.link, "_blank", "nofollow sponsored noopener noreferrer");
+                        setOpen(false);
+                    }
+                }}
             >
                 <span className="absolute left-2 top-2 z-10 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
                     Quảng cáo

@@ -301,9 +301,10 @@ export function AudioSidebar({
             )}
             
             <div className={cn(
-                "fixed right-0 w-[320px] shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col font-sans z-40",
-                // Mobile: full height top-0, controlled by open. Desktop: top-14 below header, always visible
-                isOpen ? "translate-x-0 top-0 h-full z-[60]" : "translate-x-full lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)]",
+                "fixed right-0 w-[320px] shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col font-sans",
+                // Top position: always top-0 on mobile, top-14 on desktop to sit below header. Height: h-full on mobile, h-[calc(100vh-3.5rem)] on desktop.
+                "top-0 h-full lg:top-14 lg:h-[calc(100vh-3.5rem)]",
+                isOpen ? "translate-x-0 z-[60]" : "translate-x-full z-45",
                 isDark ? "bg-stone-950 border-stone-800 text-stone-100" : "bg-white border-stone-200 text-stone-900",
                 "border-l"
             )}>
@@ -312,8 +313,8 @@ export function AudioSidebar({
                     <h2 className="font-semibold text-lg flex items-center gap-2">
                         <Headphones className="w-5 h-5" /> Trình phát
                     </h2>
-                    {/* Close button - visible only on mobile/tablet */}
-                    <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full lg:hidden">
+                    {/* Close button */}
+                    <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
                         <X className="w-5 h-5" />
                     </Button>
                 </div>
@@ -361,58 +362,66 @@ export function AudioSidebar({
                             </div>
 
                             {/* Main Controls */}
-                            <div className="space-y-3">
-                                <div className="space-y-1.5">
-                                    <Slider
-                                        value={[currentTime]}
-                                        max={duration || 100}
-                                        step={1}
-                                        onValueChange={handleSeek}
-                                        className="cursor-pointer"
-                                    />
-                                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-                                        <span>{formatTime(currentTime)}</span>
-                                        <span>{formatTime(duration)}</span>
+                            {audioUrl ? (
+                                <div className="space-y-3">
+                                    <div className="space-y-1.5">
+                                        <Slider
+                                            value={[currentTime]}
+                                            max={duration || 100}
+                                            step={1}
+                                            onValueChange={handleSeek}
+                                            className="cursor-pointer"
+                                        />
+                                        <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                                            <span>{formatTime(currentTime)}</span>
+                                            <span>{formatTime(duration)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-center gap-6">
+                                        <Button variant="ghost" size="icon" disabled={!hasPrev} onClick={onPrev} className="h-8 w-8">
+                                            <SkipBack className="w-4 h-4" />
+                                        </Button>
+                                        <Button 
+                                            size="icon" 
+                                            className="h-10 w-10 rounded-full shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
+                                            onClick={togglePlay}
+                                        >
+                                            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                                        </Button>
+                                        <Button variant="ghost" size="icon" disabled={!hasNext} onClick={onNext} className="h-8 w-8">
+                                            <SkipForward className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+
+                                    {/* Speed & Volume Row */}
+                                    <div className="flex items-center justify-between gap-2">
+                                         <Button variant="ghost" size="sm" 
+                                            className="h-7 text-[10px] font-mono border rounded-full px-2 min-w-[3rem]"
+                                            onClick={() => {
+                                                const rates = [0.75, 1, 1.25, 1.5, 2];
+                                                const idx = rates.indexOf(playbackRate);
+                                                setPlaybackRate(rates[(idx + 1) % rates.length]);
+                                            }}
+                                         >
+                                            {playbackRate}x
+                                         </Button>
+                                         <div className="flex items-center gap-2 flex-1 justify-end max-w-[100px]">
+                                             <Volume2 className="w-3.5 h-3.5 text-muted-foreground shrink-0"/>
+                                             <Slider value={[volume]} max={1} step={0.1} onValueChange={(v) => {
+                                                 setVolume(v[0]);
+                                                 if (audioRef.current) audioRef.current.volume = v[0];
+                                             }} />
+                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="flex items-center justify-center gap-6">
-                                    <Button variant="ghost" size="icon" disabled={!hasPrev} onClick={onPrev} className="h-8 w-8">
-                                        <SkipBack className="w-4 h-4" />
-                                    </Button>
-                                    <Button 
-                                        size="icon" 
-                                        className="h-10 w-10 rounded-full shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
-                                        onClick={togglePlay}
-                                    >
-                                        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                                    </Button>
-                                    <Button variant="ghost" size="icon" disabled={!hasNext} onClick={onNext} className="h-8 w-8">
-                                        <SkipForward className="w-4 h-4" />
-                                    </Button>
+                            ) : (
+                                <div className="text-center py-5 px-3 rounded-xl bg-stone-100/50 dark:bg-stone-900/40 border border-dashed border-stone-200 dark:border-stone-800">
+                                    <VolumeX className="w-6 h-6 mx-auto mb-2 text-muted-foreground opacity-60 animate-pulse" />
+                                    <p className="text-xs font-semibold opacity-90">Chương này chưa có giọng đọc</p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">Bật Nhạc nền bên dưới để nghe nhạc lúc đọc nhé!</p>
                                 </div>
-
-                                {/* Speed & Volume Row */}
-                                <div className="flex items-center justify-between gap-2">
-                                     <Button variant="ghost" size="sm" 
-                                        className="h-7 text-[10px] font-mono border rounded-full px-2 min-w-[3rem]"
-                                        onClick={() => {
-                                            const rates = [0.75, 1, 1.25, 1.5, 2];
-                                            const idx = rates.indexOf(playbackRate);
-                                            setPlaybackRate(rates[(idx + 1) % rates.length]);
-                                        }}
-                                     >
-                                        {playbackRate}x
-                                     </Button>
-                                     <div className="flex items-center gap-2 flex-1 justify-end max-w-[100px]">
-                                         <Volume2 className="w-3.5 h-3.5 text-muted-foreground shrink-0"/>
-                                         <Slider value={[volume]} max={1} step={0.1} onValueChange={(v) => {
-                                             setVolume(v[0]);
-                                             if (audioRef.current) audioRef.current.volume = v[0];
-                                         }} />
-                                     </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 

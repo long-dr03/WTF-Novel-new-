@@ -36,12 +36,32 @@
 
 .gooey-nav-container {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .gooey-nav-container nav {
   display: flex;
   position: relative;
   transform: translate3d(0, 0, 0.01px);
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  padding: 4px 0;
+}
+
+.gooey-nav-container nav::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.gooey-nav-scroll-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: max-content;
 }
 
 .gooey-nav-container nav ul {
@@ -52,12 +72,13 @@
   margin: 0;
   position: relative;
   z-index: 3;
-  color: white;
-  text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  color: #4b5563; /* zinc-600 */
+  background: rgba(0, 0, 0, 0.04);
   backdrop-filter: blur(10px);
   border-radius: 100vw;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  width: max-content;
 }
 
 .gooey-nav-container nav ul li {
@@ -70,11 +91,12 @@
     box-shadow 0.3s ease,
     transform 0.2s ease;
   box-shadow: 0 0 0.5px 1.5px transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.55);
+  z-index: 2; /* Render in front of gooey background */
 }
 
 .gooey-nav-container nav ul li:hover {
-  color: white;
+  color: black;
   transform: translateY(-1px);
 }
 
@@ -104,7 +126,7 @@
 }
 
 .gooey-nav-container nav ul li.active {
-  color: black;
+  color: transparent;
   text-shadow: none;
 }
 
@@ -130,6 +152,7 @@
   color: white;
   transition: color 0.3s ease;
   font-weight: 600;
+  z-index: 4; /* Render on top of normal li text (which is inside ul with z-index 3) */
 }
 
 .gooey-nav-container .effect.text.active {
@@ -137,8 +160,8 @@
 }
 
 .gooey-nav-container .effect.filter {
-  filter: blur(7px) contrast(100) blur(0);
-  mix-blend-mode: lighten;
+  filter: none;
+  mix-blend-mode: normal;
 }
 
 .gooey-nav-container .effect.filter::before {
@@ -146,7 +169,8 @@
   position: absolute;
   inset: -75px;
   z-index: -2;
-  background: black;
+  background: transparent;
+  display: none;
 }
 
 .gooey-nav-container .effect.filter::after {
@@ -154,11 +178,11 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(168, 85, 247, 1), rgba(236, 72, 153, 1));
-  transform: scale(0);
-  opacity: 0;
+  transform: scale(1);
+  opacity: 1;
   z-index: -1;
   border-radius: 100vw;
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.5);
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
 }
 
 .gooey-nav-container .effect.active::after {
@@ -170,6 +194,44 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* ==========================================================================
+   Dark Mode Overrides
+   ========================================================================== */
+.dark .gooey-nav-container nav ul {
+  color: white;
+  text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .gooey-nav-container nav ul li {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .gooey-nav-container nav ul li:hover {
+  color: white;
+}
+
+.dark .gooey-nav-container nav ul li.active {
+  color: black;
+}
+
+.dark .gooey-nav-container .effect.filter {
+  filter: blur(7px) contrast(100) blur(0);
+  mix-blend-mode: lighten;
+}
+
+.dark .gooey-nav-container .effect.filter::before {
+  background: black;
+  display: block;
+}
+
+.dark .gooey-nav-container .effect.filter::after {
+  transform: scale(0);
+  opacity: 0;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.5);
 }
 
 .particle,
@@ -251,3 +313,41 @@
     opacity: 0;
   }
 }
+
+@media (max-width: 768px) {
+  /* Hide custom gooey effects and duplicate text overlay completely */
+  .gooey-nav-container .effect {
+    display: none !important;
+  }
+
+  /* Disable gooey morph backdrop scale pseudo-elements */
+  .gooey-nav-container nav ul li::after {
+    display: none !important;
+  }
+
+  /* Style active tab as a normal tab directly */
+  .gooey-nav-container nav ul li.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 1), rgba(236, 72, 153, 1));
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  }
+
+  .gooey-nav-container nav ul li.active a {
+    color: white !important;
+  }
+
+  /* Clean transitions for normal mobile tab states */
+  .gooey-nav-container nav ul li {
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+}
+
+@media (min-width: 768px) {
+  .gooey-nav-container {
+    width: auto;
+  }
+  .gooey-nav-container nav {
+    justify-content: flex-end;
+  }
+}
+

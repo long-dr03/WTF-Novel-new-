@@ -293,7 +293,7 @@ useEffect(() => {
             currentTheme.bg
         )}>
             {/* Fixed Header */}
-            <header className={`sticky top-0 z-50 backdrop-blur border-b transition-colors ${currentTheme.header} ${currentTheme.border}`}>
+            <header className={`sticky top-0 z-40 backdrop-blur border-b transition-colors ${currentTheme.header} ${currentTheme.border} ${currentTheme.text}`}>
                 <div className="container max-w-4xl mx-auto px-4">
                     <div className="flex items-center justify-between h-14">
                         <div className="flex items-center gap-2">
@@ -309,9 +309,9 @@ useEffect(() => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             {/* Theme Selector */}
-                            <div className="flex items-center gap-1 mr-2 p-1 rounded-lg bg-muted/30">
+                            <div className="hidden md:flex items-center gap-1 mr-2 p-1 rounded-lg bg-muted/30">
                                 <button
                                     onClick={() => updateTheme('light')}
                                     className={cn(
@@ -383,6 +383,45 @@ useEffect(() => {
                                     <DropdownMenuLabel>Cài đặt đọc</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <div className="p-2 space-y-4">
+                                        {/* Mobile Theme Selector */}
+                                        <div className="block md:hidden">
+                                            <label className="text-xs font-semibold opacity-70 mb-1.5 block">Giao diện</label>
+                                            <div className="grid grid-cols-3 gap-1 p-0.5 rounded-md bg-muted/40">
+                                                <button
+                                                    onClick={() => updateTheme('light')}
+                                                    className={cn(
+                                                        "py-1 rounded text-[10px] font-medium transition-all",
+                                                        readingTheme === 'light' 
+                                                            ? 'bg-white shadow-sm text-stone-850 font-bold' 
+                                                            : 'text-stone-600 hover:text-stone-850'
+                                                    )}
+                                                >
+                                                    Sáng
+                                                </button>
+                                                <button
+                                                    onClick={() => updateTheme('sepia')}
+                                                    className={cn(
+                                                        "py-1 rounded text-[10px] font-medium transition-all",
+                                                        readingTheme === 'sepia' 
+                                                            ? 'bg-[#faf8f3] shadow-sm text-[#5f4b32] font-bold' 
+                                                            : 'text-[#8c7457] hover:text-[#5f4b32]'
+                                                    )}
+                                                >
+                                                    Sepia
+                                                </button>
+                                                <button
+                                                    onClick={() => updateTheme('dark')}
+                                                    className={cn(
+                                                        "py-1 rounded text-[10px] font-medium transition-all",
+                                                        readingTheme === 'dark' 
+                                                            ? 'bg-[#2d2d2d] shadow-sm text-stone-300 font-bold' 
+                                                            : 'text-stone-550 hover:text-stone-300'
+                                                    )}
+                                                >
+                                                    Tối
+                                                </button>
+                                            </div>
+                                        </div>
                                         {/* Font Size */}
                                         <div>
                                             <label className="text-sm font-medium">Cỡ chữ: {fontSize}px</label>
@@ -436,6 +475,20 @@ useEffect(() => {
                                 <Flag className="h-4 w-4" />
                             </Button>
 
+                            {/* Audio Player Toggle Button */}
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                className={cn(
+                                    "transition-colors",
+                                    isSidebarOpen && "text-primary"
+                                )}
+                                title="Trình phát nhạc / giọng đọc"
+                            >
+                                <Headphones className="h-4 w-4" />
+                            </Button>
+
                             <Button variant="ghost" size="icon" asChild>
                                 <Link href="/">
                                     <Home className="h-4 w-4" />
@@ -449,11 +502,11 @@ useEffect(() => {
             {/* Chapter Content */}
             <main className={cn(
                 "container max-w-4xl mx-auto px-4 py-8 transition-all duration-300",
-                // Add right padding on desktop if audio exists
-                chapter.audioUrl && "lg:pr-[320px] lg:max-w-[none]" 
+                // Shift content to the left when the sidebar is open on desktop
+                isSidebarOpen && "lg:pr-[320px]" 
             )}>
                 <div className={cn(
-                    "rounded-2xl p-8 shadow-sm transition-colors border max-w-4xl mx-auto", // Keep content centered within available space
+                    "rounded-2xl p-4 sm:p-8 shadow-sm transition-colors border max-w-4xl mx-auto", // Keep content centered within available space
                     currentTheme.contentBg, 
                     currentTheme.border
                 )}>
@@ -517,60 +570,75 @@ useEffect(() => {
 
                 {/* Comment Section */}
                 <div className="mt-12">
-                     <CommentSection />
+                     <CommentSection theme={readingTheme} />
                 </div>
             </main>
 
 
             {/* Audio Toggle FAB - Mobile Only */}
-            {chapter.audioUrl && (
-                <Button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="fixed bottom-8 right-6 h-12 w-12 rounded-full shadow-xl z-40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 lg:hidden"
-                    size="icon"
-                >
-                    <Headphones className="w-5 h-5" />
-                </Button>
-            )}
+            <Button
+                onClick={() => setIsSidebarOpen(true)}
+                className="fixed bottom-8 right-6 h-12 w-12 rounded-full shadow-xl z-40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 lg:hidden"
+                size="icon"
+                title="Trình phát nhạc / giọng đọc"
+            >
+                <Headphones className="w-5 h-5" />
+            </Button>
 
             {/* Audio Sidebar */}
-            {chapter.audioUrl && (
-                <AudioSidebar
-                    isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
-                    audioUrl={chapter.audioUrl}
-                    title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
-                    novelTitle={novel?.title}
-                    coverUrl={novel?.coverImage}
-                    onNext={goToNextChapter}
-                    onPrev={goToPrevChapter}
-                    hasNext={hasNextChapter}
-                    hasPrev={hasPrevChapter}
-                    autoNext={autoNext}
-                    onAutoNextChange={setAutoNext}
-                    isDark={readingTheme === 'dark'}
-                />
-            )}
+            <AudioSidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                audioUrl={chapter.audioUrl || null}
+                title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
+                novelTitle={novel?.title}
+                coverUrl={novel?.coverImage}
+                onNext={goToNextChapter}
+                onPrev={goToPrevChapter}
+                hasNext={hasNextChapter}
+                hasPrev={hasPrevChapter}
+                autoNext={autoNext}
+                onAutoNextChange={setAutoNext}
+                isDark={readingTheme === 'dark'}
+            />
 
             {/* Auto-Scroll Float Panel */}
             <div className="fixed bottom-24 right-6 z-40 flex flex-col items-center gap-2">
                 {isScrollPanelOpen && (
-                    <div className="bg-background/95 backdrop-blur border rounded-full p-2 shadow-2xl flex flex-col items-center gap-2 mb-2 animate-in slide-in-from-bottom-5 duration-200">
+                    <div className={cn(
+                        "border rounded-full p-2 shadow-2xl flex flex-col items-center gap-2 mb-2 animate-in slide-in-from-bottom-5 duration-200",
+                        readingTheme === 'light'
+                            ? "bg-white/95 border-stone-200 text-stone-850"
+                            : readingTheme === 'sepia'
+                                ? "bg-[#faf8f3]/95 border-[#e8dcc8] text-[#5f4b32]"
+                                : "bg-[#2d2d2d]/95 border-[#404040] text-stone-300"
+                    )}>
                         <span className="text-[10px] font-semibold opacity-70 px-2">Cuộn: V{autoScrollSpeed}</span>
                         <div className="flex flex-col gap-1">
                             {[10, 8, 6, 4, 2].map((speed) => (
                                 <Button
                                     key={speed}
                                     size="icon"
-                                    variant={autoScrollSpeed === speed ? "default" : "ghost"}
-                                    className="h-8 w-8 rounded-full text-xs"
+                                    variant="ghost"
+                                    className={cn(
+                                        "h-8 w-8 rounded-full text-xs transition-colors",
+                                        autoScrollSpeed === speed 
+                                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                            : readingTheme === 'light'
+                                                ? "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                                                : readingTheme === 'sepia'
+                                                    ? "text-[#5f4b32] hover:bg-[#e8dcc8]/50 hover:text-[#5f4b32]"
+                                                    : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                                    )}
                                     onClick={() => setAutoScrollSpeed(speed)}
                                 >
                                     {speed}
                                 </Button>
                             ))}
                         </div>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className={cn(
+                            readingTheme === 'light' ? 'bg-stone-200' : readingTheme === 'sepia' ? 'bg-[#e8dcc8]' : 'bg-[#404040]'
+                        )} />
                         <Button
                             size="icon"
                             variant="destructive"
@@ -584,7 +652,12 @@ useEffect(() => {
                 <Button
                     onClick={() => setIsScrollPanelOpen(!isScrollPanelOpen)}
                     className={cn(
-                        "h-12 w-12 rounded-full shadow-xl bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800 transition-all active:scale-95",
+                        "h-12 w-12 rounded-full shadow-xl transition-all active:scale-95",
+                        readingTheme === 'light'
+                            ? "bg-white border border-stone-200 text-stone-800 hover:bg-stone-100"
+                            : readingTheme === 'sepia'
+                                ? "bg-[#faf8f3] border border-[#e8dcc8] text-[#5f4b32] hover:bg-[#e8dcc8]/30"
+                                : "bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800",
                         autoScrollSpeed > 0 && "animate-pulse border-primary"
                     )}
                     size="icon"

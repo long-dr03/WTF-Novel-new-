@@ -47,7 +47,7 @@ const MOCK_COMMENTS: Comment[] = [
     }
 ]
 
-export function CommentSection() {
+export function CommentSection({ theme = 'light' }: { theme?: 'light' | 'sepia' | 'dark' }) {
     const [comments, setComments] = useState<Comment[]>(MOCK_COMMENTS)
     const [newComment, setNewComment] = useState("")
 
@@ -67,8 +67,22 @@ export function CommentSection() {
         setNewComment("")
     }
 
+    const isLight = theme === 'light';
+    const isSepia = theme === 'sepia';
+    
+    const containerBg = isLight ? 'bg-white/80' : isSepia ? 'bg-[#faf8f3]' : 'bg-[#2d2d2d]';
+    const containerBorder = isLight ? 'border-stone-200' : isSepia ? 'border-[#e8dcc8]' : 'border-[#404040]';
+    const textMain = isLight ? 'text-stone-850' : isSepia ? 'text-[#5f4b32]' : 'text-stone-100';
+    const textMuted = isLight ? 'text-stone-500' : isSepia ? 'text-[#5f4b32]/60' : 'text-stone-400';
+    const textareaBgBorder = isLight ? 'bg-white border-stone-200 text-stone-850 focus-visible:ring-primary' : isSepia ? 'bg-[#faf8f3] border-[#e8dcc8] text-[#5f4b32] placeholder:text-[#5f4b32]/40 focus-visible:ring-primary' : 'bg-[#1a1a1a] border-[#404040] text-stone-100 placeholder:text-stone-400 focus-visible:ring-primary';
+    const avatarBorder = isLight ? 'border-stone-200' : isSepia ? 'border-[#e8dcc8]' : 'border-[#404040]';
+    const commentName = isLight ? 'text-stone-850 font-bold' : isSepia ? 'text-[#5f4b32] font-bold' : 'text-stone-200 font-bold';
+    const commentText = isLight ? 'text-stone-750' : isSepia ? 'text-[#5f4b32]/95' : 'text-stone-300';
+    const replyBorder = isLight ? 'border-stone-200' : isSepia ? 'border-[#e8dcc8]' : 'border-[#404040]';
+    const actionText = isLight ? 'text-stone-500 hover:text-primary' : isSepia ? 'text-[#5f4b32]/75 hover:text-primary' : 'text-stone-400 hover:text-primary';
+
     return (
-        <div className="bg-card/50 rounded-xl p-6 border border-border/50 mt-8">
+        <div className={`rounded-xl p-6 border mt-8 ${containerBg} ${containerBorder} ${textMain}`}>
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
                 Bình luận ({comments.length})
@@ -76,7 +90,7 @@ export function CommentSection() {
 
             {/* Input */}
             <div className="flex gap-4 mb-8">
-                <Avatar>
+                <Avatar className={`border ${avatarBorder}`}>
                     <AvatarFallback>B</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 gap-2 flex flex-col">
@@ -84,7 +98,7 @@ export function CommentSection() {
                         placeholder="Chia sẻ suy nghĩ của bạn về chương này..." 
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        className="min-h-[100px] resize-none focus-visible:ring-primary"
+                        className={`min-h-[100px] resize-none ${textareaBgBorder}`}
                     />
                     <div className="flex justify-end">
                         <Button onClick={handleSubmit} disabled={!newComment.trim()}>
@@ -99,50 +113,50 @@ export function CommentSection() {
             <div className="space-y-6">
                 {comments.map((comment) => (
                     <div key={comment.id} className="flex gap-4 group">
-                        <Avatar className="w-10 h-10 border border-border/50">
+                        <Avatar className={`w-10 h-10 border ${avatarBorder}`}>
                             <AvatarImage src={comment.user.avatar} />
                             <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                                <span className="font-semibold text-sm">{comment.user.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className={`font-semibold text-sm ${commentName}`}>{comment.user.name}</span>
+                                <span className={`text-xs ${textMuted}`}>
                                     {formatDistanceToNow(comment.createdAt, { addSuffix: true, locale: vi })}
                                 </span>
                             </div>
-                            <p className="text-sm text-foreground/90 mb-2">{comment.content}</p>
+                            <p className={`text-sm mb-2 ${commentText}`}>{comment.content}</p>
                             
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <button className="flex items-center gap-1 hover:text-primary transition-colors">
+                            <div className={`flex items-center gap-4 text-xs ${textMuted}`}>
+                                <button className={`flex items-center gap-1 transition-colors ${actionText}`}>
                                     <ThumbsUp className="w-3 h-3" />
                                     {comment.likes > 0 && <span>{comment.likes}</span>}
                                     Thích
                                 </button>
-                                <button className="hover:text-primary transition-colors">
+                                <button className={`transition-colors ${actionText}`}>
                                     Trả lời
                                 </button>
-                                <button className="hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 ml-auto">
+                                <button className={`hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 ml-auto`}>
                                     <Flag className="w-3 h-3" />
                                 </button>
                             </div>
 
                             {/* Replies */}
                             {comment.replies && comment.replies.length > 0 && (
-                                <div className="mt-4 pl-4 border-l-2 border-border/50 space-y-4">
+                                <div className={`mt-4 pl-4 border-l-2 space-y-4 ${replyBorder}`}>
                                      {comment.replies.map(reply => (
                                          <div key={reply.id} className="flex gap-3">
-                                            <Avatar className="w-8 h-8">
+                                            <Avatar className={`w-8 h-8 border ${avatarBorder}`}>
                                                 <AvatarImage src={reply.user.avatar} />
                                                 <AvatarFallback>{reply.user.name[0]}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <span className="font-semibold text-sm">{reply.user.name}</span>
-                                                    <span className="text-xs text-muted-foreground">
+                                                    <span className={`font-semibold text-sm ${commentName}`}>{reply.user.name}</span>
+                                                    <span className={`text-xs ${textMuted}`}>
                                                         {formatDistanceToNow(reply.createdAt, { addSuffix: true, locale: vi })}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-foreground/90">{reply.content}</p>
+                                                <p className={`text-sm ${commentText}`}>{reply.content}</p>
                                             </div>
                                          </div>
                                      ))}

@@ -145,8 +145,8 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                         <CarouselItem key={index}>
                             <div className="p-1">
                                 <Card className="border-0 shadow-none bg-transparent">
-                                    <CardContent className="flex aspect-[3/1] items-center justify-center p-0 relative overflow-hidden rounded-2xl group/card cursor-pointer" onClick={() => {
-                                        if(banner.id) window.location.href = `/reader/${banner.id}`
+                                    <CardContent className="flex aspect-[16/10] sm:aspect-[21/9] md:aspect-[3/1] items-center justify-center p-0 relative overflow-hidden rounded-2xl group/card cursor-pointer" onClick={() => {
+                                        if(banner.id) window.location.href = `/novel/${banner.id}`
                                     }}>
                                         {/* Background Image với hiệu ứng zoom khi hover */}
                                         <Image
@@ -167,7 +167,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                                         
                                         {/* Content với animation */}
                                         <div className={cn(
-                                            "absolute left-8 md:left-16 bottom-1/2 translate-y-1/2 z-10 max-w-xl",
+                                            "absolute left-4 sm:left-8 md:left-16 bottom-4 sm:bottom-6 md:bottom-1/2 md:translate-y-1/2 z-10 max-w-[85%] sm:max-w-xl",
                                             "transition-all duration-700 ease-out",
                                             current === index 
                                                 ? "opacity-100 translate-x-0" 
@@ -175,7 +175,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                                         )}>
                                             {/* Badge */}
                                             <span className={cn(
-                                                "inline-block px-3 py-1 mb-3 text-xs font-semibold rounded-full",
+                                                "inline-block px-3 py-1 mb-2 md:mb-3 text-[10px] sm:text-xs font-semibold rounded-full",
                                                 "bg-gradient-to-r from-pink-500 to-violet-500 text-white",
                                                 "animate-pulse shadow-lg shadow-pink-500/25"
                                             )}>
@@ -184,8 +184,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                                             
                                             {/* Title */}
                                             <h2 className={cn(
-                                                "text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2",
-                                                "drop-shadow-2xl",
+                                                "text-base sm:text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-1 md:mb-2 leading-tight drop-shadow-2xl",
                                                 "transition-all duration-700 delay-100",
                                                 current === index 
                                                     ? "opacity-100 translate-y-0" 
@@ -196,7 +195,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                                             
                                             {/* Subtitle */}
                                             <p className={cn(
-                                                "text-sm md:text-lg text-gray-200 mb-4",
+                                                "text-xs sm:text-sm md:text-lg text-gray-200 mb-2 md:mb-4 line-clamp-1 sm:line-clamp-none",
                                                 "transition-all duration-700 delay-200",
                                                 current === index 
                                                     ? "opacity-100 translate-y-0" 
@@ -207,7 +206,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
                                             
                                             {/* CTA Button */}
                                             <button className={cn(
-                                                "px-6 py-2.5 rounded-full font-medium",
+                                                "px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm",
                                                 "bg-white/20 backdrop-blur-sm text-white",
                                                 "border border-white/30",
                                                 "hover:bg-white hover:text-black",

@@ -102,6 +102,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
     const [showAudioManager, setShowAudioManager] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showMusicManager, setShowMusicManager] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const selectedNovel = novels.find(n => (n._id || n.id) === selectedNovelId);
 
@@ -135,7 +136,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
         editorProps: {
             attributes: {
                 class: cn(
-                    'prose prose-lg max-w-none focus:outline-none min-h-[calc(100vh-300px)] py-8 px-12 md:px-20',
+                    'prose prose-lg max-w-none focus:outline-none min-h-[calc(100vh-300px)] py-8 px-4 sm:px-12 md:px-20',
                     'prose-headings:font-bold prose-headings:tracking-tight',
                     'prose-p:leading-loose prose-p:my-4',
                     'prose-blockquote:border-l-4 prose-blockquote:pl-4 prose-blockquote:italic',
@@ -185,6 +186,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
         if (!selectedNovelId || !editor) return;
         setIsLoadingContent(true);
         setSelectedChapterId(chapter._id || chapter.id || null);
+        setSidebarOpen(false);
         try {
             const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber);
             if (chapterData) {
@@ -202,6 +204,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
     const handleNewChapter = () => {
         if (!editor) return;
         setEditMode('new'); setSelectedChapterId(null); setChapterTitle(''); setChapterStatus('draft');
+        setSidebarOpen(false);
         editor.commands.clearContent();
         if (chapters.length > 0) {
             const maxChapter = Math.max(...chapters.map(c => c.chapterNumber));
@@ -291,10 +294,21 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
             theme.bg, theme.border, theme.text,
             isFullscreen && "fixed inset-0 h-screen z-50 rounded-none border-0"
         )}>
+            {/* Sidebar drawer backdrop for mobile */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* LEFT SIDEBAR - NAVIGATION */}
             <div className={cn(
-                "w-72 flex-shrink-0 flex flex-col border-r h-full relative z-10",
-                theme.sidebarBg, theme.border
+                theme.sidebarBg, theme.border,
+                "w-72 flex-shrink-0 flex flex-col border-r h-full relative z-10 transition-all duration-300",
+                sidebarOpen 
+                    ? "fixed inset-y-0 left-0 z-50 bg-card" 
+                    : "hidden lg:flex"
             )}>
                 {/* Header: Novel Selection */}
                 <div className="p-4 border-b space-y-3 flex-none border-dashed" style={{borderColor: isDarkMode ? '#333' : '#e5e7eb'}}>
@@ -402,9 +416,19 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                 
                 {/* 1. TOP METADATA BAR */}
                 <div className={cn("flex-none p-4 md:px-8 pt-6 pb-2 flex flex-col gap-4", theme.bg)}>
-                     <div className="flex items-center justify-between gap-4">
+                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         {/* Title Input Area */}
-                         <div className="flex-1 flex gap-3 items-center">
+                         <div className="flex-1 flex gap-2 sm:gap-3 items-center w-full">
+                             <Button
+                                 variant="outline"
+                                 size="icon"
+                                 onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
+                                 className="lg:hidden h-10 w-10 flex-shrink-0 flex items-center justify-center border hover:bg-accent text-foreground self-end"
+                                 title="Danh sách chương"
+                             >
+                                 <List className="h-4 w-4" />
+                             </Button>
+                             
                              <div className="w-20 flex-shrink-0 flex flex-col">
                                  <span className="text-[10px] uppercase font-bold tracking-wide opacity-50 mb-0.5 ml-1">Chương</span>
                                  <Input 
@@ -428,7 +452,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                          </div>
                          
                          {/* Action Buttons */}
-                         <div className="flex items-center gap-2 pl-4 border-l border-stone-800">
+                         <div className="flex items-center flex-wrap gap-2 pl-0 lg:pl-4 border-l-0 lg:border-l border-dashed border-stone-800/60 w-full lg:w-auto justify-end">
                              <div className="flex items-center bg-stone-800/50 rounded-lg p-0.5 border border-stone-700/50 mr-2">
                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-white" onClick={() => setIsDarkMode(!isDarkMode)}>
                                      {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -466,7 +490,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
 
                 {/* 2. RICH TEXT TOOLBAR */}
                 {editor && (
-                    <div className={cn("flex-none mx-4 md:mx-8 mb-4 px-2 py-1.5 rounded-lg border flex flex-wrap items-center gap-1 shadow-sm", 
+                    <div className={cn("flex-none mx-4 md:mx-8 mb-4 px-2 py-1.5 rounded-lg border flex flex-row overflow-x-auto lg:flex-wrap items-center gap-1 shadow-sm scrollbar-hidden whitespace-nowrap", 
                         isDarkMode ? "bg-[#202020] border-[#333]" : "bg-white border-stone-200"
                     )}>
                         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo" isDark={isDarkMode}><Undo className="w-4 h-4"/></ToolbarButton>

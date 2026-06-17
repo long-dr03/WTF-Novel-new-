@@ -187,14 +187,6 @@ export default function SettingsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                            <Label className="text-base">Bật quảng cáo 2 bên</Label>
-                            <p className="text-sm text-muted-foreground">Công tắc tổng cho cả 2 banner</p>
-                        </div>
-                        <Switch checked={settings.ads.enabled} onCheckedChange={(checked) => setSettings({...settings, ads: {...settings.ads, enabled: checked}})} />
-                    </div>
-
                     {(['left', 'right'] as const).map((side) => (
                         <div key={side} className="space-y-3 rounded-lg border p-4">
                             <div className="flex items-center justify-between">

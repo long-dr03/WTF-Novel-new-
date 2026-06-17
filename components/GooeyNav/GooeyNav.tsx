@@ -96,75 +96,71 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
   };
 
   const updateEffectPosition = (element: HTMLElement) => {
-    if (!containerRef.current || !filterRef.current || !textRef.current) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const pos = element.getBoundingClientRect();
+    if (!filterRef.current || !textRef.current || !navRef.current) return;
+    const wrapper = navRef.current.parentElement;
+    if (!wrapper) return;
+
+    const rect = element.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
 
     const styles = {
-      left: `${pos.x - containerRect.x}px`,
-      top: `${pos.y - containerRect.y}px`,
-      width: `${pos.width}px`,
-      height: `${pos.height}px`
+      left: `${rect.left - wrapperRect.left}px`,
+      top: `${rect.top - wrapperRect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`
     };
     Object.assign(filterRef.current.style, styles);
     Object.assign(textRef.current.style, styles);
     textRef.current.innerText = element.innerText;
   };
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
-    const liEl = e.currentTarget;
+  const handleClick = (liEl: HTMLElement, index: number) => {
     if (activeIndex === index) return;
 
     setActiveIndex(index);
-    updateEffectPosition(liEl);
+    
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
+
+    if (isDesktop) {
+      updateEffectPosition(liEl);
+    }
 
     if (onChange) {
       onChange(index);
     }
 
-    if (filterRef.current) {
+    if (isDesktop && filterRef.current) {
       const particles = filterRef.current.querySelectorAll('.particle');
       particles.forEach(p => filterRef.current!.removeChild(p));
     }
 
-    if (textRef.current) {
+    if (isDesktop && textRef.current) {
       textRef.current.classList.remove('active');
 
       void textRef.current.offsetWidth;
       textRef.current.classList.add('active');
     }
 
-    if (filterRef.current) {
+    if (isDesktop && filterRef.current) {
       makeParticles(filterRef.current);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLAnchorElement>, index: number) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      const liEl = e.currentTarget.parentElement;
-      if (liEl) {
-        handleClick(
-          {
-            currentTarget: liEl
-          } as React.MouseEvent<HTMLAnchorElement>,
-          index
-        );
-      }
     }
   };
 
   useEffect(() => {
     if (!navRef.current || !containerRef.current) return;
+    
+    const isDesktop = window.innerWidth > 768;
     const activeLi = navRef.current.querySelectorAll('li')[activeIndex] as HTMLElement;
-    if (activeLi) {
+    
+    if (activeLi && isDesktop) {
       updateEffectPosition(activeLi);
       textRef.current?.classList.add('active');
     }
 
     const resizeObserver = new ResizeObserver(() => {
       const currentActiveLi = navRef.current?.querySelectorAll('li')[activeIndex] as HTMLElement;
-      if (currentActiveLi) {
+      const isDesktopNow = window.innerWidth > 768;
+      if (currentActiveLi && isDesktopNow) {
         updateEffectPosition(currentActiveLi);
       }
     });
@@ -176,18 +172,32 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
   return (
     <div className="gooey-nav-container" ref={containerRef}>
       <nav>
-        <ul ref={navRef}>
-          {items.map((item, index) => (
-            <li key={index} className={activeIndex === index ? 'active' : ''}>
-              <a href={item.href} onClick={e => handleClick(e, index)} onKeyDown={e => handleKeyDown(e, index)}>
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className="gooey-nav-scroll-wrapper">
+          <ul ref={navRef}>
+            {items.map((item, index) => (
+              <li key={index} className={activeIndex === index ? 'active' : ''}>
+                <a 
+                  href={item.href} 
+                  onClick={e => {
+                    e.preventDefault();
+                    handleClick(e.currentTarget.parentElement as HTMLElement, index);
+                  }} 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleClick(e.currentTarget.parentElement as HTMLElement, index);
+                    }
+                  }}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <span className="effect filter" ref={filterRef} />
+          <span className="effect text" ref={textRef} />
+        </div>
       </nav>
-      <span className="effect filter" ref={filterRef} />
-      <span className="effect text" ref={textRef} />
     </div>
   );
 };

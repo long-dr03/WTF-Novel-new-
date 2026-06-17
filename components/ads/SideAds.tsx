@@ -23,7 +23,7 @@ function AdBanner({ slot, side }: { slot: AdSlot; side: "left" | "right" }) {
 
     return (
         <aside
-            className={`fixed top-1/2 ${sideClass} z-30 hidden -translate-y-1/2 2xl:block`}
+            className={`fixed top-1/2 ${sideClass} z-30 hidden -translate-y-1/2 xl:block`}
             aria-label="Quảng cáo"
         >
             {slot.link ? (
@@ -40,7 +40,7 @@ function AdBanner({ slot, side }: { slot: AdSlot; side: "left" | "right" }) {
 export default function SideAds() {
     const { ads } = useSiteSettings();
 
-    if (!ads?.enabled) return null;
+    if (!ads) return null;
 
     return (
         <>

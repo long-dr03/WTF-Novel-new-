@@ -77,7 +77,7 @@ export function HeaderSearch() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-[300px] justify-between text-muted-foreground"
+                        className="w-full max-w-[300px] justify-between text-zinc-650 dark:text-muted-foreground bg-zinc-100/60 dark:bg-zinc-900/50 hover:bg-zinc-200/60 dark:hover:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-foreground rounded-xl transition-all duration-200 cursor-pointer"
                     >
                         <span className="truncate">
                             {query ? query : "Tìm kiếm truyện..."}
@@ -87,7 +87,7 @@ export function HeaderSearch() {
                 </PopoverTrigger>
 
                 {/* Content */}
-                <PopoverContent className="w-[300px] p-0" align="start">
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <Command shouldFilter={false}>
                         <CommandInput
                             placeholder="Nhập tên truyện..."

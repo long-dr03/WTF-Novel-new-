@@ -131,7 +131,7 @@
 /* Author Page Styles */
 .author-layout {
   @apply flex h-screen overflow-hidden mx-auto;
-  max-width: 1300px;
+  max-width: 1200px;
 }
 
 .author-sidebar {
@@ -273,4 +273,25 @@
 
 [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover {
   background: oklch(0.5 0 0 / 50%);
+}
+
+/* Custom Container overrides to prevent sidebar ads overlap */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 1200px) and (max-width: 1535px) {
+  .container {
+    max-width: 980px !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1200px !important;
+  }
 }

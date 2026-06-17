@@ -241,7 +241,7 @@ export default function NovelDetailPage() {
             {/* Novel Info Section */}
             <div className="flex flex-col md:flex-row gap-8 mb-8">
                 {/* Cover Image */}
-                <div className="w-full md:w-[200px] flex-shrink-0">
+                <div className="w-full max-w-[200px] mx-auto md:w-[200px] md:mx-0 flex-shrink-0">
                     <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-muted">
                         {novel.image && !imageError ? (
                             <Image
@@ -260,7 +260,7 @@ export default function NovelDetailPage() {
                 </div>
 
                 {/* Novel Details */}
-                <div className="flex-1 bg-zinc-900 p-4 rounded-xl">
+                <div className="flex-1 bg-zinc-100/60 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/40 p-5 rounded-xl">
                     <h1 className="text-3xl font-bold mb-3">{novel.title}</h1>
 
                     <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -330,9 +330,9 @@ export default function NovelDetailPage() {
                     </p>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 w-full justify-center md:justify-start">
                         {chapters.length > 0 && (
-                            <Button asChild>
+                            <Button asChild className="flex-1 sm:flex-none justify-center">
                                 <Link href={`/novel/${novelId}/chapter/1`}>
                                     <BookOpen className="h-4 w-4 mr-2" />
                                     Đọc từ đầu
@@ -340,7 +340,7 @@ export default function NovelDetailPage() {
                             </Button>
                         )}
                         {stats.latestChapter && stats.latestChapter.chapterNumber > 1 && (
-                            <Button variant="secondary" asChild>
+                            <Button variant="secondary" asChild className="flex-1 sm:flex-none justify-center">
                                 <Link href={`/novel/${novelId}/chapter/${stats.latestChapter.chapterNumber}`}>
                                     <BookOpen className="h-4 w-4 mr-2" />
                                     Chương mới nhất
@@ -351,13 +351,14 @@ export default function NovelDetailPage() {
                             variant={isFavorite ? "default" : "outline"} 
                             onClick={toggleFavorite}
                             disabled={libLoading}
+                            className="flex-1 sm:flex-none justify-center"
                         >
                             <Heart className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
                             {isFavorite ? "Đã yêu thích" : "Yêu thích"}
                         </Button>
                         <Button 
                             variant="outline" 
-                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30 flex-1 sm:flex-none justify-center"
                             onClick={() => setIsReportOpen(true)}
                         >
                             <Flag className="h-4 w-4 mr-2" />

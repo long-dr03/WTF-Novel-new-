@@ -10,7 +10,7 @@ export function InlineAd() {
     if (!popup?.enabled || !popup.imageUrl) return null;
 
     const bannerContent = (
-        <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 backdrop-blur transition-all hover:border-primary/30 flex flex-col md:flex-row gap-4 items-center group">
+        <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/40 p-4 backdrop-blur transition-all hover:border-primary/30 flex flex-col md:flex-row gap-4 items-center group">
             <span className="absolute left-2 top-2 z-10 rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/25 leading-none">
                 Tài trợ
             </span>
@@ -25,7 +25,7 @@ export function InlineAd() {
             
             <div className="flex-1 text-center md:text-left space-y-1 py-1">
                 {popup.title && (
-                    <h3 className="font-bold text-base md:text-lg text-white group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-base md:text-lg text-zinc-900 dark:text-white group-hover:text-primary transition-colors">
                         {popup.title}
                     </h3>
                 )}
