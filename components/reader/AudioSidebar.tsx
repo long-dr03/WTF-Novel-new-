@@ -329,39 +329,7 @@ export function AudioSidebar({
                     {/* Top Section: Player Controls - Shrink to fit content */}
                     <div className="shrink-0 p-4 border-b border-pink-50/50 dark:border-zinc-850/60">
                         <div className="space-y-4">
-                            {/* Banner/Cover Visualization */}
-                            <div className="flex flex-col items-center">
-                                <div className={cn(
-                                    "relative w-full aspect-[2/3] max-w-[125px] rounded-xl shadow-lg overflow-hidden border border-pink-100/40 dark:border-zinc-800/60 shadow-pink-100/20 dark:shadow-none",
-                                    "group"
-                                )}>
-                                    {coverUrl ? (
-                                        <img 
-                                            src={coverUrl} 
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                                            alt="Cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-tr from-pink-50 to-pink-100/40 dark:from-zinc-900 dark:to-zinc-800/80 flex flex-col items-center justify-center gap-2">
-                                            <div className="w-11 h-11 rounded-full bg-white dark:bg-zinc-800 shadow-md flex items-center justify-center text-primary animate-pulse">
-                                                <Music className="w-5.5 h-5.5" />
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* Equalizer overlay */}
-                                    {isPlaying && (
-                                        <div className="absolute inset-0 bg-black/25 backdrop-blur-[0.5px] flex items-end justify-center pb-3 gap-1">
-                                            {[...Array(4)].map((_, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    className="w-1 bg-white rounded-full animate-music-bar"
-                                                    style={{ animationDelay: `${i * 0.15}s`, height: '20%' }}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+
 
                             {/* Info */}
                             <div className="text-center space-y-1 px-1">
