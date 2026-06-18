@@ -309,3 +309,11 @@
     max-width: 1200px !important;
   }
 }
+
+@keyframes music-bar {
+  0%, 100% { height: 20%; }
+  50% { height: 80%; }
+}
+.animate-music-bar {
+  animation: music-bar 1.2s ease-in-out infinite;
+}

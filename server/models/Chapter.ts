@@ -128,11 +128,10 @@ ChapterSchema.index({ audioStatus: 1 });
 ChapterSchema.virtual('readingTime').get(function (this: IChapter) {
     return Math.ceil(this.wordCount / 200);
 });
-ChapterSchema.pre('save', function (this: any, next: any) {
+ChapterSchema.pre('save', function (this: IChapter) {
     if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
         this.publishedAt = new Date();
     }
-    next();
 });
 
 export default (mongoose.models.Chapter as Model<IChapter>) || mongoose.model<IChapter>('Chapter', ChapterSchema);

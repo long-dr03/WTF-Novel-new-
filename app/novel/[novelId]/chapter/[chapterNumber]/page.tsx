@@ -57,6 +57,7 @@ interface Chapter {
 interface Novel {
     _id: string
     title: string
+    image?: string
     coverImage?: string
 }
 
@@ -592,7 +593,7 @@ useEffect(() => {
                 audioUrl={chapter.audioUrl || null}
                 title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
                 novelTitle={novel?.title}
-                coverUrl={novel?.coverImage}
+                coverUrl={novel?.image || novel?.coverImage || undefined}
                 onNext={goToNextChapter}
                 onPrev={goToPrevChapter}
                 hasNext={hasNextChapter}
