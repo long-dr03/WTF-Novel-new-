@@ -1208,14 +1208,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
 
 
-                            {/* Music Manager */}
-                            <ToolbarButton
-                                onClick={() => setShowMusicManager(true)}
-                                title="Quản lý Nhạc nền"
-                                isDark={isDarkMode}
-                            >
-                                <Music className="w-4 h-4" />
-                            </ToolbarButton>
+
                         </div>
                     </div>
                 )}

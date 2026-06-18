@@ -5,12 +5,11 @@ import { useAuth } from "@/components/providers/AuthProvider"
 import { DashboardStats } from "@/components/author/DashboardStats"
 import { NovelList } from "@/components/author/NovelList"
 import  WriteNovel  from "@/components/author/WriteNovelV2"
-import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut, Music } from "lucide-react"
+import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getNovelsByAuthorService } from "@/services/novelService"
-import { BackgroundMusicContent } from "@/components/author/BackgroundMusicManager"
 
-type TabType = "dashboard" | "novels" | "write" | "settings" | "music"
+type TabType = "dashboard" | "novels" | "write" | "settings"
 
 interface Novel {
     _id: string;
@@ -71,11 +70,6 @@ const Page = () => {
             icon: PenTool
         },
         {
-            id: "music" as TabType,
-            label: "Kho nhạc",
-            icon: Music
-        },
-        {
             id: "settings" as TabType,
             label: "Cài đặt",
             icon: Settings
@@ -93,12 +87,6 @@ const Page = () => {
                 return <NovelList novels={authorNovels} onEditNovel={handleEditNovel} />
             case "write":
                 return <WriteNovel novels={authorNovels} selectedNovelId={selectedNovelId} onNovelChange={setSelectedNovelId} />
-            case "music":
-                return (
-                    <div className="p-6 h-full flex flex-col">
-                        <BackgroundMusicContent className="flex-1" />
-                    </div>
-                )
             case "settings":
                 return (
                     <div className="p-6">

@@ -512,7 +512,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                         
                         <div className="flex-1" />
                         
-                        <ToolbarButton onClick={() => setShowMusicManager(true)} title="Ambient Music" isDark={isDarkMode}><Music className="w-4 h-4"/></ToolbarButton>
+
                     </div>
                 )}
 
