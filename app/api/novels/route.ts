@@ -1,0 +1,5 @@
+import { NextRequest } from 'next/server';
+import { handle } from '@/server/adapter';
+import { getPublicNovels } from '@/server/controllers/getNovel';
+
+export const GET = (req: NextRequest) => handle(req, getPublicNovels);

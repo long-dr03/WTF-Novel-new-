@@ -1,13 +1,16 @@
 import axios from "axios";
 
-// QUAN TRỌNG: chỉ biến có tiền tố NEXT_PUBLIC_ mới được expose ra trình duyệt.
-// Vì axios này chạy ở client nên phải dùng NEXT_PUBLIC_BACKEND_URL, nếu không
-// nó sẽ rơi về URL production và gọi sai backend.
+// Backend đã được gộp vào chính Next.js (các route handler trong app/api/*).
+// - Ở client: gọi tương đối "/api" (cùng origin).
+// - Ở server (SSR): cần URL tuyệt đối nên dùng NEXT_PUBLIC_SITE_URL.
+const API_PREFIX = "/api";
+const baseURL =
+    typeof window === "undefined"
+        ? `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}${API_PREFIX}`
+        : API_PREFIX;
+
 const instance = axios.create({
-    baseURL:
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        process.env.BACKEND_URL ||
-        "https://wtfnovel.wtfdev.qzz.io/",
+    baseURL,
     withCredentials: true
 });
 

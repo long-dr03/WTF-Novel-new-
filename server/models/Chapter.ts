@@ -128,8 +128,7 @@ ChapterSchema.index({ audioStatus: 1 });
 ChapterSchema.virtual('readingTime').get(function (this: IChapter) {
     return Math.ceil(this.wordCount / 200);
 });
-
-ChapterSchema.pre('save', function (this: IChapter, next) {
+ChapterSchema.pre('save', function (this: any, next: any) {
     if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
         this.publishedAt = new Date();
     }
