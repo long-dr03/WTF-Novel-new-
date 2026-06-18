@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { StatCard } from "@/components/cards/StatCard"
 import { Card } from "@/components/ui/card"
 import { BookOpen, Eye, Heart, TrendingUp, FileText, Loader2 } from "lucide-react"
@@ -125,7 +125,7 @@ export const DashboardStats = () => {
             </div>
 
             {/* SVG Trend Chart */}
-            <Card className="p-6 border-zinc-800 bg-zinc-900/50 backdrop-blur">
+            <Card className="p-6 border-zinc-200 dark:border-zinc-800 bg-card text-card-foreground shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-semibold">Xu hướng lượt xem</h3>
@@ -137,8 +137,8 @@ export const DashboardStats = () => {
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
                             <defs>
                                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.4" />
-                                    <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0" />
+                                    <stop offset="0%" stopColor="oklch(0.68 0.17 12)" stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor="oklch(0.68 0.17 12)" stopOpacity="0" />
                                 </linearGradient>
                             </defs>
                             
@@ -153,7 +153,7 @@ export const DashboardStats = () => {
                                             y1={y} 
                                             x2={width - paddingRight} 
                                             y2={y} 
-                                            stroke="rgba(255,255,255,0.05)" 
+                                            className="stroke-zinc-100 dark:stroke-zinc-800/40" 
                                             strokeDasharray="4 4" 
                                         />
                                         <text 
@@ -178,7 +178,7 @@ export const DashboardStats = () => {
                                 <path 
                                     d={linePath} 
                                     fill="none" 
-                                    stroke="rgb(59, 130, 246)" 
+                                    stroke="oklch(0.68 0.17 12)" 
                                     strokeWidth="3" 
                                     strokeLinecap="round" 
                                     strokeLinejoin="round"
@@ -192,7 +192,8 @@ export const DashboardStats = () => {
                                         cx={p.x} 
                                         cy={p.y} 
                                         r="5" 
-                                        className="fill-white stroke-blue-500 stroke-2 cursor-pointer transition-all hover:r-7"
+                                        className="fill-white dark:fill-zinc-950 stroke-primary stroke-2 cursor-pointer transition-all hover:r-7"
+                                        stroke="oklch(0.68 0.17 12)"
                                         onMouseEnter={() => setHoveredPoint(idx)}
                                         onMouseLeave={() => setHoveredPoint(null)}
                                     />
@@ -211,7 +212,7 @@ export const DashboardStats = () => {
                         {/* Interactive Tooltip */}
                         {hoveredPoint !== null && points[hoveredPoint] && (
                             <div 
-                                className="absolute bg-zinc-950 border border-zinc-800 rounded-lg p-2 shadow-xl text-xs z-10 pointer-events-none transition-all duration-150"
+                                className="absolute bg-popover text-popover-foreground border border-border rounded-lg p-2 shadow-xl text-xs z-10 pointer-events-none transition-all duration-150"
                                 style={{ 
                                     left: `${points[hoveredPoint].x + 10}px`, 
                                     top: `${points[hoveredPoint].y - 40}px` 
