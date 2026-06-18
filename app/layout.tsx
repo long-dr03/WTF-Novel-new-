@@ -47,7 +47,7 @@ export default function RootLayout({
             strategy="beforeInteractive" 
           />
         )}
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
             <ConditionalLayout>
               {children}

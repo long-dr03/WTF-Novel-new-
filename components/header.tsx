@@ -42,30 +42,42 @@ export const Header = () => {
     
     return (
         <>
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="sticky top-0 z-50 w-full border-b border-pink-200/20 bg-primary text-white dark:bg-zinc-950 dark:text-foreground dark:border-border/40 shadow-md transition-colors duration-300">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                <Link href="/" className="flex items-center gap-2 shrink-0">
-                    <Image src="/logo.jpg" alt="Logo" width={50} height={50} className="rounded-lg" />
-                    <span className="text-xl font-bold">Novel</span>
-                </Link>
+                <div className="flex items-center gap-6 shrink-0">
+                    <Link href="/" className="flex items-center gap-2 select-none">
+                        <Image src="/logo.jpg" alt="Logo" width={40} height={40} className="rounded-full border-2 border-white/60 dark:border-primary/50 shadow-md" />
+                        <span className="text-2xl font-serif font-bold italic tracking-wide text-white dark:text-primary">
+                            Lão Phật Gia
+                        </span>
+                    </Link>
+                    <nav className="hidden lg:flex items-center gap-5 text-sm font-semibold">
+                        <Link href="/search?sort=popular" className="text-white/85 hover:text-white dark:text-muted-foreground dark:hover:text-foreground transition-colors">
+                            Xu hướng
+                        </Link>
+                        <Link href="/search?sort=newest" className="text-white/85 hover:text-white dark:text-muted-foreground dark:hover:text-foreground transition-colors">
+                            Truyện Mới
+                        </Link>
+                    </nav>
+                </div>
 
                 <div className="hidden md:flex flex-1 max-w-xl mx-6 items-center justify-center gap-1.5">
-                    <HeaderSearch />
+                    <HeaderSearch isHeader={true} />
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button 
                                 variant="ghost" 
-                                className="flex items-center gap-1.5 font-semibold select-none cursor-pointer hover:bg-accent/50 text-foreground transition-all duration-200 shrink-0"
+                                className="flex items-center gap-1.5 font-semibold select-none cursor-pointer text-white hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-accent/50 transition-all duration-200 shrink-0"
                             >
-                                <Compass className="h-4 w-4 text-primary" />
+                                <Compass className="h-4 w-4 text-white dark:text-primary" />
                                 <span>Thể loại</span>
-                                <ChevronDown className="h-3.5 w-3.5 opacity-70 transition-transform duration-200" />
+                                <ChevronDown className="h-3.5 w-3.5 text-white/70 dark:text-foreground/70 transition-transform duration-200" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent 
                             align="end" 
-                            className="w-[320px] p-2.5 bg-popover/95 backdrop-blur-md border border-border/85 shadow-2xl rounded-xl animate-in fade-in-50 slide-in-from-top-1"
+                            className="w-[320px] p-2.5 bg-popover/97 backdrop-blur-md border border-border/85 shadow-2xl rounded-xl animate-in fade-in-50 slide-in-from-top-1"
                         >
                             <div className="grid grid-cols-2 gap-1">
                                 {genres.length > 0 ? (
@@ -98,20 +110,20 @@ export const Header = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                            className="cursor-pointer hover:bg-accent/50 text-foreground transition-all duration-200"
+                            className="cursor-pointer text-white hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-accent/50 transition-all duration-200"
                             title="Đổi giao diện Sáng/Tối"
                         >
                             {theme === "dark" ? (
-                                <Sun className="h-4 w-4 text-amber-500" />
+                                <Sun className="h-4 w-4 text-amber-400" />
                             ) : (
-                                <Moon className="h-4 w-4 text-indigo-600" />
+                                <Moon className="h-4 w-4 text-white" />
                             )}
                         </Button>
                     )}
 
                     {/* Nút Sáng tác - chỉ hiển thị cho tác giả hoặc admin */}
                     {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (
-                        <Button variant="outline" asChild className="hidden sm:flex gap-2">
+                        <Button variant="outline" asChild className="hidden sm:flex gap-2 border-white/30 text-white hover:bg-white/10 hover:text-white dark:border-border dark:text-foreground dark:hover:bg-accent/50">
                             <Link href="/author">
                                 <PenLine className="h-4 w-4" />
                                 Sáng tác
@@ -121,7 +133,7 @@ export const Header = () => {
 
                     {/* Nút Admin - chỉ hiển thị cho admin */}
                     {isAuthenticated && user && user.role === 'admin' && (
-                        <Button variant="default" asChild className="hidden sm:flex gap-2">
+                        <Button variant="default" asChild className="hidden sm:flex gap-2 bg-white text-primary hover:bg-white/90 border-0 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-semibold shadow">
                             <Link href="/admin">
                                 Admin
                             </Link>
@@ -131,7 +143,7 @@ export const Header = () => {
                     {isAuthenticated && user ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Avatar className="cursor-pointer">
+                                <Avatar className="cursor-pointer border-2 border-white/60 dark:border-zinc-800 shadow">
                                     <AvatarImage src={user.avatar || "https://github.com/shadcn.png"} />
                                     <AvatarFallback>{user.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                                 </Avatar>
@@ -149,10 +161,10 @@ export const Header = () => {
                         </DropdownMenu>
                     ) : (
                         <div className="hidden sm:flex gap-2">
-                            <Button variant="ghost" asChild>
+                            <Button variant="ghost" asChild className="text-white hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-accent/50">
                                 <Link href="/login">Đăng nhập</Link>
                             </Button>
-                            <Button asChild>
+                            <Button asChild className="bg-white text-primary hover:bg-white/90 border-0 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold shadow-md rounded-full px-5">
                                 <Link href="/register">Đăng ký</Link>
                             </Button>
                         </div>
@@ -163,7 +175,7 @@ export const Header = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsMobileMenuOpen(true)}
-                        className="md:hidden cursor-pointer hover:bg-accent/50 text-foreground transition-all duration-200"
+                        className="md:hidden cursor-pointer text-white hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-accent/50 transition-all duration-200"
                         title="Mở menu"
                     >
                         <Menu className="h-5 w-5" />
@@ -180,7 +192,7 @@ export const Header = () => {
                     <div className="relative w-[300px] max-w-[85vw] h-full bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-200/80 dark:border-zinc-800/80 shadow-[rgba(0,0,0,0.56)_0px_22px_70px_4px] p-6 flex flex-col gap-6 overflow-y-auto animate-in slide-in-from-right duration-300">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/60 pb-4">
-                            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">Danh mục</span>
+                            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-pink-500">Danh mục</span>
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -201,20 +213,20 @@ export const Header = () => {
                             <Link 
                                 href="/" 
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-55 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
+                                className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
                             >
                                 <Home className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                                <span className="text-zinc-750 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Trang chủ</span>
+                                <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Trang chủ</span>
                             </Link>
 
                             {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (
                                 <Link 
                                     href="/author" 
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-55 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
+                                    className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
                                 >
                                     <PenLine className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                                    <span className="text-zinc-750 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Sáng tác</span>
+                                    <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Sáng tác</span>
                                 </Link>
                             )}
 
@@ -222,10 +234,10 @@ export const Header = () => {
                                 <Link 
                                     href="/admin" 
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-55 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
+                                    className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
                                 >
                                     <BookOpen className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                                    <span className="text-zinc-750 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Admin Panel</span>
+                                    <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Admin Panel</span>
                                 </Link>
                             )}
 
@@ -252,7 +264,7 @@ export const Header = () => {
                                         key={genre._id}
                                         href={`/genre/${genre.slug}`}
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="group flex items-center justify-between px-3 py-2.5 text-xs font-semibold rounded-xl bg-zinc-55 dark:bg-zinc-900/20 border border-zinc-200/80 dark:border-zinc-900/40 hover:bg-zinc-100 dark:hover:bg-zinc-900/85 hover:border-primary/20 text-zinc-650 dark:text-zinc-400 hover:text-primary dark:hover:text-foreground transition-all duration-200"
+                                        className="group flex items-center justify-between px-3 py-2.5 text-xs font-semibold rounded-xl bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200/80 dark:border-zinc-900/40 hover:bg-zinc-100 dark:hover:bg-zinc-900/85 hover:border-primary/20 text-zinc-600 dark:text-zinc-400 hover:text-primary dark:hover:text-foreground transition-all duration-200"
                                     >
                                         <span className="truncate">{genre.name}</span>
                                         <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-primary transition-colors group-hover:scale-125 duration-200 shrink-0" />
@@ -264,7 +276,7 @@ export const Header = () => {
                         {/* Bottom Info / Actions */}
                         <div className="mt-auto border-t border-zinc-200/80 dark:border-zinc-900 pt-4 flex flex-col gap-4">
                             <div className="flex items-center justify-between px-3 py-2 bg-zinc-55 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 rounded-xl p-3">
-                                <span className="text-xs text-zinc-550 dark:text-zinc-400 font-medium">Giao diện</span>
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Giao diện</span>
                                 {mounted && (
                                     <Button
                                         variant="outline"

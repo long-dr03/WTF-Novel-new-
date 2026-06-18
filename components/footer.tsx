@@ -1,70 +1,64 @@
 "use client"
-import { Facebook, Instagram, Linkedin } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+
+import React from "react"
+import { Facebook, Mail, ArrowUp } from "lucide-react"
+import Link from "next/link"
 
 export const Footer = () => {
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+
     return (
-        <footer className="w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mt-auto">
-            <div className="w-full max-w-[1200px] mx-auto px-4 pt-12 pb-28 md:py-12">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                    <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left gap-3">
-                        <div className="flex items-center gap-2">
-                            <Image src="/logo.jpg" alt="Logo" width={50} height={50} className="rounded-lg" />
-                            <span className="text-xl font-bold">Novel</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">© 2025 Novel. All rights reserved.</p>
-                    </div>
+        <footer className="relative w-full bg-zinc-950 text-zinc-400 border-t border-zinc-900 mt-auto py-12 px-4 shadow-inner">
+            <div className="container mx-auto flex flex-col items-center gap-6">
+                
+                {/* Social Links Circular Icons */}
+                <div className="flex items-center gap-4">
+                    <a 
+                        href="mailto:support@laophutgia.net" 
+                        className="w-9 h-9 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 flex items-center justify-center transition-all shadow hover:scale-105 active:scale-95" 
+                        title="Gửi email liên hệ"
+                    >
+                        <Mail size={16} />
+                    </a>
+                    <a 
+                        href="https://facebook.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="w-9 h-9 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 flex items-center justify-center transition-all shadow hover:scale-105 active:scale-95" 
+                        title="Kết nối Facebook"
+                    >
+                        <Facebook size={16} fill="currentColor" stroke="none" />
+                    </a>
+                </div>
 
-                    <div className="flex flex-col gap-3">
-                        <h3 className="font-semibold text-lg">Liên hệ</h3>
-                        <ul className="flex flex-col gap-2.5 text-sm">
-                            <li>
-                                <Link href="/" className="group flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                                    <Facebook size={16} strokeWidth={1.5} className="group-hover:text-primary transition-colors" /> 
-                                    <span>Facebook</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/" className="group flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                                    <Instagram size={16} strokeWidth={1.5} className="group-hover:text-primary transition-colors" /> 
-                                    <span>Instagram</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/" className="group flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                                    <Linkedin size={16} strokeWidth={1.5} className="group-hover:text-primary transition-colors" /> 
-                                    <span>Linkedin</span>
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
+                {/* Policies Links */}
+                <div className="flex items-center gap-3.5 text-xs font-bold text-zinc-300">
+                    <Link href="/about" className="hover:text-primary transition-colors duration-200">Giới thiệu</Link>
+                    <span className="text-zinc-800">|</span>
+                    <Link href="/policy" className="hover:text-primary transition-colors duration-200">Chính sách</Link>
+                </div>
 
-                    <div className="flex flex-col gap-3">
-                        <h3 className="font-semibold text-lg">Thông tin</h3>
-                        <ul className="flex flex-col gap-2.5 text-sm">
-                            <li>
-                                <Link href="/" className="group flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                                    <span className="w-1 h-1 rounded-full bg-muted-foreground group-hover:bg-primary transition-colors mr-1" />
-                                    <span>Về chúng tôi</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/" className="group flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                                    <span className="w-1 h-1 rounded-full bg-muted-foreground group-hover:bg-primary transition-colors mr-1" />
-                                    <span>Điều khoản</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/" className="group flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                                    <span className="w-1 h-1 rounded-full bg-muted-foreground group-hover:bg-primary transition-colors mr-1" />
-                                    <span>Chính sách</span>
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
+                {/* Branding and copyright info */}
+                <div className="text-center space-y-1 z-10">
+                    <p className="text-xs text-zinc-400 font-medium">
+                        Đọc truyện tại <span className="font-bold text-zinc-250 hover:text-primary transition-colors">Laophutgia.net</span>
+                    </p>
+                    <p className="text-[10px] text-zinc-650 tracking-wider">
+                        © {new Date().getFullYear()} Lão Phật Gia. All rights reserved.
+                    </p>
                 </div>
             </div>
+
+            {/* Floating Back to Top Button */}
+            <button
+                onClick={scrollToTop}
+                className="absolute right-6 bottom-6 p-2.5 rounded-lg bg-zinc-900 hover:bg-primary hover:text-white border border-zinc-800 text-zinc-400 transition-all cursor-pointer shadow hover:scale-105 active:scale-95"
+                title="Lên đầu trang"
+            >
+                <ArrowUp size={16} />
+            </button>
         </footer>
-    );
-};
+    )
+}

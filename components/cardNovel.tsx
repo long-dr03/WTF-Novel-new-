@@ -37,7 +37,7 @@ const CardNovel = ({
     const CardContent = (
         <SpotlightCard
             className={`custom-spotlight-card w-full h-full flex flex-col justify-between gap-3 bg-zinc-50 border border-zinc-200/80 text-zinc-900 dark:bg-zinc-950/40 dark:border-zinc-800/30 dark:text-zinc-50 transition-all hover:shadow-md ${className}`}
-            spotlightColor="rgba(168, 85, 247, 0.15)"
+            spotlightColor="rgba(255, 133, 162, 0.12)"
         >
             <div className="flex flex-col gap-3">
                 <div className="img_container w-full aspect-[2/3] overflow-hidden bg-muted relative">

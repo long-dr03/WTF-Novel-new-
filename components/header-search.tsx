@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { getPublicNovelsService } from "@/services/novelService"
 
+import { cn } from "@/lib/utils"
+
 interface SearchResult {
     _id: string;
     title: string;
@@ -28,7 +30,7 @@ interface SearchResult {
     image?: string;
 }
 
-export function HeaderSearch() {
+export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
     const router = useRouter()
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState("")
@@ -69,7 +71,7 @@ export function HeaderSearch() {
     }, [query])
 
     return (
-        <div className="flex items-center">
+        <div className="flex items-center w-full justify-center md:justify-start">
             <Popover open={open} onOpenChange={setOpen}>
                 {/* Trigger */}
                 <PopoverTrigger asChild>
@@ -77,12 +79,17 @@ export function HeaderSearch() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full max-w-[300px] justify-between text-zinc-650 dark:text-muted-foreground bg-zinc-100/60 dark:bg-zinc-900/50 hover:bg-zinc-200/60 dark:hover:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-foreground rounded-xl transition-all duration-200 cursor-pointer"
+                        className={cn(
+                            "w-full max-w-[300px] justify-between rounded-xl transition-all duration-200 cursor-pointer",
+                            isHeader 
+                                ? "text-white/95 hover:text-white bg-white/15 hover:bg-white/25 border-white/20 hover:border-white/30 dark:text-muted-foreground dark:bg-zinc-900/50 dark:hover:bg-zinc-900/80 dark:border-zinc-800/80 dark:hover:border-zinc-700 dark:hover:text-foreground"
+                                : "text-zinc-650 dark:text-muted-foreground bg-zinc-100/60 dark:bg-zinc-900/50 hover:bg-zinc-200/60 dark:hover:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-foreground"
+                        )}
                     >
                         <span className="truncate">
                             {query ? query : "Tìm kiếm truyện..."}
                         </span>
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <Search className={cn("ml-2 h-4 w-4 shrink-0 opacity-70", isHeader ? "text-white" : "text-zinc-500 dark:text-muted-foreground")} />
                     </Button>
                 </PopoverTrigger>
 
