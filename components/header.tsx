@@ -123,7 +123,7 @@ export const Header = () => {
 
                     {/* Nút Sáng tác - chỉ hiển thị cho tác giả hoặc admin */}
                     {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (
-                        <Button variant="outline" asChild className="hidden sm:flex gap-2 border-white/30 text-white hover:bg-white/10 hover:text-white dark:border-border dark:text-foreground dark:hover:bg-accent/50">
+                        <Button variant="outline" asChild className="hidden sm:flex gap-2 bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white dark:border-border dark:text-foreground dark:hover:bg-accent/50">
                             <Link href="/author">
                                 <PenLine className="h-4 w-4" />
                                 Sáng tác
