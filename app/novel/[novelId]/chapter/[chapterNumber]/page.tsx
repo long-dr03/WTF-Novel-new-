@@ -482,7 +482,7 @@ useEffect(() => {
                                 size="icon"
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                                 className={cn(
-                                    "transition-colors",
+                                    "transition-colors lg:hidden",
                                     isSidebarOpen && "text-primary"
                                 )}
                                 title="Trình phát nhạc / giọng đọc"
@@ -500,11 +500,9 @@ useEffect(() => {
                 </div>
             </header>
 
-            {/* Chapter Content */}
             <main className={cn(
-                "container max-w-4xl mx-auto px-4 py-8 transition-all duration-300",
-                // Shift content to the left when the sidebar is open on desktop
-                isSidebarOpen && "lg:pr-[320px]" 
+                "container max-w-4xl mx-auto px-4 pt-8 transition-all duration-300 lg:pr-[280px] xl:pr-[120px] 2xl:pr-0",
+                isSidebarOpen ? "pb-24 lg:pb-8" : "pb-8 lg:pb-8"
             )}>
                 <div className={cn(
                     "rounded-2xl p-4 sm:p-8 shadow-sm transition-colors border max-w-4xl mx-auto", // Keep content centered within available space
