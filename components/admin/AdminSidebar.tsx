@@ -52,9 +52,11 @@ export function AdminSidebar() {
   return (
     <div className="flex flex-row md:flex-col h-auto md:h-full w-full md:w-64 bg-card border-b md:border-b-0 md:border-r border-border overflow-x-auto md:overflow-x-visible shrink-0 scrollbar-hidden">
       <div className="hidden md:block p-6 border-b border-border">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-          Novel Admin
-        </h1>
+        <Link href="/" className="hover:opacity-80 transition-opacity block">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+            Novel Admin
+          </h1>
+        </Link>
       </div>
       
       <div className="flex-1 py-2 md:py-6 flex flex-row md:flex-col gap-1 md:gap-2 px-3 overflow-x-auto scrollbar-hidden w-full md:w-auto">

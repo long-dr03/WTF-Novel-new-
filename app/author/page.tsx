@@ -5,7 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider"
 import { DashboardStats } from "@/components/author/DashboardStats"
 import { NovelList } from "@/components/author/NovelList"
 import  WriteNovel  from "@/components/author/WriteNovelV2"
-import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getNovelsByAuthorService } from "@/services/novelService"
 
@@ -24,6 +24,26 @@ const Page = () => {
     const [authorNovels, setAuthorNovels] = useState<Novel[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("author-sidebar-collapsed");
+            if (saved === "true") {
+                setIsSidebarCollapsed(true);
+            }
+        }
+    }, []);
+
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(prev => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+                localStorage.setItem("author-sidebar-collapsed", String(next));
+            }
+            return next;
+        });
+    };
     useEffect(() => {
         const fetchNovels = async () => {
             if (user?.id) {
@@ -98,20 +118,28 @@ const Page = () => {
     }
 
     return (
-        <div className="author-layout my-8 flex flex-col lg:flex-row gap-6 min-h-[600px] container mx-auto px-4">
-            <div className="author-sidebar rounded-2xl w-full lg:w-64 shrink-0 flex flex-col gap-2 bg-card border shadow-sm h-fit">
-                <div className="hidden lg:flex author-sidebar-header p-4 items-center gap-3 border-b">
-                    <Avatar className="author-avatar w-10 h-10 rounded-full overflow-hidden">
+        <div className={cn(
+            "my-4 sm:my-8 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[600px] mx-auto px-3 sm:px-4 transition-all duration-300",
+            activeTab === "write" ? "max-w-[98%] w-full" : "container"
+        )}>
+            <div className={cn(
+                "rounded-2xl w-full shrink-0 flex flex-col gap-2 bg-card border shadow-sm h-fit lg:sticky lg:top-20 transition-all duration-300",
+                isSidebarCollapsed ? "lg:w-16" : "lg:w-64"
+            )}>
+                <div className={cn("hidden lg:flex p-4 items-center gap-3 border-b", isSidebarCollapsed && "justify-center px-2")}>
+                    <Avatar className="w-10 h-10 rounded-full overflow-hidden">
                         <AvatarImage src={user.avatar || "https://github.com/shadcn.png"} />
                         <AvatarFallback>{user.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                     </Avatar>
-                    <div className="author-info overflow-hidden">
-                        <h3 className="font-semibold text-sm truncate">{user.username}</h3>
-                        <p className="text-xs text-muted-foreground">Tác giả</p>
-                    </div>
+                    {!isSidebarCollapsed && (
+                        <div className="overflow-hidden">
+                            <h3 className="font-semibold text-sm truncate">{user.username}</h3>
+                            <p className="text-xs text-muted-foreground">Tác giả</p>
+                        </div>
+                    )}
                 </div>
 
-                <nav className="author-nav flex-1 p-2 flex flex-row lg:flex-col gap-1 overflow-x-auto scrollbar-hidden w-full">
+                <nav className="flex-1 p-2 flex flex-row lg:flex-col gap-1 overflow-x-auto scrollbar-hidden w-full">
                     {menuItems.map((item) => {
                         const Icon = item.icon
                         return (
@@ -119,28 +147,38 @@ const Page = () => {
                                 key={item.id}
                                 onClick={() => setActiveTab(item.id)}
                                 className={cn(
-                                    "author-nav-item w-auto lg:w-full flex items-center gap-2 lg:gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                                    "w-auto lg:w-full flex items-center gap-2 lg:gap-3 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap shrink-0",
+                                    isSidebarCollapsed && "lg:justify-center lg:px-2",
                                     activeTab === item.id 
-                                        ? "bg-primary text-primary-foreground shadow-sm" 
-                                        : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                                        ? "bg-primary text-white shadow-sm font-semibold" 
+                                        : "text-zinc-650 dark:text-zinc-400 hover:text-primary dark:hover:text-primary hover:bg-primary/10 dark:hover:bg-zinc-800/40 font-medium"
                                 )}
+                                title={isSidebarCollapsed ? item.label : undefined}
                             >
-                                <Icon className="h-4 w-4" />
-                                <span>{item.label}</span>
+                                <Icon className="h-4 w-4 flex-shrink-0" />
+                                {!isSidebarCollapsed && <span>{item.label}</span>}
                             </button>
                         )
                     })}
                 </nav>
 
-                <div className="hidden lg:block author-sidebar-footer p-2 border-t">
-                    <button className="author-nav-item logout w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
-                        <LogOut className="h-4 w-4" />
-                        <span>Đăng xuất</span>
+                <div className="hidden lg:flex flex-col gap-1 p-2 border-t">
+                    <button
+                        onClick={toggleSidebar}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
+                        title={isSidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+                    >
+                        {isSidebarCollapsed ? <ChevronRight className="h-4 w-4 flex-shrink-0" /> : <ChevronLeft className="h-4 w-4 flex-shrink-0" />}
+                        {!isSidebarCollapsed && <span>Thu gọn</span>}
+                    </button>
+                    <button className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors", isSidebarCollapsed && "justify-center px-2")}>
+                        <LogOut className="h-4 w-4 flex-shrink-0" />
+                        {!isSidebarCollapsed && <span>Đăng xuất</span>}
                     </button>
                 </div>
             </div>
 
-            <div className="author-content flex-1 bg-card rounded-2xl border shadow-sm overflow-hidden min-h-[500px]">
+            <div className="flex-1 min-w-0 bg-card rounded-2xl border shadow-sm overflow-hidden min-h-[500px]">
                 {renderContent()}
             </div>
         </div>

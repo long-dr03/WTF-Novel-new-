@@ -84,6 +84,11 @@ export default function ReadChapterPage() {
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
     const [autoNext, setAutoNext] = useState(true)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isAdUnlocked, setIsAdUnlocked] = useState(false)
+
+    useEffect(() => {
+        setIsAdUnlocked(false)
+    }, [chapterNumber])
 useEffect(() => {
         if (user && chapter && chapter._id) {
              addToLibraryService(novelId, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
@@ -480,7 +485,13 @@ useEffect(() => {
                             <Button 
                                 variant="ghost" 
                                 size="icon"
-                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                onClick={() => {
+                                    if (!isAdUnlocked) {
+                                        toast.error("Vui lòng mở khóa chương truyện để nghe audio")
+                                        return
+                                    }
+                                    setIsSidebarOpen(!isSidebarOpen)
+                                }}
                                 className={cn(
                                     "transition-colors lg:hidden",
                                     isSidebarOpen && "text-primary"
@@ -520,16 +531,70 @@ useEffect(() => {
                     </div>
 
                     {/* Content */}
-                    <article 
-                        className={`prose prose-lg max-w-none transition-all ${currentTheme.text}`}
-                        style={{
-                            fontSize: `${fontSize}px`,
-                            lineHeight: lineHeight,
-                            fontFamily: fontFamily,
-                            color: readingTheme === 'light' ? '#1c1917' : readingTheme === 'sepia' ? '#5f4b32' : '#e0e0e0'
-                        }}
-                        dangerouslySetInnerHTML={{ __html: chapter.content }}
-                    />
+                    {!isAdUnlocked ? (
+                        <div className="flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5 my-6 text-center">
+                            <p className="text-sm font-medium opacity-80 mb-2">
+                                Mời Quý độc giả <span className="font-bold text-foreground">CLICK vào LIÊN KẾT HOẶC ẢNH</span> bên dưới
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-primary mb-3 uppercase tracking-wider animate-pulse">
+                                MỞ ỨNG DỤNG SHOPEE, sau đó quay trở lại để tiếp tục đọc toàn bộ chương truyện!
+                            </p>
+                            <a 
+                                href="https://s.shopee.vn/5L5nAgyTop"
+                                target="_blank"
+                                rel="nofollow sponsored noopener noreferrer"
+                                onClick={() => setIsAdUnlocked(true)}
+                                className="text-primary hover:underline font-bold text-base sm:text-lg block mb-6 break-all"
+                            >
+                                https://s.shopee.vn/5L5nAgyTop
+                            </a>
+
+                            <a 
+                                href="https://s.shopee.vn/5L5nAgyTop"
+                                target="_blank"
+                                rel="nofollow sponsored noopener noreferrer"
+                                onClick={() => setIsAdUnlocked(true)}
+                                className="group relative block w-full max-w-sm rounded-2xl bg-gradient-to-br from-pink-400 via-primary to-rose-600 p-1 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                
+                                <div className="flex w-full flex-col items-center justify-center rounded-xl bg-white p-5 sm:p-6 text-center shadow-inner relative min-h-[210px] sm:min-h-[240px]">
+                                    <span className="text-primary text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1">ẤN VÀO ĐÂY</span>
+                                    <span className="text-slate-900 text-lg sm:text-xl font-extrabold uppercase leading-tight mb-2">
+                                        ĐỂ ĐỌC TOÀN BỘ<br />CHƯƠNG TRUYỆN
+                                    </span>
+                                    <div className="w-12 h-0.5 bg-pink-200 my-1" />
+                                    <span className="text-slate-500 text-[9px] sm:text-[10px] uppercase tracking-wide font-medium mt-1">
+                                        HÀNH ĐỘNG NÀY CHỈ THỰC HIỆN MỘT LẦN.
+                                    </span>
+                                    <span className="text-slate-500 text-[9px] sm:text-[10px] uppercase tracking-wide font-medium">
+                                        MONG QUÝ ĐỘC GIẢ ỦNG HỘ.
+                                    </span>
+
+                                    <div className="absolute bottom-2 right-4 transform group-hover:scale-110 transition-transform duration-300">
+                                        <svg className="w-6 h-6 sm:w-8 sm:h-8 text-primary drop-shadow-md fill-current" viewBox="0 0 24 24">
+                                            <path d="M12 2a1 1 0 0 1 .993.883L13 3v4.618l.824-.275a2.03 2.03 0 0 1 2.457 1.058l.123.275 1.5 5a2 2 0 0 1-.36 1.831l-.14.169-3.5 3.5a1 1 0 0 1-.607.284L13.7 19.5h-5.2a3 3 0 0 1-2.993-2.824L5.5 16.5v-6a2 2 0 0 1 1.85-1.995L7.5 8.5h2v-3.5a3 3 0 0 1 5.824-.883L15 4.5l.001 2.382a2 2 0 0 1-.502 1.29l-.117.118-2.382 2.382v-6.672a1 1 0 0 1 .883-.993L12 2zm1 11v-1.586l-2.707 2.707a1 1 0 0 1-1.32.083l-.094-.083a1 1 0 0 1 0-1.414L12.586 10H11v-1.5h2a2.5 2.5 0 0 0 2.492-2.336L15.5 6V4.5a1.5 1.5 0 0 0-2.993-.145L12.5 4.5V13h.5zm-5-3h-1.5a.5.5 0 0 0-.492.41L7 10.5v6c0 .773.57 1.414 1.318 1.493L8.5 18H13c.277 0 .543-.112.738-.31l.09-.1.97-.97-2.298-2.299v-2.321h-.5a1 1 0 0 1-.993-.883L11 11V9.5H8v1z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </a>
+                            
+                            <p className="text-xs text-muted-foreground mt-6 font-medium">
+                                Laophutgia.net và đội ngũ Editor xin chân thành cảm ơn!
+                            </p>
+                        </div>
+                    ) : (
+                        <article 
+                            className={`prose prose-lg max-w-none transition-all ${currentTheme.text}`}
+                            style={{
+                                fontSize: `${fontSize}px`,
+                                lineHeight: lineHeight,
+                                fontFamily: fontFamily,
+                                color: readingTheme === 'light' ? '#1c1917' : readingTheme === 'sepia' ? '#5f4b32' : '#e0e0e0'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: chapter.content }}
+                        />
+                    )}
                 </div>
 
                 {/* Quảng cáo tài trợ */}
@@ -576,7 +641,13 @@ useEffect(() => {
 
             {/* Audio Toggle FAB - Mobile Only */}
             <Button
-                onClick={() => setIsSidebarOpen(true)}
+                onClick={() => {
+                    if (!isAdUnlocked) {
+                        toast.error("Vui lòng mở khóa chương truyện để nghe audio")
+                        return
+                    }
+                    setIsSidebarOpen(true)
+                }}
                 className="fixed bottom-8 right-6 h-12 w-12 rounded-full shadow-xl z-40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 lg:hidden"
                 size="icon"
                 title="Trình phát nhạc / giọng đọc"
@@ -586,9 +657,9 @@ useEffect(() => {
 
             {/* Audio Sidebar */}
             <AudioSidebar
-                isOpen={isSidebarOpen}
+                isOpen={isSidebarOpen && isAdUnlocked}
                 onClose={() => setIsSidebarOpen(false)}
-                audioUrl={chapter.audioUrl || null}
+                audioUrl={isAdUnlocked ? (chapter.audioUrl || null) : null}
                 title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
                 novelTitle={novel?.title}
                 coverUrl={novel?.image || novel?.coverImage || undefined}
@@ -599,6 +670,7 @@ useEffect(() => {
                 autoNext={autoNext}
                 onAutoNextChange={setAutoNext}
                 isDark={readingTheme === 'dark'}
+                isLocked={!isAdUnlocked}
             />
 
             {/* Auto-Scroll Float Panel */}

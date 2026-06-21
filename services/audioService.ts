@@ -1,7 +1,5 @@
 import axios from '../setup/axios';
 
-const API_BASE = process.env.BACKEND_URL || 'http://localhost:6969';
-
 export interface AudioInfo {
     chapterId: string;
     chapterNumber: number;

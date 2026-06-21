@@ -49,7 +49,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 w-[100vw]">
+        <div className="min-h-screen flex items-center justify-center p-4 w-full">
             <div className="w-full max-w-md space-y-4">
                 {error && (
                     <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">

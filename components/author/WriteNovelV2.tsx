@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -15,7 +16,7 @@ import {
     Highlighter, Sun, Moon, Save, FileText, Eye, EyeOff, Music,
     Maximize2, Minimize2, Type, Pilcrow, Plus, Edit3, RefreshCw,
     Send, Clock, FileEdit, Upload, ChevronLeft, ChevronRight,
-    ChevronsLeft, ChevronsRight, Search, Headphones, CheckCircle2, Circle
+    ChevronsLeft, ChevronsRight, ChevronsLeftRight, Search, Headphones, CheckCircle2, Circle
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
@@ -76,13 +77,22 @@ interface WriteNovelProps {
 }
 
 const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: WriteNovelProps) => {
-    const [isDarkMode, setIsDarkMode] = useState(true);
+    const { resolvedTheme } = useTheme();
+    const [isDarkMode, setIsDarkMode] = useState(resolvedTheme === "dark");
+
+    useEffect(() => {
+        setIsDarkMode(resolvedTheme === "dark");
+    }, [resolvedTheme]);
+
     const [isPreview, setIsPreview] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterNumber, setChapterNumber] = useState(1);
     const [chapterStatus, setChapterStatus] = useState<'draft' | 'published' | 'scheduled'>('draft');
+
+    const [internalSidebarOpen, setInternalSidebarOpen] = useState(true);
+    const [isWideMode, setIsWideMode] = useState(false);
 
     // State
     const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -308,7 +318,9 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                 "w-72 flex-shrink-0 flex flex-col border-r h-full relative z-10 transition-all duration-300",
                 sidebarOpen 
                     ? "fixed inset-y-0 left-0 z-50 bg-card" 
-                    : "hidden lg:flex"
+                    : internalSidebarOpen 
+                        ? "hidden lg:flex" 
+                        : "hidden"
             )}>
                 {/* Header: Novel Selection */}
                 <div className="p-4 border-b space-y-3 flex-none border-dashed" style={{borderColor: isDarkMode ? '#333' : '#e5e7eb'}}>
@@ -316,11 +328,16 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                         <span className="text-xs font-bold uppercase tracking-wider opacity-70">
                             QUẢN LÝ
                         </span>
-                         {selectedNovel && (
-                             <Button variant="ghost" size="icon" onClick={() => setShowEditDialog(true)} className="h-6 w-6 opacity-60 hover:opacity-100">
-                                <Edit3 className="w-3.5 h-3.5" />
-                            </Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                             {selectedNovel && (
+                                 <Button variant="ghost" size="icon" onClick={() => setShowEditDialog(true)} className="h-6 w-6 opacity-60 hover:opacity-100">
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                 </Button>
+                             )}
+                             <Button variant="ghost" size="icon" onClick={() => setInternalSidebarOpen(false)} className="hidden lg:flex h-6 w-6 opacity-60 hover:opacity-100" title="Thu gọn danh sách">
+                                 <ChevronLeft className="w-4 h-4" />
+                             </Button>
+                        </div>
                      </div>
                      
                     <Select value={selectedNovelId || ""} onValueChange={(value) => onNovelChange?.(value || null)}>
@@ -362,7 +379,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                                         className={cn(
                                             "w-full px-3 py-2.5 rounded-lg text-left text-sm transition-all flex flex-col gap-1 group relative",
                                             isSelected 
-                                                ? isDarkMode ? "bg-purple-500/10 text-purple-300" : "bg-purple-50 text-purple-900"
+                                                ? isDarkMode ? "bg-primary/10 text-primary font-semibold" : "bg-primary/5 text-primary border border-primary/20 font-semibold"
                                                 : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100"
                                         )}
                                     >
@@ -396,7 +413,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                  <div className={cn("p-3 border-t space-y-2 flex-none", theme.border)}>
                     <Button 
                         onClick={handleNewChapter} disabled={!selectedNovelId}
-                        className="w-full justify-center bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/20"
+                        className="w-full justify-center bg-primary hover:bg-primary/95 text-white shadow-md shadow-primary/10"
                     >
                         <Plus className="w-4 h-4 mr-2" /> Chương mới
                     </Button>
@@ -422,8 +439,18 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                              <Button
                                  variant="outline"
                                  size="icon"
-                                 onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
-                                 className="lg:hidden h-10 w-10 flex-shrink-0 flex items-center justify-center border hover:bg-accent text-foreground self-end"
+                                 onClick={(e) => { 
+                                     e.stopPropagation(); 
+                                     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                                         setSidebarOpen(true); 
+                                     } else {
+                                         setInternalSidebarOpen(true);
+                                     }
+                                 }}
+                                 className={cn(
+                                     "h-10 w-10 flex-shrink-0 flex items-center justify-center border hover:bg-accent text-foreground self-end",
+                                     internalSidebarOpen ? "lg:hidden" : "lg:flex"
+                                 )}
                                  title="Danh sách chương"
                              >
                                  <List className="h-4 w-4" />
@@ -435,7 +462,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                                      type="number" 
                                      value={chapterNumber} 
                                      onChange={e => setChapterNumber(Number(e.target.value))} 
-                                     className={cn("h-10 text-center font-mono text-lg font-bold border-transparent hover:border-stone-700 focus:border-purple-500 transition-colors bg-transparent shadow-none px-0 rounded-none border-b", isDarkMode ? "text-white placeholder:text-stone-600" : "text-black")} 
+                                     className={cn("h-10 text-center font-mono text-lg font-bold border-transparent hover:border-stone-700 focus:border-primary transition-colors bg-transparent shadow-none px-0 rounded-none border-b", isDarkMode ? "text-white placeholder:text-stone-600" : "text-black")} 
                                  />
                              </div>
                              
@@ -446,18 +473,21 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                                     value={chapterTitle} 
                                     onChange={e => setChapterTitle(e.target.value)} 
                                     placeholder="Nhập tiêu đề chương..." 
-                                    className={cn("h-10 text-xl font-bold border-transparent hover:border-stone-700 focus:border-purple-500 transition-colors bg-transparent shadow-none px-2 rounded-none border-b placeholder:font-normal", isDarkMode ? "text-white placeholder:text-stone-700" : "text-black")} 
+                                    className={cn("h-10 text-xl font-bold border-transparent hover:border-stone-700 focus:border-primary transition-colors bg-transparent shadow-none px-2 rounded-none border-b placeholder:font-normal", isDarkMode ? "text-white placeholder:text-stone-700" : "text-black")} 
                                 />
                              </div>
                          </div>
                          
                          {/* Action Buttons */}
                          <div className="flex items-center flex-wrap gap-2 pl-0 lg:pl-4 border-l-0 lg:border-l border-dashed border-stone-800/60 w-full lg:w-auto justify-end">
-                             <div className="flex items-center bg-stone-800/50 rounded-lg p-0.5 border border-stone-700/50 mr-2">
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-white" onClick={() => setIsDarkMode(!isDarkMode)}>
+                             <div className={cn("flex items-center rounded-lg p-0.5 border mr-2", isDarkMode ? "bg-stone-800/50 border-stone-700/50" : "bg-stone-100 border-stone-200")}>
+                                 <Button variant="ghost" size="icon" className={cn("h-8 w-8", isDarkMode ? "text-stone-400 hover:text-white" : "text-stone-600 hover:text-stone-900")} onClick={() => setIsDarkMode(!isDarkMode)}>
                                      {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                                  </Button>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-white" onClick={() => setIsFullscreen(!isFullscreen)}>
+                                 <Button variant="ghost" size="icon" className={cn("h-8 w-8", isDarkMode ? "text-stone-400 hover:text-white" : "text-stone-600 hover:text-stone-900")} onClick={() => setIsWideMode(!isWideMode)} title={isWideMode ? "Thu hẹp vùng viết" : "Mở rộng vùng viết"}>
+                                     <ChevronsLeftRight className="w-4 h-4" />
+                                 </Button>
+                                 <Button variant="ghost" size="icon" className={cn("h-8 w-8", isDarkMode ? "text-stone-400 hover:text-white" : "text-stone-600 hover:text-stone-900")} onClick={() => setIsFullscreen(!isFullscreen)}>
                                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                                  </Button>
                              </div>
@@ -518,7 +548,11 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
 
                 {/* 3. EDITOR AREA */}
                 <div className={cn("flex-1 overflow-y-auto relative no-scrollbar", theme.editorBg)} onClick={() => editor?.chain().focus()}>
-                    <div className={cn("max-w-4xl mx-auto min-h-full shadow-sm", theme.prose)}>
+                    <div className={cn(
+                        "mx-auto min-h-full shadow-sm transition-all duration-300", 
+                        isWideMode ? "max-w-6xl px-4 md:px-8" : "max-w-4xl px-4 md:px-12", 
+                        theme.prose
+                    )}>
                         <EditorContent editor={editor} />
                     </div>
                 </div>

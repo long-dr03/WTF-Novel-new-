@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX } from "lucide-react"
+import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX, Lock } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -22,6 +22,7 @@ interface AudioSidebarProps {
     autoNext?: boolean
     onAutoNextChange?: (val: boolean) => void
     isDark?: boolean
+    isLocked?: boolean
 }
 
 export function AudioSidebar({
@@ -37,7 +38,8 @@ export function AudioSidebar({
     hasPrev = false,
     autoNext = true,
     onAutoNextChange,
-    isDark = false
+    isDark = false,
+    isLocked = false
 }: AudioSidebarProps) {
     // --- Main Audio State ---
     const audioRef = useRef<HTMLAudioElement>(null)
@@ -204,6 +206,14 @@ export function AudioSidebar({
                                          }} className="h-1 cursor-pointer" />
                                      </div>
                                 </div>
+                            </div>
+                        ) : isLocked ? (
+                            <div className="text-center py-6 px-3 rounded-xl bg-primary/5 dark:bg-zinc-900/40 border border-primary/20 dark:border-zinc-800/80 shadow-sm">
+                                <Lock className="w-7 h-7 mx-auto mb-2 text-primary opacity-80 animate-pulse" />
+                                <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-250">Chương truyện đang khóa</p>
+                                <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+                                    Vui lòng click quảng cáo ở nội dung chương để mở khóa nghe audio.
+                                </p>
                             </div>
                         ) : (
                             <div className="text-center py-6 px-3 rounded-xl bg-primary/5 dark:bg-zinc-900/40 border border-primary/20 dark:border-zinc-800/80 shadow-sm">

@@ -47,9 +47,6 @@ export const Header = () => {
                 <div className="flex items-center gap-6 shrink-0">
                     <Link href="/" className="flex items-center gap-2 select-none">
                         <Image src="/logo.jpg" alt="Logo" width={40} height={40} className="rounded-full border-2 border-white/60 dark:border-primary/50 shadow-md" />
-                        <span className="text-2xl font-serif font-bold italic tracking-wide text-white dark:text-primary">
-                            Lão Phật Gia
-                        </span>
                     </Link>
                     <nav className="hidden lg:flex items-center gap-5 text-sm font-semibold">
                         <Link href="/search?sort=popular" className="text-white/85 hover:text-white dark:text-muted-foreground dark:hover:text-foreground transition-colors">

@@ -30,8 +30,19 @@ export default function WelcomePopup() {
             setOpen(false);
             return;
         }
-        // Hiện lại mỗi lần vào / chuyển trang (KHÔNG giới hạn 1 lần/phiên)
-        const timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
+        // Chỉ hiện 1 lần duy nhất trong phiên truy cập (Session Storage)
+        if (typeof window !== "undefined") {
+            const hasShown = sessionStorage.getItem("hasShownWelcomePopup");
+            if (hasShown) {
+                return;
+            }
+        }
+        const timer = setTimeout(() => {
+            setOpen(true);
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("hasShownWelcomePopup", "true");
+            }
+        }, SHOW_DELAY_MS);
         return () => clearTimeout(timer);
     }, [popup?.enabled, isPopupPage, pathname]);
 
