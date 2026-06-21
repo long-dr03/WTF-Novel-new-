@@ -149,7 +149,7 @@ export function AudioSidebar({
                                 {title || "Chương truyện"}
                             </h3>
                             <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide line-clamp-1">
-                                {novelTitle || "Audio By MEO MEO"}
+                                {novelTitle || "gocaudio"}
                             </p>
                         </div>
 
@@ -269,7 +269,7 @@ export function AudioSidebar({
                             {title || "Chương truyện"}
                         </span>
                         <span className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5">
-                            {novelTitle || "Audio By MEO MEO"}
+                            {novelTitle || "gocaudio"}
                         </span>
                     </div>
 

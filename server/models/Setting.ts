@@ -48,7 +48,7 @@ const PopupSchema = new Schema({
 }, { _id: false });
 
 const SettingSchema: Schema = new Schema({
-    siteName: { type: String, default: 'Audio By MEO MEO' },
+    siteName: { type: String, default: 'gocaudio' },
     siteDescription: { type: String, default: 'Nền tảng đọc truyện online hàng đầu Việt Nam' },
     maintenanceMode: { type: Boolean, default: false },
     emailNotification: { type: Boolean, default: true },

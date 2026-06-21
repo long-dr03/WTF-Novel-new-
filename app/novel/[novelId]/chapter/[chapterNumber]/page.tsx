@@ -580,7 +580,7 @@ useEffect(() => {
                             </a>
                             
                             <p className="text-xs text-muted-foreground mt-6 font-medium">
-                                Audio By MEO MEO và đội ngũ Editor xin chân thành cảm ơn!
+                                gocaudio và đội ngũ Editor xin chân thành cảm ơn!
                             </p>
                         </div>
                     ) : (
@@ -800,11 +800,11 @@ useEffect(() => {
                             "datePublished": chapter.publishedAt || chapter.createdAt || new Date().toISOString(),
                             "author": {
                                 "@type": "Person",
-                                "name": "Audio By MEO MEO"
+                                "name": "gocaudio"
                             },
                             "publisher": {
                                 "@type": "Organization",
-                                "name": "Audio By MEO MEO",
+                                "name": "gocaudio",
                                 "logo": {
                                     "@type": "ImageObject",
                                     "url": "/favicon.ico"

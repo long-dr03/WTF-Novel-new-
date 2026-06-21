@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Audio By MEO MEO",
-  description: "Audio By MEO MEO - Nền tảng đọc & nghe truyện online",
+  title: "gocaudio",
+  description: "gocaudio - Nền tảng đọc & nghe truyện online",
   icons: {
     icon: "/logo.jpg",
   },
