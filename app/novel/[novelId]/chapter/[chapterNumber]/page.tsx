@@ -580,7 +580,7 @@ useEffect(() => {
                             </a>
                             
                             <p className="text-xs text-muted-foreground mt-6 font-medium">
-                                Laophutgia.net và đội ngũ Editor xin chân thành cảm ơn!
+                                Audio By MEO MEO và đội ngũ Editor xin chân thành cảm ơn!
                             </p>
                         </div>
                     ) : (
@@ -800,11 +800,11 @@ useEffect(() => {
                             "datePublished": chapter.publishedAt || chapter.createdAt || new Date().toISOString(),
                             "author": {
                                 "@type": "Person",
-                                "name": "WTF Novel"
+                                "name": "Audio By MEO MEO"
                             },
                             "publisher": {
                                 "@type": "Organization",
-                                "name": "WTF Novel",
+                                "name": "Audio By MEO MEO",
                                 "logo": {
                                     "@type": "ImageObject",
                                     "url": "/favicon.ico"

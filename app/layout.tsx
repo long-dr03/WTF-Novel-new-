@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Novel",
-  description: "Web Novel Reader Application",
+  title: "Audio By MEO MEO",
+  description: "Audio By MEO MEO - Nền tảng đọc & nghe truyện online",
   icons: {
     icon: "/logo.jpg",
   },

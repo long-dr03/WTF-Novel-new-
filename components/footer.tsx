@@ -43,10 +43,10 @@ export const Footer = () => {
                 {/* Branding and copyright info */}
                 <div className="text-center space-y-1 z-10">
                     <p className="text-xs text-zinc-400 font-medium">
-                        Đọc truyện tại <span className="font-bold text-zinc-250 hover:text-primary transition-colors">Laophutgia.net</span>
+                        Đọc & nghe truyện tại <span className="font-bold text-zinc-250 hover:text-primary transition-colors">Audio By MEO MEO</span>
                     </p>
                     <p className="text-[10px] text-zinc-650 tracking-wider">
-                        © {new Date().getFullYear()} Lão Phật Gia. All rights reserved.
+                        © {new Date().getFullYear()} Audio By MEO MEO. All rights reserved.
                     </p>
                 </div>
             </div>
