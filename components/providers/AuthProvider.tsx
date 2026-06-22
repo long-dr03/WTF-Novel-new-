@@ -11,6 +11,7 @@ interface User {
     email: string
     avatar?: string
     role?: 'user' | 'admin' | 'author'
+    createdAt?: string
 }
 
 interface AuthContextType {

@@ -18,7 +18,12 @@ import {
     Sun,
     Moon,
     Flag,
-    ArrowDown
+    ArrowDown,
+    Play,
+    Pause,
+    Plus,
+    Minus,
+    X
 } from "lucide-react"
 import {
     DropdownMenu,
@@ -29,7 +34,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService, createReportService } from "@/services/novelService"
-import { AudioSidebar } from "@/components/reader/AudioSidebar"
+import { useAudioPlayer } from "@/components/providers/AudioPlayerContext"
 import { CommentSection } from "@/components/CommentSection"
 import { Headphones } from "lucide-react"
 import { useAuth } from "@/components/providers/AuthProvider"
@@ -82,13 +87,20 @@ export default function ReadChapterPage() {
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
-    const [autoNext, setAutoNext] = useState(true)
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const [isAdUnlocked, setIsAdUnlocked] = useState(false)
+    const [isAdUnlocked, setIsAdUnlocked] = useState(() => {
+        if (typeof window !== "undefined") {
+            return sessionStorage.getItem(`ad-unlocked-${novelId}-${chapterNumber}`) === "true"
+        }
+        return false
+    })
+    const player = useAudioPlayer()
 
     useEffect(() => {
-        setIsAdUnlocked(false)
-    }, [chapterNumber])
+        if (typeof window !== "undefined") {
+            const unlocked = sessionStorage.getItem(`ad-unlocked-${novelId}-${chapterNumber}`) === "true"
+            setIsAdUnlocked(unlocked)
+        }
+    }, [novelId, chapterNumber])
 useEffect(() => {
         if (user && chapter && chapter._id) {
              addToLibraryService(novelId, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
@@ -260,6 +272,48 @@ useEffect(() => {
             router.push(`/novel/${novelId}/chapter/${chapterNumber + 1}`)
         }
     }
+
+    const handlePlayAudio = () => {
+        if (!isAdUnlocked) {
+            toast.error("Vui lòng mở khóa chương truyện để nghe audio")
+            return
+        }
+        if (!chapter?.audioUrl) {
+            toast.error("Chương này chưa có giọng đọc")
+            return
+        }
+        player.loadAudio(chapter.audioUrl, {
+            title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
+            novelTitle: novel?.title || "",
+            novelId: novelId,
+            chapterNumber: chapter.chapterNumber,
+            hasNext: hasNextChapter,
+            hasPrev: hasPrevChapter,
+            isLocked: false
+        })
+    }
+
+    const handleAdClick = () => {
+        setIsAdUnlocked(true)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem(`ad-unlocked-${novelId}-${chapterNumber}`, "true")
+        }
+    }
+
+    // Sync active player with new chapter data on navigation
+    useEffect(() => {
+        if (chapter && player.audioUrl) {
+            player.loadAudio(isAdUnlocked ? (chapter.audioUrl || null) : null, {
+                title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
+                novelTitle: novel?.title || "",
+                novelId: novelId,
+                chapterNumber: chapter.chapterNumber,
+                hasNext: hasNextChapter,
+                hasPrev: hasPrevChapter,
+                isLocked: !isAdUnlocked
+            })
+        }
+    }, [chapterNumber, isAdUnlocked, chapter, novel, hasNextChapter, hasPrevChapter])
     if (loading) {
         return (
             <div className={`min-h-screen ${currentTheme.bg}`}>
@@ -299,8 +353,13 @@ useEffect(() => {
             currentTheme.bg
         )}>
             {/* Fixed Header */}
-            <header className={`sticky top-0 z-40 backdrop-blur border-b transition-colors ${currentTheme.header} ${currentTheme.border} ${currentTheme.text}`}>
-                <div className="container max-w-4xl mx-auto px-4">
+            <header className={cn(
+                "sticky top-0 z-40 backdrop-blur border-b transition-all duration-300 w-full lg:pr-[280px]",
+                currentTheme.header,
+                currentTheme.border,
+                currentTheme.text
+            )}>
+                <div className="max-w-4xl mx-auto px-4">
                     <div className="flex items-center justify-between h-14">
                         <div className="flex items-center gap-2">
                             <Button variant="ghost" size="icon" asChild>
@@ -357,7 +416,7 @@ useEffect(() => {
                             </div>
 
                             {/* Chapter List Dropdown */}
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon">
                                         <List className="h-4 w-4" />
@@ -379,7 +438,7 @@ useEffect(() => {
                             </DropdownMenu>
 
                             {/* Settings Dropdown */}
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon">
                                         <Settings className="h-4 w-4" />
@@ -485,16 +544,10 @@ useEffect(() => {
                             <Button 
                                 variant="ghost" 
                                 size="icon"
-                                onClick={() => {
-                                    if (!isAdUnlocked) {
-                                        toast.error("Vui lòng mở khóa chương truyện để nghe audio")
-                                        return
-                                    }
-                                    setIsSidebarOpen(!isSidebarOpen)
-                                }}
+                                onClick={handlePlayAudio}
                                 className={cn(
-                                    "transition-colors lg:hidden",
-                                    isSidebarOpen && "text-primary"
+                                    "transition-colors",
+                                    player.audioUrl === chapter?.audioUrl && player.isPlaying && "text-primary animate-pulse"
                                 )}
                                 title="Trình phát nhạc / giọng đọc"
                             >
@@ -512,14 +565,15 @@ useEffect(() => {
             </header>
 
             <main className={cn(
-                "container max-w-4xl mx-auto px-4 pt-8 transition-all duration-300 lg:pr-[280px] xl:pr-[120px] 2xl:pr-0",
-                isSidebarOpen ? "pb-24 lg:pb-8" : "pb-8 lg:pb-8"
+                "w-full px-4 pt-8 pb-8 transition-all duration-300",
+                player.audioUrl && "pb-[96px]"
             )}>
-                <div className={cn(
-                    "rounded-2xl p-4 sm:p-8 shadow-sm transition-colors border max-w-4xl mx-auto", // Keep content centered within available space
-                    currentTheme.contentBg, 
-                    currentTheme.border
-                )}>
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className={cn(
+                        "rounded-2xl p-4 sm:p-8 shadow-sm transition-colors border",
+                        currentTheme.contentBg, 
+                        currentTheme.border
+                    )}>
                     {/* Chapter Title */}
                     <div className="text-center mb-8 pb-6 border-b border-current/10">
                         <h1 className={`text-2xl sm:text-3xl font-bold mb-3 ${currentTheme.text}`}>
@@ -543,7 +597,7 @@ useEffect(() => {
                                 href="https://s.shopee.vn/5L5nAgyTop"
                                 target="_blank"
                                 rel="nofollow sponsored noopener noreferrer"
-                                onClick={() => setIsAdUnlocked(true)}
+                                onClick={handleAdClick}
                                 className="text-primary hover:underline font-bold text-base sm:text-lg block mb-6 break-all"
                             >
                                 https://s.shopee.vn/5L5nAgyTop
@@ -553,7 +607,7 @@ useEffect(() => {
                                 href="https://s.shopee.vn/5L5nAgyTop"
                                 target="_blank"
                                 rel="nofollow sponsored noopener noreferrer"
-                                onClick={() => setIsAdUnlocked(true)}
+                                onClick={handleAdClick}
                                 className="group relative block w-full max-w-sm rounded-2xl bg-gradient-to-br from-pink-400 via-primary to-rose-600 p-1 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -598,12 +652,12 @@ useEffect(() => {
                 </div>
 
                 {/* Quảng cáo tài trợ */}
-                <div className="my-8 max-w-4xl mx-auto">
+                <div>
                     <InlineAd />
                 </div>
 
                 {/* Navigation */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-8">
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-8">
                     <Button
                         variant="outline"
                         disabled={!hasPrevChapter}
@@ -633,108 +687,133 @@ useEffect(() => {
                 </div>
 
                 {/* Comment Section */}
-                <div className="mt-12">
-                     <CommentSection theme={readingTheme} />
+                <div>
+                     <CommentSection theme={readingTheme} novelId={novelId} chapterId={chapter._id} />
                 </div>
-            </main>
+            </div>
+        </main>
 
 
-            {/* Audio Toggle FAB - Mobile Only */}
-            <Button
-                onClick={() => {
-                    if (!isAdUnlocked) {
-                        toast.error("Vui lòng mở khóa chương truyện để nghe audio")
-                        return
-                    }
-                    setIsSidebarOpen(true)
-                }}
-                className="fixed bottom-8 right-6 h-12 w-12 rounded-full shadow-xl z-40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 lg:hidden"
-                size="icon"
-                title="Trình phát nhạc / giọng đọc"
-            >
-                <Headphones className="w-5 h-5" />
-            </Button>
-
-            {/* Audio Sidebar */}
-            <AudioSidebar
-                isOpen={isSidebarOpen && isAdUnlocked}
-                onClose={() => setIsSidebarOpen(false)}
-                audioUrl={isAdUnlocked ? (chapter.audioUrl || null) : null}
-                title={`Chương ${chapter.chapterNumber}: ${chapter.title}`}
-                novelTitle={novel?.title}
-                coverUrl={novel?.image || novel?.coverImage || undefined}
-                onNext={goToNextChapter}
-                onPrev={goToPrevChapter}
-                hasNext={hasNextChapter}
-                hasPrev={hasPrevChapter}
-                autoNext={autoNext}
-                onAutoNextChange={setAutoNext}
-                isDark={readingTheme === 'dark'}
-                isLocked={!isAdUnlocked}
-            />
 
             {/* Auto-Scroll Float Panel */}
-            <div className="fixed bottom-24 right-6 z-40 flex flex-col items-center gap-2">
+            <div className="fixed bottom-24 right-6 z-45 flex flex-col items-end gap-3 select-none">
                 {isScrollPanelOpen && (
                     <div className={cn(
-                        "border rounded-full p-2 shadow-2xl flex flex-col items-center gap-2 mb-2 animate-in slide-in-from-bottom-5 duration-200",
+                        "rounded-full p-2 shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200 border text-xs font-semibold backdrop-blur-md",
                         readingTheme === 'light'
                             ? "bg-white/95 border-stone-200 text-stone-850"
                             : readingTheme === 'sepia'
                                 ? "bg-[#faf8f3]/95 border-[#e8dcc8] text-[#5f4b32]"
                                 : "bg-[#2d2d2d]/95 border-[#404040] text-stone-300"
                     )}>
-                        <span className="text-[10px] font-semibold opacity-70 px-2">Cuộn: V{autoScrollSpeed}</span>
-                        <div className="flex flex-col gap-1">
-                            {[10, 8, 6, 4, 2].map((speed) => (
-                                <Button
-                                    key={speed}
-                                    size="icon"
-                                    variant="ghost"
-                                    className={cn(
-                                        "h-8 w-8 rounded-full text-xs transition-colors",
-                                        autoScrollSpeed === speed 
-                                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                                            : readingTheme === 'light'
-                                                ? "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
-                                                : readingTheme === 'sepia'
-                                                    ? "text-[#5f4b32] hover:bg-[#e8dcc8]/50 hover:text-[#5f4b32]"
-                                                    : "text-stone-300 hover:bg-stone-800 hover:text-white"
-                                    )}
-                                    onClick={() => setAutoScrollSpeed(speed)}
-                                >
-                                    {speed}
-                                </Button>
-                            ))}
-                        </div>
-                        <DropdownMenuSeparator className={cn(
-                            readingTheme === 'light' ? 'bg-stone-200' : readingTheme === 'sepia' ? 'bg-[#e8dcc8]' : 'bg-[#404040]'
-                        )} />
+                        {/* Play/Pause Button */}
                         <Button
                             size="icon"
-                            variant="destructive"
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => setAutoScrollSpeed(0)}
+                            variant="ghost"
+                            className={cn(
+                                "h-8 w-8 rounded-full transition-all active:scale-90 cursor-pointer",
+                                autoScrollSpeed > 0 
+                                    ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                                    : readingTheme === 'light'
+                                        ? "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                                        : readingTheme === 'sepia'
+                                            ? "text-[#5f4b32] hover:bg-[#e8dcc8]/50 hover:text-[#5f4b32]"
+                                            : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                            )}
+                            onClick={() => {
+                                if (autoScrollSpeed > 0) {
+                                    setAutoScrollSpeed(0);
+                                } else {
+                                    setAutoScrollSpeed(4); // Default speed
+                                }
+                            }}
+                            title={autoScrollSpeed > 0 ? "Tạm dừng cuộn" : "Bắt đầu cuộn"}
                         >
-                            ✕
+                            {autoScrollSpeed > 0 ? (
+                                <Pause className="h-4 w-4" />
+                            ) : (
+                                <Play className="h-4 w-4 fill-current" />
+                            )}
+                        </Button>
+
+                        <div className={cn("h-4 w-[1px]", readingTheme === 'light' ? "bg-stone-200" : readingTheme === 'sepia' ? "bg-[#e8dcc8]" : "bg-zinc-800")} />
+
+                        {/* Speed Adjuster */}
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className={cn(
+                                    "h-7 w-7 rounded-full transition-all active:scale-90 cursor-pointer",
+                                    readingTheme === 'light'
+                                        ? "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                                        : readingTheme === 'sepia'
+                                            ? "text-[#5f4b32] hover:bg-[#e8dcc8]/50 hover:text-[#5f4b32]"
+                                            : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                                )}
+                                disabled={autoScrollSpeed <= 0}
+                                onClick={() => setAutoScrollSpeed(prev => Math.max(1, prev - 1))}
+                            >
+                                <Minus className="h-3.5 w-3.5" />
+                            </Button>
+                            
+                            <span className="text-xs font-bold font-mono min-w-[50px] text-center">
+                                V{autoScrollSpeed}
+                            </span>
+
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className={cn(
+                                    "h-7 w-7 rounded-full transition-all active:scale-90 cursor-pointer",
+                                    readingTheme === 'light'
+                                        ? "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                                        : readingTheme === 'sepia'
+                                            ? "text-[#5f4b32] hover:bg-[#e8dcc8]/50 hover:text-[#5f4b32]"
+                                            : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                                )}
+                                disabled={autoScrollSpeed >= 10}
+                                onClick={() => setAutoScrollSpeed(prev => {
+                                    if (prev === 0) return 4;
+                                    return Math.min(10, prev + 1);
+                                })}
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+
+                        <div className={cn("h-4 w-[1px]", readingTheme === 'light' ? "bg-stone-200" : readingTheme === 'sepia' ? "bg-[#e8dcc8]" : "bg-zinc-800")} />
+
+                        {/* Close button (stops scroll and closes panel) */}
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-full text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all active:scale-90 cursor-pointer"
+                            onClick={() => {
+                                setAutoScrollSpeed(0);
+                                setIsScrollPanelOpen(false);
+                            }}
+                            title="Tắt cuộn tự động"
+                        >
+                            <X className="h-4 w-4" />
                         </Button>
                     </div>
                 )}
                 <Button
                     onClick={() => setIsScrollPanelOpen(!isScrollPanelOpen)}
                     className={cn(
-                        "h-12 w-12 rounded-full shadow-xl transition-all active:scale-95",
+                        "h-12 w-12 rounded-full shadow-xl transition-all active:scale-95 cursor-pointer z-50",
                         readingTheme === 'light'
                             ? "bg-white border border-stone-200 text-stone-800 hover:bg-stone-100"
                             : readingTheme === 'sepia'
                                 ? "bg-[#faf8f3] border border-[#e8dcc8] text-[#5f4b32] hover:bg-[#e8dcc8]/30"
                                 : "bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800",
-                        autoScrollSpeed > 0 && "animate-pulse border-primary"
+                        autoScrollSpeed > 0 && "animate-pulse border-primary text-primary"
                     )}
                     size="icon"
                     title="Tự động cuộn"
                 >
-                    <ArrowDown className="w-5 h-5" />
+                    <ArrowDown className={cn("w-5 h-5 transition-transform duration-300", autoScrollSpeed > 0 && "animate-bounce")} />
                 </Button>
             </div>
 

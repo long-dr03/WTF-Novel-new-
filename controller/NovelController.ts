@@ -123,6 +123,18 @@ const getAuthorStats = () => {
     return axios.get('/author/stats');
 };
 
+const getComments = (novelId: string, chapterId?: string) => {
+    return axios.get('/comments', { params: { novelId, chapterId } });
+};
+
+const createComment = (novelId: string, content: string, chapterId?: string, parentId?: string) => {
+    return axios.post('/comments', { novelId, content, chapterId, parentId });
+};
+
+const likeComment = (commentId: string) => {
+    return axios.post(`/comments/${commentId}/like`);
+};
+
 export {
     createNovel,
     uploadChapter,
@@ -145,5 +157,8 @@ export {
     createReport,
     getReports,
     updateReportStatus,
-    getAuthorStats
+    getAuthorStats,
+    getComments,
+    createComment,
+    likeComment
 };

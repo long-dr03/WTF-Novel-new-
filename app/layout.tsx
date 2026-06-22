@@ -28,6 +28,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalLayout } from "@/components/providers/ConditionalLayout";
 import { ThemeProvider } from "next-themes";
+import { AudioPlayerProvider } from "@/components/providers/AudioPlayerContext";
 
 export default function RootLayout({
   children,
@@ -49,9 +50,11 @@ export default function RootLayout({
         )}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
+            <AudioPlayerProvider>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </AudioPlayerProvider>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

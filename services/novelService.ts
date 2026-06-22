@@ -1,4 +1,4 @@
-import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary, createReport, getReports, updateReportStatus, getAuthorStats } from '../controller/NovelController';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary, createReport, getReports, updateReportStatus, getAuthorStats, getComments, createComment, likeComment } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -350,6 +350,36 @@ const getAuthorStatsService = async () => {
     }
 }
 
+const getCommentsService = async (novelId: string, chapterId?: string): Promise<any[] | null> => {
+    try {
+        const response = await getComments(novelId, chapterId);
+        return extractApiData<any[]>(response);
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        return null;
+    }
+}
+
+const createCommentService = async (novelId: string, content: string, chapterId?: string, parentId?: string): Promise<any | null> => {
+    try {
+        const response = await createComment(novelId, content, chapterId, parentId);
+        return extractApiData(response);
+    } catch (error) {
+        console.error("Error creating comment:", error);
+        return null;
+    }
+}
+
+const likeCommentService = async (commentId: string): Promise<any | null> => {
+    try {
+        const response = await likeComment(commentId);
+        return extractApiData(response);
+    } catch (error) {
+        console.error("Error liking comment:", error);
+        return null;
+    }
+}
+
 export {
     createNovelService,
     uploadChapterService,
@@ -371,7 +401,10 @@ export {
     createReportService,
     getReportsService,
     updateReportStatusService,
-    getAuthorStatsService
+    getAuthorStatsService,
+    getCommentsService,
+    createCommentService,
+    likeCommentService
 }
 
 export type { Novel, Chapter, ChapterData, NovelData }

@@ -44,8 +44,8 @@ function SearchPageContent() {
     // Parse initial genres from URL (comma separated)
     const initialGenres = searchParams.get('genre') ? searchParams.get('genre')!.split(',') : []
     const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres)
-    const [sort, setSort] = useState('newest')
-    const [statusFilter, setStatusFilter] = useState('all')
+    const [sort, setSort] = useState(searchParams.get('sort') || 'newest')
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all')
     
     const [openGenre, setOpenGenre] = useState(false)
 
@@ -77,7 +77,7 @@ function SearchPageContent() {
             // Call public endpoint
             const res = await axios.get('/novels', { params })
             const data: any = res;
-            setNovels(data?.novels || [])
+            setNovels(data?.data?.novels || data?.novels || [])
             // Note: backend response structure: { novels: [], total... } or just [] depending on endpoint?
             // getPublicNovels returns { novels, total, page, pages }
             // client code was: setNovels(data?.novels || []) -> Correct.
@@ -91,6 +91,15 @@ function SearchPageContent() {
     useEffect(() => {
         fetchGenres()
     }, [])
+
+    useEffect(() => {
+        // Sync states with URL query params when they change (e.g. navigation from other pages)
+        setQuery(searchParams.get('q') || '')
+        const genreParam = searchParams.get('genre')
+        setSelectedGenres(genreParam ? genreParam.split(',') : [])
+        setSort(searchParams.get('sort') || 'newest')
+        setStatusFilter(searchParams.get('status') || 'all')
+    }, [searchParams])
 
     useEffect(() => {
         // Debounce search

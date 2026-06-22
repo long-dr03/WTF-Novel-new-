@@ -13,7 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { HeaderSearch } from "./header-search";
-import { PenLine, ChevronDown, Compass, Sun, Moon, Menu, X, Home, BookOpen } from "lucide-react";
+import { PenLine, ChevronDown, Compass, Sun, Moon, Menu, X, Home, BookOpen, TrendingUp, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPublicGenresService } from "@/services/novelService";
 import { useTheme } from "next-themes";
@@ -217,6 +217,24 @@ export const Header = () => {
                             >
                                 <Home className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
                                 <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Trang chủ</span>
+                            </Link>
+
+                            <Link 
+                                href="/search?sort=popular" 
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
+                            >
+                                <TrendingUp className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                                <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Xu hướng</span>
+                            </Link>
+
+                            <Link 
+                                href="/search?sort=newest" 
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:border-primary/20 transition-all duration-200"
+                            >
+                                <Sparkles className="h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                                <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-primary dark:group-hover:text-foreground transition-colors">Truyện Mới</span>
                             </Link>
 
                             {isAuthenticated && user && (user.role === 'author' || user.role === 'admin') && (

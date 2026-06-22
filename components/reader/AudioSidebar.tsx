@@ -128,7 +128,7 @@ export function AudioSidebar({
         <>
             {/* Desktop Sidebar - Always visible, sits on the right */}
             <div className={cn(
-                "fixed right-0 top-16 w-[280px] h-[calc(100vh-4rem)] border-l z-40 hidden lg:flex flex-col font-sans transition-all duration-300",
+                "fixed right-0 top-14 w-[280px] h-[calc(100vh-3.5rem)] border-l z-40 hidden lg:flex flex-col font-sans transition-all duration-300",
                 isDark 
                     ? "bg-zinc-950 border-zinc-800/80 text-zinc-100" 
                     : "bg-white border-pink-100/60 text-zinc-900"

@@ -94,7 +94,7 @@ export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
                 </PopoverTrigger>
 
                 {/* Content */}
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[70]" align="start">
                     <Command shouldFilter={false}>
                         <CommandInput
                             placeholder="Nhập tên truyện..."
