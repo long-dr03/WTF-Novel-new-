@@ -192,8 +192,10 @@ export const getChapterContent = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy chương');
         }
 
+        // Increment views asynchronously in the background to avoid blocking on writing large document contents
+        Chapter.updateOne({ _id: chapter._id }, { $inc: { views: 1 } }).catch(e => console.error('Increment views error:', e));
+
         chapter.views = (chapter.views || 0) + 1;
-        await chapter.save();
         return ApiResponse.success(res, chapter, 'Lấy nội dung chương thành công');
     } catch (error) {
         console.error('Get chapter content error:', error);

@@ -98,10 +98,11 @@ export default function NovelDetailPage() {
     useEffect(() => {
         const fetchSidebarData = async () => {
             try {
-                const popularRes = await getPublicNovelsService({ limit: 5, sort: 'popular' })
+                const [popularRes, genresRes] = await Promise.all([
+                    getPublicNovelsService({ limit: 5, sort: 'popular' }),
+                    getPublicGenresService()
+                ])
                 if (popularRes?.novels) setPopularNovels(popularRes.novels)
-
-                const genresRes = await getPublicGenresService()
                 if (Array.isArray(genresRes)) setGenres(genresRes.slice(0, 12))
             } catch (error) {
                 console.error("Error fetching sidebar data:", error)

@@ -127,40 +127,57 @@ export default function Home() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch primary resources concurrently to eliminate waterfalls
+        const [
+          featuredRes,
+          completedRes,
+          popularRes,
+          genresRes,
+          updatedRes,
+          newestRes
+        ] = await Promise.all([
+          getPublicNovelsService({ isFeatured: true, limit: 10 }),
+          getPublicNovelsService({ status: 'completed', limit: 6 }),
+          getPublicNovelsService({ limit: 10, sort: 'popular' }),
+          getPublicGenresService(),
+          getPublicNovelsService({ page: 1, limit: 10, sort: 'updated' }),
+          getPublicNovelsService({ limit: 6, sort: 'newest' })
+        ]);
+
         // 1. Featured Novels for Recommended Banner
-        const featuredRes = await getPublicNovelsService({ isFeatured: true, limit: 10 });
         if (featuredRes?.novels && featuredRes.novels.length > 0) {
           setFeaturedNovels(featuredRes.novels);
-        } else {
-          // fallback to popular
-          const popularFallback = await getPublicNovelsService({ limit: 10, sort: 'popular' });
-          if (popularFallback?.novels) setFeaturedNovels(popularFallback.novels);
+        } else if (popularRes?.novels) {
+          setFeaturedNovels(popularRes.novels);
         }
 
         // 2. Initial page of Mới Cập Nhật
-        await fetchUpdatedNovels(1);
+        if (updatedRes?.novels) {
+          setUpdatedNovels(updatedRes.novels);
+          setUpdateTotalPages(updatedRes.totalPages || 1);
+        }
 
         // 3. Completed Novels ("Truyện Hoàn")
-        const completedRes = await getPublicNovelsService({ status: 'completed', limit: 6 });
         if (completedRes?.novels && completedRes.novels.length > 0) {
           setCompletedNovels(completedRes.novels);
-        } else {
-          // fallback: slice from newest/popular
-          const fallbackNewest = await getPublicNovelsService({ limit: 6, sort: 'newest' });
-          if (fallbackNewest?.novels) setCompletedNovels(fallbackNewest.novels);
+        } else if (newestRes?.novels) {
+          setCompletedNovels(newestRes.novels);
         }
 
         // 4. Popular Novels for Sidebar Trending
-        const popularRes = await getPublicNovelsService({ limit: 5, sort: 'popular' });
-        if (popularRes?.novels) setPopularNovels(popularRes.novels);
+        if (popularRes?.novels) {
+          setPopularNovels(popularRes.novels.slice(0, 5));
+        }
 
         // 5. Public Genres for Tag Cloud
-        const genresRes = await getPublicGenresService();
-        if (Array.isArray(genresRes)) setGenres(genresRes.slice(0, 12));
+        if (Array.isArray(genresRes)) {
+          setGenres(genresRes.slice(0, 12));
+        }
 
-        // 6. Audio Novels for bottom showcase
-        const audioRes = await getPublicNovelsService({ limit: 5, sort: 'popular' });
-        if (audioRes?.novels) setAudioNovels(audioRes.novels);
+        // 6. Audio Novels for bottom showcase (reuse popular list to avoid redundant API request)
+        if (popularRes?.novels) {
+          setAudioNovels(popularRes.novels.slice(0, 5));
+        }
 
       } catch (error) {
         console.error("Error fetching novels:", error);
