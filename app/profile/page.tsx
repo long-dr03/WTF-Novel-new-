@@ -80,7 +80,9 @@ export default function ProfilePage() {
                         </Avatar>
                         <h2 className="text-lg font-bold text-zinc-900 dark:text-foreground truncate" title={user.username}>{user.username}</h2>
                         <div className="flex justify-center mt-2">
-                             <Badge className="bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 capitalize font-semibold text-xs px-2.5 py-0.5 rounded-full">{user.role}</Badge>
+                             <Badge className="bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 font-semibold text-xs px-2.5 py-0.5 rounded-full">
+                                 {user.role === 'admin' ? 'Admin' : user.role === 'author' ? 'Tác giả' : 'Người dùng'}
+                             </Badge>
                         </div>
                         <p className="text-xs text-zinc-500 dark:text-muted-foreground mt-3 truncate" title={user.email}>{user.email}</p>
                         
@@ -134,7 +136,9 @@ export default function ProfilePage() {
                                             </div>
                                             <div className="space-y-0.5 min-w-0">
                                                 <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Vai trò quản trị</span>
-                                                <p className="font-semibold text-xs text-primary capitalize">{user.role}</p>
+                                                <p className="font-semibold text-xs text-primary">
+                                                    {user.role === 'admin' ? 'Admin' : user.role === 'author' ? 'Tác giả' : 'Người dùng'}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-900 flex items-start gap-3">

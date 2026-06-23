@@ -77,7 +77,12 @@ export default function UsersPage() {
     const handleUpdateRole = async (userId: string, role: string) => {
         try {
             await axios.put(`/admin/users/${userId}/status`, { role })
-            toast.success(`Đã cập nhật vai trò thành ${role}`)
+            const roleLabels: Record<string, string> = {
+                user: 'Người dùng',
+                author: 'Tác giả',
+                admin: 'Admin'
+            };
+            toast.success(`Đã cập nhật vai trò thành ${roleLabels[role] || role}`)
             fetchUsers()
         } catch (error) {
             toast.error("Lỗi khi cập nhật vai trò")
@@ -146,7 +151,7 @@ export default function UsersPage() {
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
                                         <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'author' ? 'default' : 'secondary'}>
-                                            {user.role}
+                                            {user.role === 'admin' ? 'Admin' : user.role === 'author' ? 'Tác giả' : 'Người dùng'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -169,13 +174,13 @@ export default function UsersPage() {
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuLabel>Đổi vai trò</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'user')}>
-                                                    User
+                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'user')} className="cursor-pointer">
+                                                    Người dùng
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'author')}>
-                                                    Author
+                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'author')} className="cursor-pointer">
+                                                    Tác giả
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'admin')}>
+                                                <DropdownMenuItem onClick={() => handleUpdateRole(user._id, 'admin')} className="cursor-pointer">
                                                     Admin
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />

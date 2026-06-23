@@ -148,13 +148,20 @@ export const Header = () => {
                                     <AvatarFallback>{user.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                                 </Avatar>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel className="font-normal">
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {user.role === 'admin' ? 'Admin' : user.role === 'author' ? 'Tác giả' : 'Người dùng'}
+                                        </p>
+                                    </div>
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild>
+                                <DropdownMenuItem asChild className="cursor-pointer">
                                     <Link href="/profile">Hồ sơ cá nhân</Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={logout} className="text-red-500">
+                                <DropdownMenuItem onClick={logout} className="text-red-500 cursor-pointer">
                                     Đăng xuất
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
