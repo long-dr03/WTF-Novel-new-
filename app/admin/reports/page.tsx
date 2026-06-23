@@ -128,7 +128,7 @@ export default function ReportsPage() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <Card className="mt-6 border-zinc-800 bg-zinc-900/40">
+                    <Card className="mt-6 dark:bg-zinc-900/40 dark:border-zinc-800">
                         <CardHeader>
                             <CardTitle className="text-lg font-medium flex items-center gap-2">
                                 <Flag className="w-5 h-5 text-red-500" />
@@ -138,7 +138,7 @@ export default function ReportsPage() {
                         <CardContent className="p-0">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-zinc-800">
+                                    <TableRow className="hover:bg-transparent dark:border-zinc-800">
                                         <TableHead className="w-[120px]">Người gửi</TableHead>
                                         <TableHead className="w-[180px]">Mục tiêu báo cáo</TableHead>
                                         <TableHead className="w-[180px]">Loại lỗi</TableHead>
@@ -149,7 +149,7 @@ export default function ReportsPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredReports.map((report) => (
-                                        <TableRow key={report._id} className="border-zinc-800 hover:bg-zinc-800/10">
+                                        <TableRow key={report._id} className="dark:border-zinc-800 hover:bg-muted/50">
                                             <TableCell className="font-medium">
                                                 {report.reporter?.username || "Ẩn danh"}
                                             </TableCell>
