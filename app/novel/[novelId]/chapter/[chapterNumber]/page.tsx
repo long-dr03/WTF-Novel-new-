@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { InlineAd } from "@/components/ads/InlineAd"
+import { useTheme } from "next-themes"
 
 interface Chapter {
     _id: string
@@ -86,7 +87,14 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
-    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
+    const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme()
+    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem('reading-theme') as 'light' | 'sepia' | 'dark'
+            return saved || 'light'
+        }
+        return 'light'
+    })
     const [isAdUnlocked, setIsAdUnlocked] = useState(() => {
         if (typeof window !== "undefined") {
             return sessionStorage.getItem(`ad-unlocked-${novelId}-${chapterNumber}`) === "true"
@@ -101,15 +109,33 @@ export default function ReadChapterPage() {
             setIsAdUnlocked(unlocked)
         }
     }, [novelId, chapterNumber])
-useEffect(() => {
+    useEffect(() => {
         if (user && chapter && chapter._id) {
              addToLibraryService(novelId, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
         }
     }, [user, chapter, novelId])
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem('reading-theme') as 'light' | 'sepia' | 'dark'
+            if (saved) {
+                setReadingTheme(saved)
+                setGlobalTheme(saved === 'dark' ? 'dark' : 'light')
+            } else {
+                setGlobalTheme('light')
+            }
+        }
+    }, [setGlobalTheme])
 
-    
     const updateTheme = (theme: 'light' | 'sepia' | 'dark') => {
         setReadingTheme(theme)
+        if (typeof window !== "undefined") {
+            localStorage.setItem('reading-theme', theme)
+        }
+        if (theme === 'dark') {
+            setGlobalTheme('dark')
+        } else {
+            setGlobalTheme('light')
+        }
     }
 
     // Auto Scroll State
@@ -572,7 +598,8 @@ useEffect(() => {
                     <div className={cn(
                         "rounded-2xl p-4 sm:p-8 shadow-sm transition-colors border",
                         currentTheme.contentBg, 
-                        currentTheme.border
+                        currentTheme.border,
+                        currentTheme.text
                     )}>
                     {/* Chapter Title */}
                     <div className="text-center mb-8 pb-6 border-b border-current/10">
@@ -588,7 +615,7 @@ useEffect(() => {
                     {!isAdUnlocked ? (
                         <div className="flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5 my-6 text-center">
                             <p className="text-sm font-medium opacity-80 mb-2">
-                                Mời Quý độc giả <span className="font-bold text-foreground">CLICK vào LIÊN KẾT HOẶC ẢNH</span> bên dưới
+                                Mời Quý độc giả <span className="font-bold text-primary">CLICK vào LIÊN KẾT HOẶC ẢNH</span> bên dưới
                             </p>
                             <p className="text-sm sm:text-base font-bold text-primary mb-3 uppercase tracking-wider animate-pulse">
                                 MỞ ỨNG DỤNG SHOPEE, sau đó quay trở lại để tiếp tục đọc toàn bộ chương truyện!
@@ -633,7 +660,7 @@ useEffect(() => {
                                 </div>
                             </a>
                             
-                            <p className="text-xs text-muted-foreground mt-6 font-medium">
+                            <p className="text-xs mt-6 font-medium opacity-60">
                                 gocaudio và đội ngũ Editor xin chân thành cảm ơn!
                             </p>
                         </div>
