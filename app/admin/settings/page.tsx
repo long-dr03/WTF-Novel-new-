@@ -105,8 +105,8 @@ export default function SettingsPage() {
     return (
         <div className="space-y-6 pb-20">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Cài đặt hệ thống</h2>
-                <p className="text-muted-foreground">Quản lý cấu hình và tùy chọn hệ thống.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Cài đặt hệ thống</h2>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">Quản lý cấu hình và tùy chọn hệ thống.</p>
             </div>
 
             <Card>

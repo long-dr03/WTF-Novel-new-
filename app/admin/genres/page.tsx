@@ -94,12 +94,12 @@ export default function GenresPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Quản lý thể loại</h2>
-                    <p className="text-muted-foreground">Quản lý các thể loại truyện.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Quản lý thể loại</h2>
+                    <p className="text-sm sm:text-base text-muted-foreground">Quản lý các thể loại truyện.</p>
                 </div>
-                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
+                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Thêm thể loại
                 </Button>
             </div>
@@ -134,7 +134,7 @@ export default function GenresPage() {
                                             <Book className="w-6 h-6 m-2" />
                                         )}
                                     </div>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                         <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-primary" onClick={() => openEdit(genre)}>
                                             <Pencil className="w-4 h-4" />
                                         </Button>

@@ -91,10 +91,10 @@ export default function ReportsPage() {
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 p-4 sm:p-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Báo cáo vi phạm</h2>
-                <p className="text-muted-foreground mt-1">Quản lý và giải quyết các báo cáo vi phạm, lỗi chương từ người đọc.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Báo cáo vi phạm</h2>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">Quản lý và giải quyết các báo cáo vi phạm, lỗi chương từ người đọc.</p>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

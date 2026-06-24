@@ -91,10 +91,10 @@ export default function UsersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Người dùng</h2>
-                    <p className="text-muted-foreground">Quản lý tài khoản và phân quyền.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Người dùng</h2>
+                    <p className="text-sm sm:text-base text-muted-foreground">Quản lý tài khoản và phân quyền.</p>
                 </div>
             </div>
 

@@ -148,10 +148,10 @@ export default function NovelsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Quản lý truyện</h2>
-                    <p className="text-muted-foreground">Quản lý và duyệt nội dung truyện.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Quản lý truyện</h2>
+                    <p className="text-sm sm:text-base text-muted-foreground">Quản lý và duyệt nội dung truyện.</p>
                 </div>
             </div>
 
