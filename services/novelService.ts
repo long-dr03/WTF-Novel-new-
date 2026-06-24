@@ -123,8 +123,9 @@ const getNovelByIdService = async (novelId: string): Promise<Novel | null> => {
     try {
         const response = await getNovelById(novelId);
         return extractApiData<Novel>(response);
-    } catch (error) {
-        console.error("Error fetching novel:", error);
+    } catch (error: any) {
+        // 404 = truyện không tồn tại/đã bị xóa: tình huống bình thường (UI hiển thị "Không tìm thấy truyện"), không log đỏ.
+        if (error?.response?.status !== 404) console.error("Error fetching novel:", error);
         return null;
     }
 }
@@ -181,8 +182,8 @@ const getChaptersByNovelService = async (novelId: string): Promise<Chapter[] | n
     try {
         const response = await getChaptersByNovel(novelId);
         return extractApiData<Chapter[]>(response);
-    } catch (error) {
-        console.error("Error fetching chapters:", error);
+    } catch (error: any) {
+        if (error?.response?.status !== 404) console.error("Error fetching chapters:", error);
         return null;
     }
 }
@@ -196,8 +197,8 @@ const getChapterContentService = async (novelId: string, chapterNumber: number):
     try {
         const response = await getChapterContent(novelId, chapterNumber);
         return extractApiData<Chapter>(response);
-    } catch (error) {
-        console.error("Error fetching chapter content:", error);
+    } catch (error: any) {
+        if (error?.response?.status !== 404) console.error("Error fetching chapter content:", error);
         return null;
     }
 }

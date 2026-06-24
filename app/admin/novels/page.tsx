@@ -156,12 +156,12 @@ export default function NovelsPage() {
             </div>
 
             <div className="flex flex-col gap-4">
-                 <div className="flex items-center gap-4 justify-between">
-                    <Tabs defaultValue="all" className="w-[400px]" onValueChange={(val) => {
+                 <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center w-full">
+                    <Tabs defaultValue="all" className="w-full md:w-[400px]" onValueChange={(val) => {
                         setActiveTab(val);
                         setPage(1);
                     }}>
-                        <TabsList>
+                        <TabsList className="grid grid-cols-4 w-full">
                             <TabsTrigger value="all">Tất cả</TabsTrigger>
                             <TabsTrigger value="pending">Chờ duyệt</TabsTrigger>
                             <TabsTrigger value="published">Đã xuất bản</TabsTrigger>
@@ -169,7 +169,7 @@ export default function NovelsPage() {
                         </TabsList>
                     </Tabs>
 
-                    <div className="relative w-64">
+                    <div className="relative w-full md:w-64">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="search"
@@ -181,11 +181,11 @@ export default function NovelsPage() {
                     </div>
                  </div>
 
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[60px]"></TableHead>
+                 <div className="border rounded-lg overflow-hidden">
+                     <Table className="min-w-[900px]">
+                         <TableHeader>
+                             <TableRow>
+                                 <TableHead className="w-[60px]"></TableHead>
                                 <TableHead>Tên truyện</TableHead>
                                 <TableHead>Tác giả</TableHead>
                                 <TableHead>Trạng thái</TableHead>

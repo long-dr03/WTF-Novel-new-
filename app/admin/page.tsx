@@ -100,9 +100,8 @@ export default function AdminDashboard() {
         </Card>
       </div>
       
-      {/* Placeholder for Chart or Recent Activity could go here */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+        <Card className="col-span-1 md:col-span-1 lg:col-span-4">
             <CardHeader>
                 <CardTitle>Hoạt động gần đây</CardTitle>
             </CardHeader>
@@ -126,7 +125,7 @@ export default function AdminDashboard() {
                 </div>
             </CardContent>
         </Card>
-        <Card className="col-span-3">
+        <Card className="col-span-1 md:col-span-1 lg:col-span-3">
              <CardHeader>
                 <CardTitle>Thao tác nhanh</CardTitle>
             </CardHeader>

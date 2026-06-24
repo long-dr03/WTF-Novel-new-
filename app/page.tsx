@@ -194,7 +194,8 @@ export default function Home() {
     if (user) {
       getLibraryService('history').then(res => {
         if (Array.isArray(res)) {
-          setHistory(res.slice(0, 4));
+          // Bỏ qua mục lịch sử trỏ tới truyện đã bị xóa (novel = null sau populate)
+          setHistory(res.filter((item: any) => item?.novel).slice(0, 4));
         }
       }).catch(err => console.error("Failed to fetch history", err));
     } else {
@@ -296,7 +297,7 @@ export default function Home() {
                   <div className="relative w-12 h-18 rounded overflow-hidden flex-shrink-0 bg-muted border border-zinc-200/20">
                     <Image
                       src={item.novel?.image || "/ANIMENETFLIX-FA.webp"}
-                      alt={item.novel?.title}
+                      alt={item.novel?.title || "Truyện"}
                       fill
                       sizes="48px"
                       className="object-cover"

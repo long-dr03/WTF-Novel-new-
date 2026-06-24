@@ -135,8 +135,8 @@ export default function ReportsPage() {
                                 Danh sách báo cáo ({filteredReports.length})
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            <Table>
+                        <CardContent className="p-0 overflow-hidden">
+                            <Table className="min-w-[800px]">
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent dark:border-zinc-800">
                                         <TableHead className="w-[120px]">Người gửi</TableHead>

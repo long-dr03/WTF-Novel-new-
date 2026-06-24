@@ -98,8 +98,8 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-sm">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center w-full">
+                <div className="relative w-full sm:max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
@@ -111,8 +111,8 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="border rounded-lg">
-                <Table>
+            <div className="border rounded-lg overflow-hidden">
+                <Table className="min-w-[800px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[80px]">Avatar</TableHead>

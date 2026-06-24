@@ -60,7 +60,7 @@ export function AdminSidebar() {
       <div className="hidden md:block p-6 border-b border-border">
         <Link href="/" className="hover:opacity-80 transition-opacity block">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-            Novel Admin
+            gocaudio Admin
           </h1>
         </Link>
       </div>
