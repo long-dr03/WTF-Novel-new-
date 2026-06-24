@@ -10,7 +10,8 @@ import {
   Tags,
   Settings,
   Flag,
-  LogOut
+  LogOut,
+  PenLine
 } from "lucide-react"
 
 const sidebarItems = [
@@ -43,6 +44,11 @@ const sidebarItems = [
         title: "Cài đặt",
         href: "/admin/settings",
         icon: Settings
+    },
+    {
+        title: "Viết truyện",
+        href: "/author",
+        icon: PenLine
     }
 ]
 

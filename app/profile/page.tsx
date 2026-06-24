@@ -44,7 +44,7 @@ const LibraryTab = ({ type }: { type: 'history' | 'favorite' }) => {
                 return (
                     <CardNovel
                         key={item._id}
-                        novelId={novel._id}
+                        novelId={novel.slug || novel._id}
                         coverImage={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"}
                         title={novel.title}
                         genres={[]}

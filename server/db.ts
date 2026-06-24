@@ -28,6 +28,22 @@ export const connectDB = async (): Promise<typeof mongoose> => {
             .connect(MONGODB_URI as string)
             .then((m) => {
                 console.log('✅ MongoDB connected successfully');
+                // Run background migration for novels without slugs
+                import('./models/Novel').then(async (module) => {
+                    const Novel = module.default;
+                    try {
+                        const novelsWithoutSlug = await Novel.find({ $or: [{ slug: { $exists: false } }, { slug: '' }] });
+                        if (novelsWithoutSlug.length > 0) {
+                            console.log(`🔧 [Migration] Found ${novelsWithoutSlug.length} novels without slug. Migrating...`);
+                            for (const novel of novelsWithoutSlug) {
+                                await novel.save();
+                            }
+                            console.log(`🔧 [Migration] Migrated ${novelsWithoutSlug.length} novels successfully.`);
+                        }
+                    } catch (err) {
+                        console.error('❌ [Migration] Error migrating novels:', err);
+                    }
+                }).catch(e => console.error('Failed to import Novel model in db.ts:', e));
                 return m;
             })
             .catch((err) => {

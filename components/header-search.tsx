@@ -28,6 +28,7 @@ interface SearchResult {
     title: string;
     author?: { username: string };
     image?: string;
+    slug?: string;
 }
 
 export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
@@ -46,7 +47,7 @@ export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
                 search: searchQuery,
                 limit: 6
             })
-            return (result?.novels || []).map((novel: any) => ({ ...novel, _id: novel._id || novel.id || '' }))
+            return (result?.novels || []).map((novel: any) => ({ ...novel, _id: novel._id || novel.id || '', slug: novel.slug }))
         } catch (error) {
             console.error("Search error:", error)
             return []
@@ -123,7 +124,7 @@ export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
                                             key={novel._id}
                                             value={novel.title}
                                             onSelect={() => {
-                                                router.push(`/novel/${novel._id}`)
+                                                router.push(`/novel/${novel.slug || novel._id}`)
                                                 setOpen(false)
                                                 setQuery("")
                                             }}

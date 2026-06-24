@@ -312,7 +312,7 @@ export default function Home() {
                       </p>
                     </div>
                     <Link
-                      href={`/novel/${item.novel?._id}/chapter/${item.lastReadChapter?.chapterNumber || 1}`}
+                      href={`/novel/${item.novel?.slug || item.novel?._id}/chapter/${item.lastReadChapter?.chapterNumber || 1}`}
                       className="text-xs text-primary font-medium flex items-center gap-1 hover:underline mt-1"
                     >
                       Đọc tiếp
@@ -349,7 +349,7 @@ export default function Home() {
               ) : updatedNovels.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {updatedNovels.map((novel) => {
-                    const novelId = novel._id || novel.id || "";
+                    const novelId = novel.slug || novel._id || novel.id || "";
                     const rating = getNovelRating(novel);
                     const chaptersCount = novel.chapters || 0;
                     return (
@@ -511,7 +511,7 @@ export default function Home() {
               {completedNovels.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {completedNovels.map((novel) => {
-                    const novelId = novel._id || novel.id || "";
+                    const novelId = novel.slug || novel._id || novel.id || "";
                     const rating = getNovelRating(novel);
                     return (
                       <div key={novelId} className="flex gap-4 p-3.5 bg-white/95 dark:bg-zinc-950/40 border border-zinc-200/60 dark:border-zinc-800/30 rounded-2xl shadow-sm hover:shadow hover:border-primary/20 dark:hover:border-primary/30 transition-all duration-300 group">
@@ -601,7 +601,7 @@ export default function Home() {
               <div className="p-5 flex flex-col gap-3.5">
                 {popularNovels.length > 0 ? (
                   popularNovels.map((novel, index) => {
-                    const novelId = novel._id || novel.id || "";
+                    const novelId = novel.slug || novel._id || novel.id || "";
                     const rank = index + 1;
                     return (
                       <div key={novelId} className="flex items-center gap-3 group">
@@ -700,7 +700,7 @@ export default function Home() {
           
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {audioNovels.map((novel) => {
-              const novelId = novel._id || novel.id || "";
+              const novelId = novel.slug || novel._id || novel.id || "";
               return (
                 <Link href={`/novel/${novelId}`} key={novelId} className="group">
                   <div className="bg-zinc-50 border border-zinc-200 dark:bg-zinc-900/40 dark:border-zinc-800/80 rounded-xl overflow-hidden p-3 hover:border-primary/40 transition-all hover:scale-[1.02] shadow-sm hover:shadow-md h-full flex flex-col justify-between">

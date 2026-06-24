@@ -24,6 +24,7 @@ interface Novel {
     genres: { _id: string, name: string }[]
     views: number
     isFeatured: boolean
+    slug?: string
 }
 
 interface Genre {
@@ -243,7 +244,7 @@ function SearchPageContent() {
             ) : novels?.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {novels.map(novel => (
-                        <Link href={`/novel/${novel._id}`} key={novel._id} className="group">
+                        <Link href={`/novel/${novel.slug || novel._id}`} key={novel._id} className="group">
                             <Card className="overflow-hidden border-none bg-transparent shadow-none hover:scale-[1.02] transition-transform">
                                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-3">
                                     <Image

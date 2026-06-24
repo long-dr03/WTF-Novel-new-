@@ -12,11 +12,18 @@ export const getNovelById = async (req: Request, res: Response) => {
     try {
         const novelId = req.params.id;
 
-        if (!novelId || !mongoose.Types.ObjectId.isValid(novelId)) {
-            return ApiResponse.badRequest(res, 'ID truyện không hợp lệ');
+        if (!novelId) {
+            return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
 
-        const novel = await Novel.findById(novelId)
+        let query;
+        if (mongoose.Types.ObjectId.isValid(novelId)) {
+            query = Novel.findById(novelId);
+        } else {
+            query = Novel.findOne({ slug: novelId });
+        }
+
+        const novel = await query
             .populate('author', 'username avatar')
             .populate('genres', 'name slug');
         if (!novel) {
@@ -162,10 +169,20 @@ export const getPublicGenres = async (req: Request, res: Response) => {
 export const getChaptersByNovel = async (req: Request, res: Response) => {
     try {
         const novelId = req.params.novelId;
-        if (!novelId || !mongoose.Types.ObjectId.isValid(novelId)) {
-            return ApiResponse.badRequest(res, 'ID truyện không hợp lệ');
+        if (!novelId) {
+            return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
-        const chapters = await Chapter.find({ novelId: novelId })
+
+        let actualNovelId = novelId;
+        if (!mongoose.Types.ObjectId.isValid(novelId)) {
+            const novelDoc = await Novel.findOne({ slug: novelId }).select('_id');
+            if (!novelDoc) {
+                return ApiResponse.notFound(res, 'Không tìm thấy truyện');
+            }
+            actualNovelId = novelDoc._id.toString();
+        }
+
+        const chapters = await Chapter.find({ novelId: actualNovelId })
             .select('chapterNumber title status publishedAt createdAt views wordCount')
             .sort({ chapterNumber: 1 });
         return ApiResponse.success(res, chapters, 'Lấy danh sách chương thành công');
@@ -181,11 +198,21 @@ export const getChaptersByNovel = async (req: Request, res: Response) => {
 export const getChapterContent = async (req: Request, res: Response) => {
     try {
         const { novelId, chapterNumber } = req.params;
-        if (!novelId || !mongoose.Types.ObjectId.isValid(novelId)) {
-            return ApiResponse.badRequest(res, 'ID truyện không hợp lệ');
+        if (!novelId) {
+            return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
+
+        let actualNovelId = novelId;
+        if (!mongoose.Types.ObjectId.isValid(novelId)) {
+            const novelDoc = await Novel.findOne({ slug: novelId }).select('_id');
+            if (!novelDoc) {
+                return ApiResponse.notFound(res, 'Không tìm thấy truyện');
+            }
+            actualNovelId = novelDoc._id.toString();
+        }
+
         const chapter = await Chapter.findOne({
-            novelId: novelId,
+            novelId: actualNovelId,
             chapterNumber: parseInt(chapterNumber)
         });
         if (!chapter) {

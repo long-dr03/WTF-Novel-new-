@@ -45,6 +45,7 @@ export interface Novel {
     likes: number
     lastUpdated: string
     genre?: string
+    slug?: string
 }
 
 interface NovelCardProps {
@@ -156,7 +157,7 @@ const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) 
                         className="flex-1 gap-2"
                         asChild
                     >
-                        <Link href={`/novel/${novel._id || novel.id}`}>
+                        <Link href={`/novel/${novel.slug || novel._id || novel.id}`}>
                             <ExternalLink className="h-4 w-4" />
                             Xem
                         </Link>
@@ -183,7 +184,7 @@ const NovelCard = ({ novel, onEdit, onDelete, onStatusChange }: NovelCardProps) 
                         className="gap-2 text-primary hover:text-primary hover:bg-primary/10"
                         asChild
                     >
-                        <Link href={`/novel/${novel._id || novel.id}/chapter/1`}>
+                        <Link href={`/novel/${novel.slug || novel._id || novel.id}/chapter/1`}>
                             <Headphones className="h-4 w-4" />
                         </Link>
                     </Button>

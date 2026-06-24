@@ -134,7 +134,7 @@ export function RecommendedBanner({ novels }: RecommendedBannerProps) {
                 >
                     <CarouselContent className="-ml-4">
                         {novels.map((novel) => {
-                            const novelIdStr = novel._id || novel.id || ""
+                            const novelIdStr = novel.slug || novel._id || novel.id || ""
                             const chaptersCount = novel.chapters || 0
                             return (
                                 <CarouselItem key={novelIdStr} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">

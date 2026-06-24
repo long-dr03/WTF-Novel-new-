@@ -68,7 +68,7 @@ export default function GenrePage() {
                     {novels.map(novel => (
                          <CardNovel 
                             key={novel._id}
-                            novelId={novel._id}
+                            novelId={novel.slug || novel._id}
                             coverImage={novel.image || novel.coverImage || "/ANIMENETFLIX-FA.webp"} 
                             title={novel.title} 
                             genres={formatGenres(novel.genres)}

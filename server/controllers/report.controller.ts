@@ -35,14 +35,20 @@ export const createReport = async (req: AuthRequest, res: Response) => {
         };
 
         if (novelId) {
+            let actualNovelId = novelId;
             if (!mongoose.Types.ObjectId.isValid(novelId)) {
-                return ApiResponse.badRequest(res, 'ID truyện không hợp lệ');
+                const novelDoc = await Novel.findOne({ slug: novelId }).select('_id');
+                if (!novelDoc) {
+                    return ApiResponse.notFound(res, 'Không tìm thấy truyện được báo cáo');
+                }
+                actualNovelId = novelDoc._id.toString();
+            } else {
+                const novelExists = await Novel.findById(novelId);
+                if (!novelExists) {
+                    return ApiResponse.notFound(res, 'Không tìm thấy truyện được báo cáo');
+                }
             }
-            const novelExists = await Novel.findById(novelId);
-            if (!novelExists) {
-                return ApiResponse.notFound(res, 'Không tìm thấy truyện được báo cáo');
-            }
-            reportData.novel = novelId;
+            reportData.novel = actualNovelId;
         }
 
         if (chapterId) {

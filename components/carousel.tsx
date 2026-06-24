@@ -73,7 +73,7 @@ export function Banner_carousel({ novels }: BannerCarouselProps) {
         title: n.title,
         subtitle: n.author?.username ? `Tác giả: ${n.author.username}` : "Truyện Hot",
         badge: "Featured",
-        id: n._id || n.id
+        id: n.slug || n._id || n.id
     })) : bannerData;
 
     const plugin = React.useRef(

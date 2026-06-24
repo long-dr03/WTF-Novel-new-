@@ -1,6 +1,7 @@
 import type { Request, Response } from '../types';
 import Novel from '../models/Novel';
 import Chapter from '../models/Chapter';
+import User from '../models/User';
 import mongoose from 'mongoose';
 import ApiResponse from '../utils/apiResponse';
 
@@ -36,6 +37,15 @@ export const createNovel = async (req: Request, res: Response) => {
             imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         }
 
+        // Check if the author is an admin to bypass approval process
+        let isAuthorAdmin = false;
+        if (req.userId) {
+            const currentUser = await User.findById(req.userId);
+            if (currentUser && currentUser.role === 'admin') {
+                isAuthorAdmin = true;
+            }
+        }
+
         const novelData = {
             title: data.title,
             description: data.description,
@@ -44,7 +54,8 @@ export const createNovel = async (req: Request, res: Response) => {
             image: imageUrl,
             status: mapStatus(data.status),
             views: data.views || 0,
-            likes: data.likes || 0
+            likes: data.likes || 0,
+            publishStatus: isAuthorAdmin ? 'published' : 'pending'
         };
 
         const novel = new Novel(novelData);

@@ -110,10 +110,10 @@ export default function ReadChapterPage() {
         }
     }, [novelId, chapterNumber])
     useEffect(() => {
-        if (user && chapter && chapter._id) {
-             addToLibraryService(novelId, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
+        if (user && chapter && chapter._id && novel && novel._id) {
+             addToLibraryService(novel._id, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
         }
-    }, [user, chapter, novelId])
+    }, [user, chapter, novel])
     useEffect(() => {
         if (typeof window !== "undefined") {
             const saved = localStorage.getItem('reading-theme') as 'light' | 'sepia' | 'dark'
@@ -159,7 +159,7 @@ export default function ReadChapterPage() {
         }
         setReportLoading(true)
         try {
-            const res = await createReportService(novelId, chapter?._id, reportReason, reportDescription)
+            const res = await createReportService(novel?._id || novelId, chapter?._id, reportReason, reportDescription)
             if (res) {
                 toast.success("Báo cáo lỗi chương đã được gửi thành công")
                 setIsReportOpen(false)

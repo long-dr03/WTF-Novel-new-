@@ -26,6 +26,7 @@ interface Novel {
     chapters?: number;
     createdAt?: string;
     updatedAt?: string;
+    slug?: string;
 }
 
 interface Chapter {

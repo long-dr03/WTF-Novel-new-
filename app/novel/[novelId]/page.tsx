@@ -135,7 +135,7 @@ export default function NovelDetailPage() {
         }
         setReportLoading(true)
         try {
-            const res = await createReportService(novelId, undefined, reportReason, reportDescription)
+            const res = await createReportService(novel?._id, undefined, reportReason, reportDescription)
             if (res) {
                 toast.success("Báo cáo vi phạm đã được gửi đi thành công")
                 setIsReportOpen(false)
@@ -185,27 +185,28 @@ export default function NovelDetailPage() {
     }, [novelId])
 
     useEffect(() => {
-        if (novelId && user) {
-             checkLibraryStatusService(novelId).then(res => {
+        if (novel && user) {
+             checkLibraryStatusService(novel._id).then(res => {
                  // checkLibraryStatus returns { inHistory: boolean, isFavorite: boolean }
                  if (res && (res as any).isFavorite) setIsFavorite(true)
              })
         }
-    }, [novelId, user])
+    }, [novel, user])
 
     const toggleFavorite = async () => {
         if (!user) {
             toast.error("Vui lòng đăng nhập để thêm vào yêu thích")
             return
         }
+        if (!novel) return
         setLibLoading(true)
         try {
             if (isFavorite) {
-                await removeFromLibraryService(novelId, 'favorite')
+                await removeFromLibraryService(novel._id, 'favorite')
                 setIsFavorite(false)
                 toast.success("Đã xóa khỏi danh sách yêu thích")
             } else {
-                await addToLibraryService(novelId, 'favorite')
+                await addToLibraryService(novel._id, 'favorite')
                 setIsFavorite(true)
                 toast.success("Đã thêm vào danh sách yêu thích")
             }
@@ -582,7 +583,7 @@ export default function NovelDetailPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                             {relatedNovels.length > 0 ? (
                                 relatedNovels.map((n) => {
-                                    const rId = n._id || n.id || "";
+                                    const rId = n.slug || n._id || n.id || "";
                                     return (
                                         <Link 
                                             key={rId} 
@@ -656,7 +657,7 @@ export default function NovelDetailPage() {
                         <div className="p-5 flex flex-col gap-4">
                             {popularNovels.length > 0 ? (
                                 popularNovels.map((novel, index) => {
-                                    const popularNovelId = novel._id || novel.id || "";
+                                    const popularNovelId = novel.slug || novel._id || novel.id || "";
                                     const totalChapters = novel.chapters || 0;
                                     return (
                                         <div key={popularNovelId} className="flex gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-900 last:border-b-0 last:pb-0 group">
