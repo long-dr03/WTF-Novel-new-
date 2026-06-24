@@ -467,19 +467,21 @@ export const NovelList = ({
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="adLink"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                {user?.role === "admin" && (
+                                    <FormField
+                                        control={form.control}
+                                        name="adLink"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
                                     name="status"

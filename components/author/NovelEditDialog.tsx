@@ -11,6 +11,7 @@ import * as z from "zod"
 import { Loader2, Check, ChevronsUpDown } from "lucide-react"
 import { CoverImageUpload } from "@/components/ui/CoverImageUpload"
 import { updateNovelService, getPublicGenresService } from "@/services/novelService"
+import { useAuth } from "@/components/providers/AuthProvider"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -45,6 +46,7 @@ interface NovelEditDialogProps {
 }
 
 export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelEditDialogProps) {
+    const { user } = useAuth()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [imageError, setImageError] = useState<string>("")
     const [availableGenres, setAvailableGenres] = useState<any[]>([])
@@ -247,19 +249,21 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="adLink"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {user?.role === "admin" && (
+                            <FormField
+                                control={form.control}
+                                name="adLink"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <FormField
                             control={form.control}
                             name="status"

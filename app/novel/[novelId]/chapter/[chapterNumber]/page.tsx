@@ -45,6 +45,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 import { InlineAd } from "@/components/ads/InlineAd"
 import { useTheme } from "next-themes"
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider"
 
 interface Chapter {
     _id: string
@@ -106,6 +107,7 @@ export default function ReadChapterPage() {
         return false
     })
     const player = useAudioPlayer()
+    const { ads, popup } = useSiteSettings()
 
     // Quảng cáo riêng của truyện -> SideAds dùng link/ảnh này khi đang đọc
     useEffect(() => {
@@ -293,7 +295,10 @@ export default function ReadChapterPage() {
     }
 
     const currentTheme = themeStyles[readingTheme]
-    const adLink = novel?.adLink || "https://s.shopee.vn/5L5nAgyTop"
+    const globalAdLink = ads?.left?.link || ads?.right?.link || popup?.link
+    const isGlobalAdEnabled = ads?.enabled
+    const adLink = novel?.adLink || (isGlobalAdEnabled ? (globalAdLink || "https://s.shopee.vn/5L5nAgyTop") : "")
+    const isActuallyUnlocked = isAdUnlocked || !adLink
 
     const hasPrevChapter = chapterNumber > 1
     const hasNextChapter = chapters.length > 0 && chapterNumber < Math.max(...chapters.map(c => c.chapterNumber))
@@ -311,7 +316,7 @@ export default function ReadChapterPage() {
     }
 
     const handlePlayAudio = () => {
-        if (!isAdUnlocked) {
+        if (!isActuallyUnlocked) {
             toast.error("Vui lòng mở khóa chương truyện để nghe audio")
             return
         }
@@ -340,17 +345,17 @@ export default function ReadChapterPage() {
     // Sync active player with new chapter data on navigation
     useEffect(() => {
         if (chapter && player.audioUrl) {
-            player.loadAudio(isAdUnlocked ? (chapter.audioUrl || null) : null, {
+            player.loadAudio(isActuallyUnlocked ? (chapter.audioUrl || null) : null, {
                 title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
                 novelTitle: novel?.title || "",
                 novelId: novelId,
                 chapterNumber: chapter.chapterNumber,
                 hasNext: hasNextChapter,
                 hasPrev: hasPrevChapter,
-                isLocked: !isAdUnlocked
+                isLocked: !isActuallyUnlocked
             })
         }
-    }, [chapterNumber, isAdUnlocked, chapter, novel, hasNextChapter, hasPrevChapter])
+    }, [chapterNumber, isActuallyUnlocked, chapter, novel, hasNextChapter, hasPrevChapter])
     if (loading) {
         return (
             <div className={`min-h-screen ${currentTheme.bg}`}>
@@ -625,7 +630,7 @@ export default function ReadChapterPage() {
                     </div>
 
                     {/* Content */}
-                    {!isAdUnlocked ? (
+                    {!isActuallyUnlocked ? (
                         <div className="flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5 my-6 text-center">
                             <p className="text-sm font-medium opacity-80 mb-2">
                                 Mời Quý độc giả <span className="font-bold text-primary">CLICK vào LIÊN KẾT HOẶC ẢNH</span> bên dưới
