@@ -55,7 +55,9 @@ export const createNovel = async (req: Request, res: Response) => {
             status: mapStatus(data.status),
             views: data.views || 0,
             likes: data.likes || 0,
-            publishStatus: isAuthorAdmin ? 'published' : 'pending'
+            publishStatus: isAuthorAdmin ? 'published' : 'pending',
+            adLink: data.adLink || '',
+            adImage: data.adImage || ''
         };
 
         const novel = new Novel(novelData);
@@ -225,7 +227,7 @@ export const updateNovelStatus = async (req: Request, res: Response) => {
 export const updateNovel = async (req: Request, res: Response) => {
     try {
         const { novelId } = req.params;
-        const { title, description, image, genres, status } = req.body;
+        const { title, description, image, genres, status, commentsEnabled, reportsEnabled, adImage, adLink } = req.body;
 
         if (!novelId || !mongoose.Types.ObjectId.isValid(novelId)) {
             return ApiResponse.badRequest(res, 'ID truyện không hợp lệ');
@@ -246,6 +248,10 @@ export const updateNovel = async (req: Request, res: Response) => {
         if (status) {
             novel.status = mapStatus(status);
         }
+        if (typeof commentsEnabled === 'boolean') novel.commentsEnabled = commentsEnabled;
+        if (typeof reportsEnabled === 'boolean') novel.reportsEnabled = reportsEnabled;
+        if (typeof adImage === 'string') novel.adImage = adImage;
+        if (typeof adLink === 'string') novel.adLink = adLink;
 
         await novel.save();
 

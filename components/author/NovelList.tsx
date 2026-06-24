@@ -30,6 +30,7 @@ const createNovelSchema = z.object({
     image: z.string().optional(), // URL string from UploadThing
     status: z.enum(["Đang viết", "Hoàn thành", "Tạm dừng"]),
     genres: z.array(z.string()).min(1, "Chọn ít nhất 1 thể loại"),
+    adLink: z.string().url("Link quảng cáo phải là URL hợp lệ").or(z.literal("")).optional(),
 })
 
 type CreateNovelFormValues = z.infer<typeof createNovelSchema>
@@ -239,6 +240,7 @@ export const NovelList = ({
             image: undefined,
             status: "Đang viết",
             genres: [],
+            adLink: "",
         },
     })
 
@@ -255,6 +257,7 @@ export const NovelList = ({
                 genres: values.genres,
                 image: imageUrl,
                 status: values.status,
+                adLink: values.adLink || "",
                 views: 0,
                 likes: 0,
             }
@@ -459,6 +462,19 @@ export const NovelList = ({
                                                         </div>
                                                     )}
                                                 </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="adLink"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

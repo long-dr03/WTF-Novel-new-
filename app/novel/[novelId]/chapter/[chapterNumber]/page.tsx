@@ -38,6 +38,7 @@ import { useAudioPlayer } from "@/components/providers/AudioPlayerContext"
 import { CommentSection } from "@/components/CommentSection"
 import { Headphones } from "lucide-react"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { useNovelAd } from "@/components/providers/NovelAdProvider"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -65,6 +66,8 @@ interface Novel {
     title: string
     image?: string
     coverImage?: string
+    adLink?: string
+    adImage?: string
 }
 
 interface ChapterInfo {
@@ -77,6 +80,7 @@ export default function ReadChapterPage() {
     const params = useParams()
     const router = useRouter()
     const { user } = useAuth()
+    const { setNovelAd } = useNovelAd()
     const novelId = params.novelId as string
     const chapterNumber = parseInt(params.chapterNumber as string)
 
@@ -102,6 +106,12 @@ export default function ReadChapterPage() {
         return false
     })
     const player = useAudioPlayer()
+
+    // Quảng cáo riêng của truyện -> SideAds dùng link/ảnh này khi đang đọc
+    useEffect(() => {
+        if (novel) setNovelAd({ adImage: (novel as any).adImage, adLink: (novel as any).adLink })
+        return () => setNovelAd(null)
+    }, [novel]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -283,6 +293,7 @@ export default function ReadChapterPage() {
     }
 
     const currentTheme = themeStyles[readingTheme]
+    const adLink = novel?.adLink || "https://s.shopee.vn/5L5nAgyTop"
 
     const hasPrevChapter = chapterNumber > 1
     const hasNextChapter = chapters.length > 0 && chapterNumber < Math.max(...chapters.map(c => c.chapterNumber))
@@ -556,15 +567,17 @@ export default function ReadChapterPage() {
                             </DropdownMenu>
 
                             {/* Report Chapter Button */}
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
+                            {(novel as any)?.reportsEnabled !== false && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                                 onClick={() => setIsReportOpen(true)}
                                 title="Báo lỗi chương"
                             >
                                 <Flag className="h-4 w-4" />
                             </Button>
+                            )}
 
                             {/* Audio Player Toggle Button */}
                             <Button 
@@ -621,17 +634,17 @@ export default function ReadChapterPage() {
                                 MỞ ỨNG DỤNG SHOPEE, sau đó quay trở lại để tiếp tục đọc toàn bộ chương truyện!
                             </p>
                             <a 
-                                href="https://s.shopee.vn/5L5nAgyTop"
+                                href={adLink}
                                 target="_blank"
                                 rel="nofollow sponsored noopener noreferrer"
                                 onClick={handleAdClick}
                                 className="text-primary hover:underline font-bold text-base sm:text-lg block mb-6 break-all"
                             >
-                                https://s.shopee.vn/5L5nAgyTop
+                                {adLink}
                             </a>
 
                             <a 
-                                href="https://s.shopee.vn/5L5nAgyTop"
+                                href={adLink}
                                 target="_blank"
                                 rel="nofollow sponsored noopener noreferrer"
                                 onClick={handleAdClick}
@@ -714,9 +727,11 @@ export default function ReadChapterPage() {
                 </div>
 
                 {/* Comment Section */}
+                {(novel as any)?.commentsEnabled !== false && (
                 <div>
                      <CommentSection theme={readingTheme} novelId={novelId} chapterId={chapter._id} />
                 </div>
+                )}
             </div>
         </main>
 

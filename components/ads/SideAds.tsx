@@ -1,6 +1,7 @@
 "use client";
 
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
+import { useNovelAd } from "@/components/providers/NovelAdProvider";
 import { AdMedia } from "@/components/ads/AdMedia";
 import type { AdSlot } from "@/services/settingsService";
 
@@ -39,13 +40,27 @@ function AdBanner({ slot, side }: { slot: AdSlot; side: "left" | "right" }) {
 
 export default function SideAds() {
     const { ads } = useSiteSettings();
+    const { novelAd } = useNovelAd();
 
     if (!ads) return null;
 
+    // Khi đang đọc một truyện có quảng cáo riêng: ghi đè link (và ảnh nếu có).
+    // Nếu truyện chỉ đặt link, vẫn dùng ảnh quảng cáo chung của site.
+    const withNovelAd = (slot: AdSlot): AdSlot => {
+        if (novelAd && (novelAd.adLink || novelAd.adImage)) {
+            return {
+                enabled: true,
+                imageUrl: novelAd.adImage || slot.imageUrl,
+                link: novelAd.adLink || slot.link,
+            };
+        }
+        return slot;
+    };
+
     return (
         <>
-            <AdBanner slot={ads.left} side="left" />
-            <AdBanner slot={ads.right} side="right" />
+            <AdBanner slot={withNovelAd(ads.left)} side="left" />
+            <AdBanner slot={withNovelAd(ads.right)} side="right" />
         </>
     );
 }

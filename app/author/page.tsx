@@ -5,6 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider"
 import { DashboardStats } from "@/components/author/DashboardStats"
 import { NovelList } from "@/components/author/NovelList"
 import  WriteNovel  from "@/components/author/WriteNovelV2"
+import { AuthorSettings } from "@/components/author/AuthorSettings"
 import { LayoutDashboard, BookOpen, PenTool, Settings, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getNovelsByAuthorService } from "@/services/novelService"
@@ -108,12 +109,7 @@ const Page = () => {
             case "write":
                 return <WriteNovel novels={authorNovels} selectedNovelId={selectedNovelId} onNovelChange={setSelectedNovelId} />
             case "settings":
-                return (
-                    <div className="p-6">
-                        <h2 className="text-3xl font-bold tracking-tight">Cài đặt</h2>
-                        <p className="text-muted-foreground mt-2">Đang phát triển...</p>
-                    </div>
-                )
+                return <AuthorSettings novels={authorNovels} />
         }
     }
 

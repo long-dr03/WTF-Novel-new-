@@ -13,6 +13,10 @@ export interface INovel extends Document {
     likes: number;
     adminComment?: string;
     slug?: string;
+    commentsEnabled?: boolean;
+    reportsEnabled?: boolean;
+    adImage?: string;
+    adLink?: string;
 }
 
 const NovelSchema: Schema = new Schema({
@@ -67,6 +71,23 @@ const NovelSchema: Schema = new Schema({
         type: String,
         unique: true,
         sparse: true
+    },
+    commentsEnabled: {
+        type: Boolean,
+        default: true
+    },
+    reportsEnabled: {
+        type: Boolean,
+        default: true
+    },
+    // Quảng cáo riêng của truyện (ghi đè quảng cáo chung khi đọc truyện này)
+    adImage: {
+        type: String,
+        default: ''
+    },
+    adLink: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

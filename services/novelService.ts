@@ -9,6 +9,8 @@ interface NovelData {
     status: string;
     views: number;
     likes: number;
+    adLink?: string;
+    adImage?: string;
 }
 
 interface Novel {
@@ -27,6 +29,8 @@ interface Novel {
     createdAt?: string;
     updatedAt?: string;
     slug?: string;
+    adLink?: string;
+    adImage?: string;
 }
 
 interface Chapter {

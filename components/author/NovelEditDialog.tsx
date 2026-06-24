@@ -22,6 +22,7 @@ const updateNovelSchema = z.object({
     image: z.string().optional(),
     status: z.enum(["Đang viết", "Hoàn thành", "Tạm dừng"]),
     genres: z.array(z.string()).min(1, "Chọn ít nhất 1 thể loại"),
+    adLink: z.string().url("Link quảng cáo phải là URL hợp lệ").or(z.literal("")).optional(),
 })
 
 type UpdateNovelFormValues = z.infer<typeof updateNovelSchema>
@@ -38,6 +39,7 @@ interface NovelEditDialogProps {
         coverImage?: string
         status?: string
         genres?: any[] // strings or objects
+        adLink?: string
     } | null
     onSuccess: () => void
 }
@@ -65,6 +67,7 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
             image: novel?.image || novel?.coverImage || "",
             status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
             genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
+            adLink: novel?.adLink || "",
         },
         values: {
             title: novel?.title || "",
@@ -72,6 +75,7 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
             image: novel?.image || novel?.coverImage || "",
             status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
             genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
+            adLink: novel?.adLink || "",
         }
     })
 
@@ -88,7 +92,8 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                 description: values.description,
                 image: values.image,
                 status: values.status,
-                genres: values.genres
+                genres: values.genres,
+                adLink: values.adLink || "",
             });
 
             onSuccess();
@@ -238,6 +243,19 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
                                     {imageError && (
                                         <p className="text-sm text-destructive">{imageError}</p>
                                     )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="adLink"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Link quảng cáo riêng (Tùy chọn)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Ví dụ: https://s.shopee.vn/... (Nếu trống sẽ dùng link mặc định)" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

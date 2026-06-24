@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { uploadChapterService, getChaptersByNovelService, getChapterContentService, updateChapterStatusService } from "@/services/novelService";
+import { getAuthorPrefs } from "@/lib/authorPrefs";
 import WordUploader from "./WordUploader";
 import AudioManager from "./AudioManager";
 import { Button } from "@/components/ui/button";
@@ -213,7 +214,8 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
 
     const handleNewChapter = () => {
         if (!editor) return;
-        setEditMode('new'); setSelectedChapterId(null); setChapterTitle(''); setChapterStatus('draft');
+        const defStatus = getAuthorPrefs().defaultChapterStatus;
+        setEditMode('new'); setSelectedChapterId(null); setChapterTitle(''); setChapterStatus(defStatus);
         setSidebarOpen(false);
         editor.commands.clearContent();
         if (chapters.length > 0) {
@@ -259,12 +261,22 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
         const words = editor.storage.characterCount?.words() || 0;
         const chars = editor.storage.characterCount?.characters() || 0;
 
+        // Tùy chọn soạn thảo (Cài đặt): cảnh báo số từ tối thiểu + lời tác giả mặc định
+        const prefs = getAuthorPrefs();
+        if (prefs.minWords > 0 && words < prefs.minWords) {
+            if (!confirm(`Chương chỉ có ${words} từ (dưới mức tối thiểu ${prefs.minWords}). Vẫn lưu?`)) {
+                setIsSaving(false);
+                return;
+            }
+        }
+
         const chapterData = {
             novelId: selectedNovelId,
             chapterNumber: chapterNumber,
             title: chapterTitle || `Chương ${chapterNumber}`,
             content: htmlContent, contentJson: jsonContent,
             wordCount: words, charCount: chars, status: chapterStatus,
+            ...(editMode === 'new' && prefs.defaultAuthorNote.trim() && { authorNote: prefs.defaultAuthorNote.trim() }),
             ...(editMode === 'edit' && selectedChapterId && { chapterId: selectedChapterId }),
         };
 

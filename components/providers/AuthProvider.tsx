@@ -19,6 +19,7 @@ interface AuthContextType {
     isLoading: boolean
     login: (token: string, user: User) => void
     logout: () => void
+    updateUser: (partial: Partial<User>) => void
     isAuthenticated: boolean
 }
 
@@ -72,12 +73,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login')
     }
 
+    const updateUser = (partial: Partial<User>) => {
+        setUser(prev => (prev ? { ...prev, ...partial } : prev))
+    }
+
     return (
         <AuthContext.Provider value={{
             user,
             isLoading,
             login,
             logout,
+            updateUser,
             isAuthenticated: !!user
         }}>
             {children}

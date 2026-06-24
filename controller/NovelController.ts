@@ -9,6 +9,8 @@ interface NovelData {
     status: string;
     views: number;
     likes: number;
+    adLink?: string;
+    adImage?: string;
 }
 interface ChapterData {
     novelId: string;

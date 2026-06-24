@@ -37,6 +37,7 @@ import {
     getPublicGenresService
 } from "@/services/novelService"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { useNovelAd } from "@/components/providers/NovelAdProvider"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -78,6 +79,7 @@ export default function NovelDetailPage() {
     const params = useParams()
     const router = useRouter()
     const { user } = useAuth()
+    const { setNovelAd } = useNovelAd()
     const novelId = params.novelId as string
 
     const [novel, setNovel] = useState<Novel | null>(null)
@@ -183,6 +185,12 @@ export default function NovelDetailPage() {
         
         fetchData()
     }, [novelId])
+
+    // Quảng cáo riêng của truyện -> SideAds dùng link/ảnh này khi đang xem truyện
+    useEffect(() => {
+        if (novel) setNovelAd({ adImage: (novel as any).adImage, adLink: (novel as any).adLink })
+        return () => setNovelAd(null)
+    }, [novel]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (novel && user) {
@@ -443,14 +451,16 @@ export default function NovelDetailPage() {
                             </div>
                         </div>
 
-                        <Button 
-                            variant="outline" 
+                        {(novel as any).reportsEnabled !== false && (
+                        <Button
+                            variant="outline"
                             className="text-red-500 hover:text-red-600 hover:bg-red-500/5 border-red-500/20 text-xs font-semibold rounded-xl mt-2 cursor-pointer h-9 shadow-sm"
                             onClick={() => setIsReportOpen(true)}
                         >
                             <Flag className="h-4 w-4 mr-2" />
                             Báo cáo vi phạm
                         </Button>
+                        )}
                     </div>
 
                 </div>
