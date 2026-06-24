@@ -61,13 +61,22 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
         fetchGenres();
     }, []);
 
+    const statusMapToFrontend: Record<string, "Đang viết" | "Hoàn thành" | "Tạm dừng"> = {
+        "ongoing": "Đang viết",
+        "completed": "Hoàn thành",
+        "hiatus": "Tạm dừng",
+        "Đang viết": "Đang viết",
+        "Hoàn thành": "Hoàn thành",
+        "Tạm dừng": "Tạm dừng"
+    }
+
     const form = useForm<UpdateNovelFormValues>({
         resolver: zodResolver(updateNovelSchema),
         defaultValues: {
             title: novel?.title || "",
             description: novel?.description || "",
             image: novel?.image || novel?.coverImage || "",
-            status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
+            status: statusMapToFrontend[novel?.status || ""] || "Đang viết",
             genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
             adLink: novel?.adLink || "",
         },
@@ -75,7 +84,7 @@ export function NovelEditDialog({ open, onOpenChange, novel, onSuccess }: NovelE
             title: novel?.title || "",
             description: novel?.description || "",
             image: novel?.image || novel?.coverImage || "",
-            status: (novel?.status as "Đang viết" | "Hoàn thành" | "Tạm dừng") || "Đang viết",
+            status: statusMapToFrontend[novel?.status || ""] || "Đang viết",
             genres: novel?.genres ? novel.genres.map(g => typeof g === 'string' ? g : g._id) : [],
             adLink: novel?.adLink || "",
         }

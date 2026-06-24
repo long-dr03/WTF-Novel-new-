@@ -633,20 +633,11 @@ export default function ReadChapterPage() {
                     {!isActuallyUnlocked ? (
                         <div className="flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5 my-6 text-center">
                             <p className="text-sm font-medium opacity-80 mb-2">
-                                Mời Quý độc giả <span className="font-bold text-primary">CLICK vào LIÊN KẾT HOẶC ẢNH</span> bên dưới
+                                Mời Quý độc giả <span className="font-bold text-primary">CLICK vào ẢNH</span> bên dưới
                             </p>
-                            <p className="text-sm sm:text-base font-bold text-primary mb-3 uppercase tracking-wider animate-pulse">
+                            <p className="text-sm sm:text-base font-bold text-primary mb-6 uppercase tracking-wider animate-pulse">
                                 MỞ ỨNG DỤNG SHOPEE, sau đó quay trở lại để tiếp tục đọc toàn bộ chương truyện!
                             </p>
-                            <a 
-                                href={adLink}
-                                target="_blank"
-                                rel="nofollow sponsored noopener noreferrer"
-                                onClick={handleAdClick}
-                                className="text-primary hover:underline font-bold text-base sm:text-lg block mb-6 break-all"
-                            >
-                                {adLink}
-                            </a>
 
                             <a 
                                 href={adLink}
