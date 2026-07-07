@@ -395,11 +395,18 @@ export const restoreData = async (req: Request, res: Response) => {
             const Model = modelsMap[colName];
             const docs = backupData[colName];
             if (Model && Array.isArray(docs)) {
-                // Xóa toàn bộ dữ liệu hiện tại
-                await Model.deleteMany({});
-                // Nạp dữ liệu sao lưu cũ vào
                 if (docs.length > 0) {
-                    await Model.insertMany(docs);
+                    const bulkOps = docs.map(doc => {
+                        const { _id, ...updatePayload } = doc;
+                        return {
+                            updateOne: {
+                                filter: { _id: _id },
+                                update: { $set: updatePayload },
+                                upsert: true
+                            }
+                        };
+                    });
+                    await Model.bulkWrite(bulkOps);
                 }
                 restoredCollections.push(colName);
             }

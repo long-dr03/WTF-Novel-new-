@@ -439,12 +439,12 @@ export default function BackupPage() {
                                     </div>
                                 </div>
 
-                                {/* Warning Block */}
-                                <div className="flex gap-2 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-yellow-600 dark:text-yellow-400 text-xs">
-                                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                                {/* Info/Merge Block */}
+                                <div className="flex gap-2 p-3 rounded-lg border border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400 text-xs">
+                                    <Database className="w-5 h-5 shrink-0 text-blue-500" />
                                     <div>
-                                        <p className="font-bold">CẢNH BÁO QUAN TRỌNG:</p>
-                                        <p className="mt-0.5">Việc khôi phục sẽ **xóa hoàn toàn** toàn bộ dữ liệu hiện tại trong cơ sở dữ liệu của các bảng đã chọn trước khi nạp dữ liệu cũ vào. Vui lòng cân nhắc kỹ!</p>
+                                        <p className="font-bold">HỢP NHẤT DỮ LIỆU (UPSERT):</p>
+                                        <p className="mt-0.5">Hệ thống sẽ tiến hành hợp nhất dữ liệu từ file sao lưu: **Cập nhật** những bản ghi đã có (trùng khớp ID) và **Thêm mới** những bản ghi chưa có. Các bản ghi khác hiện tại trên hệ thống sẽ không bị ảnh hưởng.</p>
                                     </div>
                                 </div>
 
@@ -454,32 +454,31 @@ export default function BackupPage() {
                                             <Button 
                                                 type="button" 
                                                 disabled={restoring || Object.values(restoreCollections).every(v => !v)}
-                                                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer w-full"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer w-full"
                                             >
-                                                <AlertTriangle className="mr-2 h-4 w-4" /> Tiến hành khôi phục cơ sở dữ liệu
+                                                <Database className="mr-2 h-4 w-4" /> Tiến hành khôi phục & hợp nhất
                                             </Button>
                                         </DialogTrigger>
                                         <DialogContent className="sm:max-w-[425px]">
                                             <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2 text-red-600">
-                                                    <AlertTriangle className="w-6 h-6" /> Xác nhận khôi phục?
+                                                <DialogTitle className="flex items-center gap-2 text-blue-600">
+                                                    <Database className="w-6 h-6" /> Xác nhận khôi phục?
                                                 </DialogTitle>
                                                 <DialogDescription className="pt-2 space-y-2 text-sm text-foreground">
-                                                    <p>Hành động này **KHÔNG THỂ HOÀN TÁC**.</p>
-                                                    <p>Bạn sắp xóa dữ liệu hiện tại và khôi phục lại các bảng:</p>
+                                                    <p>Hệ thống sẽ tiến hành hợp nhất dữ liệu cho các danh mục đã chọn:</p>
                                                     <div className="flex flex-wrap gap-1.5 py-1">
                                                         {Object.keys(restoreCollections).filter(k => restoreCollections[k]).map(k => (
-                                                            <span key={k} className="text-xs bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-semibold px-2 py-0.5 rounded border border-red-200">
+                                                            <span key={k} className="text-xs bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-red-300 font-semibold px-2 py-0.5 rounded border border-blue-200">
                                                                 {getColLabel(k)}
                                                             </span>
                                                         ))}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground mt-2">Dữ liệu hiện có của các bảng này trên hệ thống sẽ bị xóa hoàn toàn.</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">Các bản ghi trùng khớp ID sẽ bị ghi đè cập nhật bằng dữ liệu cũ từ file. Các bản ghi mới chưa có sẽ được thêm vào.</p>
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <DialogFooter className="gap-2 sm:gap-0">
                                                 <Button variant="ghost" onClick={() => setIsConfirmOpen(false)} disabled={restoring}>Hủy</Button>
-                                                <Button onClick={handleRestore} disabled={restoring} className="bg-red-600 hover:bg-red-700 text-white">
+                                                <Button onClick={handleRestore} disabled={restoring} className="bg-blue-600 hover:bg-blue-700 text-white">
                                                     {restoring ? (
                                                         <>
                                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang khôi phục...
