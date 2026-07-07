@@ -356,6 +356,159 @@ export default function ReadChapterPage() {
             })
         }
     }, [chapterNumber, isActuallyUnlocked, chapter, novel, hasNextChapter, hasPrevChapter])
+
+    // Ngăn chặn copy, select, right click, F12, inspect element và xem HTML
+    useEffect(() => {
+        const handleContextMenu = (e: MouseEvent) => {
+            const target = e.target as HTMLElement
+            if (
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable
+            ) {
+                return true
+            }
+            e.preventDefault()
+            toast.error("Nội dung truyện đã được bảo vệ bản quyền!")
+            return false
+        }
+
+        const handleCopy = (e: ClipboardEvent) => {
+            const target = e.target as HTMLElement
+            if (
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable
+            ) {
+                return true
+            }
+            e.preventDefault()
+            toast.error("Vui lòng không sao chép nội dung truyện!")
+            return false
+        }
+
+        const handleCut = (e: ClipboardEvent) => {
+            const target = e.target as HTMLElement
+            if (
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable
+            ) {
+                return true
+            }
+            e.preventDefault()
+            return false
+        }
+
+        const handleSelectStart = (e: Event) => {
+            const target = e.target as HTMLElement
+            if (
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable
+            ) {
+                return true
+            }
+            e.preventDefault()
+            return false
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // F12
+            if (e.key === "F12" || e.keyCode === 123) {
+                e.preventDefault()
+                toast.error("Chức năng này đã bị khóa!")
+                return false
+            }
+            // Ctrl+Shift+I / J / C (DevTools shortcuts)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67 || e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) {
+                e.preventDefault()
+                toast.error("Chức năng này đã bị khóa!")
+                return false
+            }
+            // Ctrl+U (View source)
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 85 || e.key === "U" || e.key === "u")) {
+                e.preventDefault()
+                toast.error("Chức năng này đã bị khóa!")
+                return false
+            }
+            // Ctrl+S (Save page)
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 83 || e.key === "S" || e.key === "s")) {
+                e.preventDefault()
+                toast.error("Chức năng này đã bị khóa!")
+                return false
+            }
+            // Ctrl+P (Print)
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 80 || e.key === "P" || e.key === "p")) {
+                e.preventDefault()
+                toast.error("Chức năng này đã bị khóa!")
+                return false
+            }
+            // Ctrl+C (Copy)
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 67 || e.key === "C" || e.key === "c")) {
+                const target = e.target as HTMLElement
+                if (
+                    target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.isContentEditable
+                ) {
+                    return true
+                }
+                e.preventDefault()
+                toast.error("Vui lòng không sao chép nội dung truyện!")
+                return false
+            }
+            // Ctrl+X (Cut)
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 88 || e.key === "X" || e.key === "x")) {
+                const target = e.target as HTMLElement
+                if (
+                    target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.isContentEditable
+                ) {
+                    return true
+                }
+                e.preventDefault()
+                return false
+            }
+        }
+
+        // Đăng ký sự kiện
+        document.addEventListener("contextmenu", handleContextMenu)
+        document.addEventListener("copy", handleCopy)
+        document.addEventListener("cut", handleCut)
+        document.addEventListener("selectstart", handleSelectStart)
+        window.addEventListener("keydown", handleKeyDown, true)
+
+        // Debugger loop để gây khó khăn cho việc dùng DevTools xem cấu trúc HTML
+        let intervalId: ReturnType<typeof setInterval>
+        const devtoolsProtection = () => {
+            try {
+                const check = function() {
+                    const start = new Date().getTime();
+                    debugger;
+                    const end = new Date().getTime();
+                    if (end - start > 100) {
+                        // DevTools đang mở
+                    }
+                }
+                check();
+            } catch (err) {}
+        }
+        
+        devtoolsProtection()
+        intervalId = setInterval(devtoolsProtection, 1000)
+
+        return () => {
+            document.removeEventListener("contextmenu", handleContextMenu)
+            document.removeEventListener("copy", handleCopy)
+            document.removeEventListener("cut", handleCut)
+            document.removeEventListener("selectstart", handleSelectStart)
+            window.removeEventListener("keydown", handleKeyDown, true)
+            if (intervalId) clearInterval(intervalId)
+        }
+    }, [])
+
     if (loading) {
         return (
             <div className={`min-h-screen ${currentTheme.bg}`}>
@@ -620,7 +773,7 @@ export default function ReadChapterPage() {
                         currentTheme.text
                     )}>
                     {/* Chapter Title */}
-                    <div className="text-center mb-8 pb-6 border-b border-current/10">
+                    <div className="text-center mb-8 pb-6 border-b border-current/10 select-none">
                         <h1 className={`text-2xl sm:text-3xl font-bold mb-3 ${currentTheme.text}`}>
                             Chương {chapter.chapterNumber}: {chapter.title}
                         </h1>
@@ -675,7 +828,7 @@ export default function ReadChapterPage() {
                         </div>
                     ) : (
                         <article 
-                            className={`prose prose-lg max-w-none transition-all ${currentTheme.text}`}
+                            className={`prose prose-lg max-w-none transition-all select-none ${currentTheme.text}`}
                             style={{
                                 fontSize: `${fontSize}px`,
                                 lineHeight: lineHeight,
