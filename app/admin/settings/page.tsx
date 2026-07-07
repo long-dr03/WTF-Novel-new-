@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2, Globe, Bell, Shield, Save, Megaphone, Sparkles } from "lucide-react"
+import { Loader2, Globe, Bell, Shield, Save, Megaphone, Sparkles, Database } from "lucide-react"
 import axios from "@/setup/axios"
 import { toast } from "sonner"
 import { MediaUpload } from "@/components/ui/MediaUpload"
@@ -58,6 +58,57 @@ const defaultSettings: SettingsState = {
 export default function SettingsPage() {
     const [settings, setSettings] = useState<SettingsState>(defaultSettings)
     const [loading, setLoading] = useState(true)
+
+    // Backup state
+    const [backupCollections, setBackupCollections] = useState<Record<string, boolean>>({
+        users: true,
+        novels: true,
+        genres: true,
+        chapters: true,
+        libraries: true,
+        musics: true,
+        reports: true,
+        settings: true
+    })
+    const [fromDate, setFromDate] = useState("")
+    const [toDate, setToDate] = useState("")
+    const [backingUp, setBackingUp] = useState(false)
+
+    const handleBackup = async () => {
+        const selectedCols = Object.keys(backupCollections).filter(k => backupCollections[k])
+        if (selectedCols.length === 0) {
+            toast.error("Vui lòng chọn ít nhất một danh mục để sao lưu")
+            return
+        }
+
+        setBackingUp(true)
+        try {
+            const payload: any = {
+                collections: selectedCols
+            }
+            if (fromDate) payload.fromDate = new Date(fromDate).toISOString()
+            if (toDate) payload.toDate = new Date(toDate).toISOString()
+
+            const res = await axios.post('/admin/backup', payload) as any
+            
+            const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const downloadAnchor = document.createElement('a')
+            downloadAnchor.href = url
+            const dateStr = new Date().toISOString().split('T')[0]
+            downloadAnchor.download = `backup_novel_${dateStr}.json`
+            document.body.appendChild(downloadAnchor)
+            downloadAnchor.click()
+            downloadAnchor.remove()
+            URL.revokeObjectURL(url)
+
+            toast.success("Tải xuống bản sao lưu thành công!")
+        } catch (error) {
+            toast.error("Lỗi khi tạo bản sao lưu dữ liệu")
+        } finally {
+            setBackingUp(false)
+        }
+    }
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -239,6 +290,114 @@ export default function SettingsPage() {
                     <div className="grid gap-2">
                         <Label>Link đích khi click (tracking link Shopee)</Label>
                         <Input placeholder="https://..." value={settings.popup.link} onChange={(e) => setSettings({...settings, popup: {...settings.popup, link: e.target.value}})} />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary"><Database className="w-5 h-5"/></div>
+                        <div>
+                            <CardTitle>Sao lưu dữ liệu (Backup)</CardTitle>
+                            <CardDescription>Sao lưu dữ liệu cơ sở dữ liệu dưới dạng file JSON.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label>Từ ngày (Bắt đầu)</Label>
+                            <Input 
+                                type="date" 
+                                value={fromDate} 
+                                onChange={(e) => setFromDate(e.target.value)} 
+                            />
+                            <p className="text-xs text-muted-foreground">Chỉ sao lưu các bản ghi tạo ra sau ngày này (không áp dụng cho Thể loại & Cài đặt).</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Đến ngày (Kết thúc)</Label>
+                            <Input 
+                                type="date" 
+                                value={toDate} 
+                                onChange={(e) => setToDate(e.target.value)} 
+                            />
+                            <p className="text-xs text-muted-foreground">Chỉ sao lưu các bản ghi tạo ra trước ngày này (không áp dụng cho Thể loại & Cài đặt).</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <Label className="text-sm font-semibold">Chọn danh mục cần sao lưu</Label>
+                            <div className="flex gap-3 text-xs text-primary font-medium">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setBackupCollections({
+                                        users: true, novels: true, genres: true, chapters: true,
+                                        libraries: true, musics: true, reports: true, settings: true
+                                    })}
+                                    className="hover:underline cursor-pointer"
+                                >
+                                    Chọn tất cả
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setBackupCollections({
+                                        users: false, novels: false, genres: false, chapters: false,
+                                        libraries: false, musics: false, reports: false, settings: false
+                                    })}
+                                    className="hover:underline cursor-pointer"
+                                >
+                                    Bỏ chọn tất cả
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg border bg-muted/20">
+                            {[
+                                { key: "users", label: "Người dùng" },
+                                { key: "novels", label: "Truyện" },
+                                { key: "genres", label: "Thể loại" },
+                                { key: "chapters", label: "Chương truyện" },
+                                { key: "libraries", label: "Thư viện & Lịch sử" },
+                                { key: "musics", label: "Nhạc nền & Giọng đọc" },
+                                { key: "reports", label: "Báo cáo lỗi" },
+                                { key: "settings", label: "Cài đặt hệ thống" }
+                            ].map((col) => (
+                                <div key={col.key} className="flex items-center gap-2">
+                                    <Switch 
+                                        id={`backup-col-${col.key}`}
+                                        checked={backupCollections[col.key]} 
+                                        onCheckedChange={(checked) => setBackupCollections(prev => ({
+                                            ...prev,
+                                            [col.key]: checked
+                                        }))} 
+                                    />
+                                    <Label htmlFor={`backup-col-${col.key}`} className="cursor-pointer text-xs font-medium sm:text-sm">
+                                        {col.label}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <Button 
+                            type="button" 
+                            disabled={backingUp} 
+                            onClick={handleBackup}
+                            className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                        >
+                            {backingUp ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo bản sao lưu...
+                                </>
+                            ) : (
+                                <>
+                                    <Database className="mr-2 h-4 w-4" /> Tạo & Tải bản sao lưu (.json)
+                                </>
+                            )}
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
