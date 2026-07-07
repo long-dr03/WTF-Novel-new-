@@ -21,11 +21,17 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         ]);
         const totalViews = viewsResult.length > 0 ? viewsResult[0].totalViews : 0;
 
+        const chapterViewsResult = await Chapter.aggregate([
+            { $group: { _id: null, totalViews: { $sum: "$views" } } }
+        ]);
+        const realViews = chapterViewsResult.length > 0 ? chapterViewsResult[0].totalViews : 0;
+
         res.status(200).json({
             totalUsers,
             totalNovels,
             totalGenres,
-            totalViews
+            totalViews,
+            realViews
         });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi lấy thống kê dashboard', error });
@@ -360,5 +366,51 @@ export const backupData = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Backup error in NextJS server:", error);
         res.status(500).json({ message: 'Lỗi khi thực hiện backup dữ liệu', error });
+    }
+};
+
+// --- Restore Management ---
+export const restoreData = async (req: Request, res: Response) => {
+    try {
+        const { backupData } = req.body;
+        if (!backupData || typeof backupData !== 'object') {
+            return res.status(400).json({ message: 'Dữ liệu sao lưu không hợp lệ' });
+        }
+
+        const modelsMap: { [key: string]: any } = {
+            users: User,
+            novels: Novel,
+            genres: Genre,
+            chapters: Chapter,
+            libraries: Library,
+            musics: Music,
+            reports: Report,
+            settings: Setting,
+            comments: Comment
+        };
+
+        const restoredCollections: string[] = [];
+
+        for (const colName of Object.keys(backupData)) {
+            const Model = modelsMap[colName];
+            const docs = backupData[colName];
+            if (Model && Array.isArray(docs)) {
+                // Xóa toàn bộ dữ liệu hiện tại
+                await Model.deleteMany({});
+                // Nạp dữ liệu sao lưu cũ vào
+                if (docs.length > 0) {
+                    await Model.insertMany(docs);
+                }
+                restoredCollections.push(colName);
+            }
+        }
+
+        res.status(200).json({
+            message: 'Khôi phục dữ liệu thành công',
+            restoredCollections
+        });
+    } catch (error) {
+        console.error("Restore error in NextJS server:", error);
+        res.status(500).json({ message: 'Lỗi khi khôi phục dữ liệu', error });
     }
 };

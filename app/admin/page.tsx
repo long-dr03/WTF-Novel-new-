@@ -12,7 +12,8 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalNovels: 0,
     totalGenres: 0,
-    totalViews: 0
+    totalViews: 0,
+    realViews: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
         <p className="text-sm sm:text-base text-muted-foreground">Tổng quan hệ thống quản trị.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tổng người dùng</CardTitle>
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              +12% so với tháng trước
+              Đang hoạt động
             </p>
           </CardContent>
         </Card>
@@ -70,19 +71,31 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalNovels}</div>
             <p className="text-xs text-muted-foreground">
-              +8% so với tháng trước
+              Đang hoạt động
             </p>
           </CardContent>
         </Card>
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tổng lượt xem</CardTitle>
+                <CardTitle className="text-sm font-medium">Lượt xem truyện (Info)</CardTitle>
                 <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{stats.totalViews}</div>
                 <p className="text-xs text-muted-foreground">
-                +23% so với hôm qua
+                  Lượt xem chi tiết truyện
+                </p>
+            </CardContent>
+        </Card>
+        <Card className="border-green-500/20 bg-green-500/5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold text-green-700 dark:text-green-400">Lượt xem thật (Chương)</CardTitle>
+                <Eye className="h-4 w-4 text-green-600 dark:text-green-400 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-black text-green-700 dark:text-green-400">{stats.realViews}</div>
+                <p className="text-xs text-green-600/80 dark:text-green-400/80 font-medium">
+                  Tổng lượt đọc chương thực tế
                 </p>
             </CardContent>
         </Card>

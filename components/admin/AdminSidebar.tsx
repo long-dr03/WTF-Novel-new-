@@ -14,7 +14,8 @@ import {
   LogOut,
   PenLine,
   Menu,
-  X
+  X,
+  Database
 } from "lucide-react"
 
 const sidebarItems = [
@@ -42,6 +43,11 @@ const sidebarItems = [
         title: "Báo cáo",
         href: "/admin/reports",
         icon: Flag
+    },
+    {
+        title: "Sao lưu",
+        href: "/admin/backup",
+        icon: Database
     },
     {
         title: "Cài đặt",
