@@ -3,6 +3,11 @@ import User from '../models/User';
 import Novel from '../models/Novel';
 import Genre from '../models/Genre';
 import Setting from '../models/Setting';
+import Chapter from '../models/Chapter';
+import Library from '../models/Library';
+import Music from '../models/Music';
+import Report from '../models/Report';
+import Comment from '../models/Comment';
 
 // --- Dashboard Stats ---
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -303,5 +308,57 @@ export const updateSettings = async (req: Request, res: Response) => {
         res.status(200).json(settings);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi cập nhật cài đặt', error });
+    }
+};
+
+// --- Backup Management ---
+export const backupData = async (req: Request, res: Response) => {
+    try {
+        const { collections, fromDate, toDate } = req.body;
+        
+        if (!collections || !Array.isArray(collections) || collections.length === 0) {
+            return res.status(400).json({ message: 'Danh sách collection cần backup không hợp lệ' });
+        }
+
+        const dateQuery: any = {};
+        if (fromDate || toDate) {
+            dateQuery.createdAt = {};
+            if (fromDate) dateQuery.createdAt.$gte = new Date(fromDate);
+            if (toDate) dateQuery.createdAt.$lte = new Date(toDate);
+        }
+
+        const backupResult: any = {};
+
+        const modelsMap: { [key: string]: any } = {
+            users: User,
+            novels: Novel,
+            genres: Genre,
+            chapters: Chapter,
+            libraries: Library,
+            musics: Music,
+            reports: Report,
+            settings: Setting,
+            comments: Comment
+        };
+
+        for (const colName of collections) {
+            const Model = modelsMap[colName];
+            if (Model) {
+                const supportsTimestamps = ['users', 'novels', 'chapters', 'reports', 'libraries', 'musics', 'comments'].includes(colName);
+                const query = (supportsTimestamps && (fromDate || toDate)) ? dateQuery : {};
+                
+                const docs = await Model.find(query);
+                backupResult[colName] = docs;
+            }
+        }
+
+        res.status(200).json({
+            message: 'Backup dữ liệu thành công',
+            timestamp: new Date().toISOString(),
+            data: backupResult
+        });
+    } catch (error) {
+        console.error("Backup error in NextJS server:", error);
+        res.status(500).json({ message: 'Lỗi khi thực hiện backup dữ liệu', error });
     }
 };

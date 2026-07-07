@@ -68,13 +68,82 @@ export default function SettingsPage() {
         libraries: true,
         musics: true,
         reports: true,
-        settings: true
+        settings: true,
+        comments: true
     })
     const [fromDate, setFromDate] = useState("")
     const [toDate, setToDate] = useState("")
     const [backingUp, setBackingUp] = useState(false)
 
-    const handleBackup = async () => {
+    const escapeXml = (unsafe: string) => {
+        if (!unsafe) return "";
+        return unsafe.toString().replace(/[<>&'"]/g, (c) => {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+                default: return c;
+            }
+        });
+    }
+
+    const convertToExcelXML = (backupData: any) => {
+        let xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+`;
+
+        Object.keys(backupData).forEach(colName => {
+            const rows = backupData[colName];
+            if (!Array.isArray(rows) || rows.length === 0) return;
+
+            const headersSet = new Set<string>();
+            rows.forEach(row => {
+                Object.keys(row).forEach(key => {
+                    headersSet.add(key);
+                });
+            });
+            const headers = Array.from(headersSet);
+            const sheetName = colName.substring(0, 30);
+
+            xml += ` <Worksheet ss:Name="${sheetName}">\n  <Table>\n`;
+            
+            xml += `   <Row>\n`;
+            headers.forEach(header => {
+                xml += `    <Cell><Data ss:Type="String">${escapeXml(header)}</Data></Cell>\n`;
+            });
+            xml += `   </Row>\n`;
+
+            rows.forEach(row => {
+                xml += `   <Row>\n`;
+                headers.forEach(header => {
+                    let val = row[header];
+                    if (val === undefined || val === null) {
+                        val = "";
+                    } else if (typeof val === 'object') {
+                        val = JSON.stringify(val);
+                    } else {
+                        val = String(val);
+                    }
+                    xml += `    <Cell><Data ss:Type="String">${escapeXml(val)}</Data></Cell>\n`;
+                });
+                xml += `   </Row>\n`;
+            });
+
+            xml += `  </Table>\n </Worksheet>\n`;
+        });
+
+        xml += `</Workbook>`;
+        return xml;
+    }
+
+    const handleBackup = async (format: 'json' | 'excel') => {
         const selectedCols = Object.keys(backupCollections).filter(k => backupCollections[k])
         if (selectedCols.length === 0) {
             toast.error("Vui lòng chọn ít nhất một danh mục để sao lưu")
@@ -91,16 +160,31 @@ export default function SettingsPage() {
 
             const res = await axios.post('/admin/backup', payload) as any
             
-            const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' })
-            const url = URL.createObjectURL(blob)
-            const downloadAnchor = document.createElement('a')
-            downloadAnchor.href = url
             const dateStr = new Date().toISOString().split('T')[0]
-            downloadAnchor.download = `backup_novel_${dateStr}.json`
-            document.body.appendChild(downloadAnchor)
-            downloadAnchor.click()
-            downloadAnchor.remove()
-            URL.revokeObjectURL(url)
+            const backupPayload = res?.data || res
+
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const downloadAnchor = document.createElement('a')
+                downloadAnchor.href = url
+                downloadAnchor.download = `backup_novel_${dateStr}.json`
+                document.body.appendChild(downloadAnchor)
+                downloadAnchor.click()
+                downloadAnchor.remove()
+                URL.revokeObjectURL(url)
+            } else {
+                const xmlContent = convertToExcelXML(backupPayload)
+                const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel' })
+                const url = URL.createObjectURL(blob)
+                const downloadAnchor = document.createElement('a')
+                downloadAnchor.href = url
+                downloadAnchor.download = `backup_novel_${dateStr}.xls`
+                document.body.appendChild(downloadAnchor)
+                downloadAnchor.click()
+                downloadAnchor.remove()
+                URL.revokeObjectURL(url)
+            }
 
             toast.success("Tải xuống bản sao lưu thành công!")
         } catch (error) {
@@ -334,7 +418,7 @@ export default function SettingsPage() {
                                     type="button" 
                                     onClick={() => setBackupCollections({
                                         users: true, novels: true, genres: true, chapters: true,
-                                        libraries: true, musics: true, reports: true, settings: true
+                                        libraries: true, musics: true, reports: true, settings: true, comments: true
                                     })}
                                     className="hover:underline cursor-pointer"
                                 >
@@ -344,7 +428,7 @@ export default function SettingsPage() {
                                     type="button" 
                                     onClick={() => setBackupCollections({
                                         users: false, novels: false, genres: false, chapters: false,
-                                        libraries: false, musics: false, reports: false, settings: false
+                                        libraries: false, musics: false, reports: false, settings: false, comments: false
                                     })}
                                     className="hover:underline cursor-pointer"
                                 >
@@ -362,7 +446,8 @@ export default function SettingsPage() {
                                 { key: "libraries", label: "Thư viện & Lịch sử" },
                                 { key: "musics", label: "Nhạc nền & Giọng đọc" },
                                 { key: "reports", label: "Báo cáo lỗi" },
-                                { key: "settings", label: "Cài đặt hệ thống" }
+                                { key: "settings", label: "Cài đặt hệ thống" },
+                                { key: "comments", label: "Bình luận" }
                             ].map((col) => (
                                 <div key={col.key} className="flex items-center gap-2">
                                     <Switch 
@@ -381,20 +466,36 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex flex-wrap gap-3">
                         <Button 
                             type="button" 
                             disabled={backingUp} 
-                            onClick={handleBackup}
+                            onClick={() => handleBackup('json')}
                             className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                         >
                             {backingUp ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo bản sao lưu...
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo JSON...
                                 </>
                             ) : (
                                 <>
-                                    <Database className="mr-2 h-4 w-4" /> Tạo & Tải bản sao lưu (.json)
+                                    <Database className="mr-2 h-4 w-4" /> Xuất file JSON
+                                </>
+                            )}
+                        </Button>
+                        <Button 
+                            type="button" 
+                            disabled={backingUp} 
+                            onClick={() => handleBackup('excel')}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                        >
+                            {backingUp ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo Excel...
+                                </>
+                            ) : (
+                                <>
+                                    <Database className="mr-2 h-4 w-4" /> Xuất file Excel (.xls)
                                 </>
                             )}
                         </Button>
