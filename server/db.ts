@@ -25,7 +25,12 @@ export const connectDB = async (): Promise<typeof mongoose> => {
 
     if (!cached.promise) {
         cached.promise = mongoose
-            .connect(MONGODB_URI as string)
+            .connect(MONGODB_URI as string, {
+                // Fail-fast thay vì treo mặc định 30s khi DB không tới được
+                // (tránh treo lúc `next build` prerender & runtime 500 kéo dài).
+                serverSelectionTimeoutMS: 8000,
+                socketTimeoutMS: 45000,
+            })
             .then((m) => {
                 console.log('✅ MongoDB connected successfully');
                 // Run background migration for novels without slugs
