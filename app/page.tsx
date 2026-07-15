@@ -1,5 +1,6 @@
 import HomeClient, { HomeInitialData } from "@/components/HomeClient";
-import { getPublicNovelsService, getPublicGenresService } from "@/services/novelService";
+import { callController } from "@/server/callController";
+import { getPublicNovels, getPublicGenres } from "@/server/controllers/getNovel";
 
 // ISR: dữ liệu trang chủ là công khai nên tái tạo tĩnh tối đa mỗi 60s.
 // => TTFB/LCP nhanh (HTML có sẵn nội dung), không còn 6 request client sau hydrate.
@@ -16,27 +17,28 @@ const EMPTY: HomeInitialData = {
   hydratedFromServer: false,
 };
 
+// Gọi controller getPublicNovels TRỰC TIẾP (không qua HTTP) và lấy phần data.
+async function fetchNovels(query: Record<string, any>) {
+  const r = await callController(getPublicNovels, { query });
+  return r?.success ? r.data : null; // { novels, total, page, pages }
+}
+
 /**
- * Lấy toàn bộ dữ liệu trang chủ ở phía server (mirror logic fetchData cũ ở client).
- * Nếu không gọi được API (vd. lúc build khi server chưa chạy) -> trả về EMPTY để
- * HomeClient tự fetch lại phía client (degrade an toàn, giữ nguyên hành vi cũ).
+ * Lấy toàn bộ dữ liệu trang chủ ở phía server bằng cách gọi thẳng controller
+ * (không self-fetch qua localhost -> hết ECONNREFUSED, nhanh hơn).
+ * Nếu có lỗi -> trả EMPTY để HomeClient tự fetch phía client (degrade an toàn).
  */
 async function loadHomeData(): Promise<HomeInitialData> {
   try {
     const [featuredRes, completedRes, popularRes, genresRes, updatedRes, newestRes] =
       await Promise.all([
-        getPublicNovelsService({ isFeatured: true, limit: 10 }),
-        getPublicNovelsService({ status: "completed", limit: 6 }),
-        getPublicNovelsService({ limit: 10, sort: "popular" }),
-        getPublicGenresService(),
-        getPublicNovelsService({ page: 1, limit: 10, sort: "updated" }),
-        getPublicNovelsService({ limit: 6, sort: "newest" }),
+        fetchNovels({ isFeatured: "true", limit: "10" }),
+        fetchNovels({ status: "completed", limit: "6" }),
+        fetchNovels({ limit: "10", sort: "popular" }),
+        callController(getPublicGenres).then((r) => (r?.success ? r.data : [])),
+        fetchNovels({ page: "1", limit: "10", sort: "updated" }),
+        fetchNovels({ limit: "6", sort: "newest" }),
       ]);
-
-    // Không nhận được phản hồi nào (server không gọi được chính API của nó) -> fallback client
-    if (!updatedRes && !popularRes && !featuredRes) {
-      return EMPTY;
-    }
 
     const popular = popularRes?.novels ?? [];
     const featured =
@@ -53,7 +55,7 @@ async function loadHomeData(): Promise<HomeInitialData> {
       popularNovels: popular.slice(0, 5),
       audioNovels: popular.slice(0, 5),
       genres: Array.isArray(genresRes) ? genresRes.slice(0, 12) : [],
-      updateTotalPages: updatedRes?.totalPages ?? 1,
+      updateTotalPages: updatedRes?.pages ?? 1,
       hydratedFromServer: true,
     };
   } catch (e) {

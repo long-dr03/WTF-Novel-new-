@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X, RotateCw, ZoomIn, ZoomOut, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { useUploadThing } from '@/lib/uploadthing'
+import { uploadMediaToR2 } from '@/lib/r2Upload'
 import 'react-image-crop/dist/ReactCrop.css'
 import './avatar-upload.css'
 
@@ -50,23 +50,6 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
     const [isProcessing, setIsProcessing] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
 
-    const { startUpload } = useUploadThing("avatarImage", {
-        onClientUploadComplete: (res) => {
-            if (res && res[0]) {
-                const uploadedUrl = res[0].ufsUrl || res[0].url
-                onChange(uploadedUrl)
-                setPreview(uploadedUrl)
-                setImgSrc('')
-                setIsUploading(false)
-                setIsProcessing(false)
-            }
-        },
-        onUploadError: (error) => {
-            onError?.(error.message || 'Lỗi khi upload ảnh')
-            setIsUploading(false)
-            setIsProcessing(false)
-        },
-    })
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (acceptedFiles && acceptedFiles.length > 0) {
@@ -192,19 +175,27 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                 return
             }
 
-            const file = new File([blob], 'avatar.png', { type: 'image/png' })
-            
-            // Upload to UploadThing
+            // Xuất WebP (nhẹ hơn, tốt SEO) rồi upload lên R2
+            const file = new File([blob], 'avatar.webp', { type: 'image/webp' })
+
             setIsUploading(true)
             try {
-                await startUpload([file])
+                const url = await uploadMediaToR2(file, { webp: false })
+                if (url) {
+                    onChange(url)
+                    setPreview(url)
+                    setImgSrc('')
+                } else {
+                    onError?.('Lỗi khi upload ảnh')
+                }
             } catch (error) {
                 onError?.('Lỗi khi upload ảnh')
+            } finally {
                 setIsUploading(false)
                 setIsProcessing(false)
             }
-        }, 'image/png', 0.95)
-    }, [completedCrop, scale, rotate, filter, brightness, contrast, startUpload, onError])
+        }, 'image/webp', 0.9)
+    }, [completedCrop, scale, rotate, filter, brightness, contrast, onChange, onError])
 
     const handleReset = () => {
         setImgSrc('')

@@ -4,7 +4,13 @@ const nextConfig: NextConfig = {
   // Không bundle các package server nặng/native vào route handler — để Node tự require.
   serverExternalPackages: ["mongoose", "bcryptjs", "@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
   images: {
+    // Ưu tiên định dạng hiện đại khi next/image tối ưu ảnh -> nhẹ hơn, LCP/SEO tốt hơn.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
       {
         protocol: "https",
         hostname: "picsum.photos",

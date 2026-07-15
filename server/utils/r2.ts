@@ -55,20 +55,27 @@ function safeName(name: string): string {
 }
 
 /**
- * Tạo URL upload trực tiếp (presigned PUT) cho file audio.
+ * Tạo URL upload trực tiếp (presigned PUT) cho một file bất kỳ.
  * Client sẽ PUT thẳng file lên R2 với ĐÚNG Content-Type đã ký (nếu lệch -> 403).
+ * @param folder Thư mục (prefix) trên bucket, vd 'chapter-audio' | 'images' | 'media'
  */
-export async function createAudioUploadUrl(filename: string, contentType: string) {
+export async function createUploadUrl(filename: string, contentType: string, folder = 'uploads') {
     if (!bucket) throw new Error('R2_BUCKET chưa được cấu hình.');
     if (!publicBase) throw new Error('R2_PUBLIC_BASE_URL chưa được cấu hình.');
 
     const ct = contentType || 'application/octet-stream';
-    const key = `chapter-audio/${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(filename)}`;
+    const safeFolder = folder.replace(/[^a-z0-9/_-]/gi, '') || 'uploads';
+    const key = `${safeFolder}/${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(filename)}`;
 
     const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: ct });
     const uploadUrl = await getSignedUrl(client(), cmd, { expiresIn: 600 }); // 10 phút
 
     return { uploadUrl, publicUrl: `${publicBase}/${key}`, key, contentType: ct };
+}
+
+/** Tương thích ngược cho luồng audio. */
+export function createAudioUploadUrl(filename: string, contentType: string) {
+    return createUploadUrl(filename, contentType, 'chapter-audio');
 }
 
 /** Xoá 1 object trên R2 theo key (dùng khi xoá audio của chương). */

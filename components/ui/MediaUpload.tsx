@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { useUploadThing } from "@/lib/uploadthing";
+import { uploadMediaToR2 } from "@/lib/r2Upload";
 import { Loader2, UploadCloud, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { isVideoUrl } from "@/services/settingsService";
@@ -18,21 +18,6 @@ interface MediaUploadProps {
 export function MediaUpload({ value, onChange, previewClassName = "aspect-[3/4]" }: MediaUploadProps) {
     const [uploading, setUploading] = useState(false);
 
-    const { startUpload } = useUploadThing("adMedia", {
-        onClientUploadComplete: (res) => {
-            const url = res?.[0]?.ufsUrl || (res?.[0] as any)?.url;
-            if (url) {
-                onChange(url);
-                toast.success("Đã tải lên thành công");
-            }
-            setUploading(false);
-        },
-        onUploadError: (error) => {
-            toast.error(error.message || "Lỗi khi tải lên");
-            setUploading(false);
-        },
-    });
-
     const handleFiles = useCallback(
         async (files: File[]) => {
             const file = files?.[0];
@@ -43,13 +28,21 @@ export function MediaUpload({ value, onChange, previewClassName = "aspect-[3/4]"
             }
             setUploading(true);
             try {
-                await startUpload([file]);
+                // Ảnh -> tự convert WebP; video giữ nguyên. Tất cả upload lên R2.
+                const url = await uploadMediaToR2(file);
+                if (url) {
+                    onChange(url);
+                    toast.success("Đã tải lên thành công");
+                } else {
+                    toast.error("Lỗi khi tải lên");
+                }
             } catch {
-                setUploading(false);
                 toast.error("Lỗi khi tải lên");
+            } finally {
+                setUploading(false);
             }
         },
-        [startUpload]
+        [onChange]
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({

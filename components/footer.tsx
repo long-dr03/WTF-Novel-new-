@@ -48,6 +48,18 @@ export const Footer = () => {
                     <p className="text-[10px] text-zinc-650 tracking-wider">
                         © {new Date().getFullYear()} gocaudio. All rights reserved.
                     </p>
+                    <p className="text-[10px] text-zinc-500 tracking-wide">
+                        Thiết kế &amp; phát triển bởi{" "}
+                        <a
+                            href="https://wtfdev.qzz.io/"
+                            target="_blank"
+                            rel="noopener"
+                            title="WTF Dev Studio — thiết kế & phát triển web"
+                            className="font-semibold text-zinc-300 hover:text-primary transition-colors"
+                        >
+                            WTF Dev Studio
+                        </a>
+                    </p>
                 </div>
             </div>
 
