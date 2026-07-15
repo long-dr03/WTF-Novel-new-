@@ -4,6 +4,19 @@ import Chapter from "../models/Chapter";
 import mongoose from "mongoose";
 import type { Request, Response } from "../types";
 import ApiResponse from "../utils/apiResponse";
+import { recordActivity } from "../models/Analytics";
+
+/**
+ * Cache-Control cho các endpoint đọc công khai (không phụ thuộc user).
+ * - s-maxage: CDN/Edge cache (Vercel) phục vụ trong N giây.
+ * - stale-while-revalidate: phục vụ bản cũ trong khi làm mới nền → không có "cold" request.
+ * - max-age nhỏ: cho phép trình duyệt cache ngắn khi điều hướng nội bộ.
+ */
+const LIST_CACHE = 'public, max-age=30, s-maxage=60, stale-while-revalidate=300';
+const GENRE_CACHE = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+
+// Chỉ lấy các trường danh sách cần hiển thị (loại bỏ description dài & field admin)
+const NOVEL_LIST_FIELDS = 'title slug image status publishStatus isFeatured views likes author genres createdAt updatedAt';
 
 /**
  * Lấy thông tin chi tiết của một cuốn truyện theo ID
@@ -25,10 +38,12 @@ export const getNovelById = async (req: Request, res: Response) => {
 
         const novel = await query
             .populate('author', 'username avatar')
-            .populate('genres', 'name slug');
+            .populate('genres', 'name slug')
+            .lean();
         if (!novel) {
             return ApiResponse.notFound(res, 'Không tìm thấy truyện');
         }
+        res.setHeader('Cache-Control', LIST_CACHE);
         return ApiResponse.success(res, novel, 'Lấy thông tin truyện thành công');
     } catch (error) {
         console.error('Get novel error:', error);
@@ -61,9 +76,12 @@ export const getPopularNovels = async (req: Request, res: Response) => {
     try {
         const limit = parseInt(req.query.limit as string) || 10;
         const novels = await Novel.find({ publishStatus: 'published' })
+            .select(NOVEL_LIST_FIELDS)
             .sort({ views: -1 })
             .limit(limit)
-            .populate('author', 'username avatar');
+            .populate('author', 'username avatar')
+            .lean();
+        res.setHeader('Cache-Control', LIST_CACHE);
         return ApiResponse.success(res, novels, 'Lấy danh sách truyện phổ biến thành công');
     } catch (error) {
         console.error('Get popular novels error:', error);
@@ -129,15 +147,20 @@ export const getPublicNovels = async (req: Request, res: Response) => {
             sortObj.createdAt = -1;
         }
 
-        const novels = await Novel.find(query)
-            .populate('author', 'username avatar')
-            .populate('genres', 'name slug')
-            .sort(sortObj)
-            .skip((page - 1) * limit)
-            .limit(limit);
+        // Chạy song song find + count để tiết kiệm 1 vòng round-trip tới DB
+        const [novels, total] = await Promise.all([
+            Novel.find(query)
+                .select(NOVEL_LIST_FIELDS)
+                .populate('author', 'username avatar')
+                .populate('genres', 'name slug')
+                .sort(sortObj)
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Novel.countDocuments(query),
+        ]);
 
-        const total = await Novel.countDocuments(query);
-
+        res.setHeader('Cache-Control', LIST_CACHE);
         return ApiResponse.success(res, {
             novels,
             total,
@@ -155,7 +178,8 @@ export const getPublicNovels = async (req: Request, res: Response) => {
  */
 export const getPublicGenres = async (req: Request, res: Response) => {
     try {
-        const genres = await Genre.find().sort({ name: 1 });
+        const genres = await Genre.find().sort({ name: 1 }).lean();
+        res.setHeader('Cache-Control', GENRE_CACHE);
         return ApiResponse.success(res, genres, 'Lấy danh sách thể loại thành công');
     } catch (error) {
         console.error('Get genres error:', error);
@@ -184,7 +208,9 @@ export const getChaptersByNovel = async (req: Request, res: Response) => {
 
         const chapters = await Chapter.find({ novelId: actualNovelId })
             .select('chapterNumber title status publishedAt createdAt views wordCount')
-            .sort({ chapterNumber: 1 });
+            .sort({ chapterNumber: 1 })
+            .lean();
+        res.setHeader('Cache-Control', LIST_CACHE);
         return ApiResponse.success(res, chapters, 'Lấy danh sách chương thành công');
     } catch (error) {
         console.error('Get chapters error:', error);
@@ -214,13 +240,18 @@ export const getChapterContent = async (req: Request, res: Response) => {
         const chapter = await Chapter.findOne({
             novelId: actualNovelId,
             chapterNumber: parseInt(chapterNumber)
-        });
+        }).lean();
         if (!chapter) {
             return ApiResponse.notFound(res, 'Không tìm thấy chương');
         }
 
         // Increment views asynchronously in the background to avoid blocking on writing large document contents
         Chapter.updateOne({ _id: chapter._id }, { $inc: { views: 1 } }).catch(e => console.error('Increment views error:', e));
+
+        // Ghi nhận "lượt đọc theo user" (chỉ khi đã đăng nhập) — fire-and-forget
+        if (req.userId) {
+            recordActivity(req.userId, 'reads').catch(e => console.error('Track read error:', e));
+        }
 
         chapter.views = (chapter.views || 0) + 1;
         return ApiResponse.success(res, chapter, 'Lấy nội dung chương thành công');

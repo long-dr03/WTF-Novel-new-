@@ -30,6 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
 
+    // Ghi nhận 1 lượt truy cập cho user đã đăng nhập — tối đa 1 lần / phiên trình duyệt
+    const trackVisitOnce = () => {
+        if (typeof window === 'undefined') return
+        if (sessionStorage.getItem('visit-tracked')) return
+        sessionStorage.setItem('visit-tracked', '1')
+        axios.post('/track/visit').catch(() => {})
+    }
+
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('jwt')
@@ -39,8 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     const response: any = await axios.get('/me')
                     if (response && response.user) {
                         setUser(response.user)
+                        trackVisitOnce()
                     } else if (response && response.data && response.data.user) {
                         setUser(response.data.user)
+                        trackVisitOnce()
                     } else {
                         // If token is invalid or request fails, clear auth
                         localStorage.removeItem('jwt')

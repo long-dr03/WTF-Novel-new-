@@ -270,3 +270,14 @@
 .animate-music-bar {
   animation: music-bar 1.2s ease-in-out infinite;
 }
+
+/* Trang đọc truyện: chỉ bố cục/vẽ những đoạn văn đang hiển thị trong khung nhìn.
+   Với chương dài, off-screen paragraphs được bỏ qua (content-visibility: auto),
+   giúp cuộn mượt và giảm CPU — lợi ích càng lớn khi tăng cỡ chữ / giãn dòng
+   (nội dung cao hơn => càng nhiều phần off-screen được bỏ qua).
+   contain-intrinsic-size 'auto' để trình duyệt ghi nhớ chiều cao thật sau lần
+   vẽ đầu, tránh nhảy thanh cuộn. */
+.reading-content > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4rem;
+}

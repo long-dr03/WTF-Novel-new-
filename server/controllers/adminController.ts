@@ -8,6 +8,7 @@ import Library from '../models/Library';
 import Music from '../models/Music';
 import Report from '../models/Report';
 import Comment from '../models/Comment';
+import Analytics from '../models/Analytics';
 
 // --- Dashboard Stats ---
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -54,12 +55,37 @@ export const getUsers = async (req: Request, res: Response) => {
         const users = await User.find(query)
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit))
-            .select('-password');
+            .select('-password')
+            .lean();
 
         const total = await User.countDocuments(query);
 
+        // Gắn thống kê theo user (tổng lượt đọc / click quảng cáo / truy cập) cho trang hiện tại
+        const userIds = users.map((u: any) => u._id);
+        const statsAgg = await Analytics.aggregate([
+            { $match: { user: { $in: userIds } } },
+            {
+                $group: {
+                    _id: '$user',
+                    reads: { $sum: '$reads' },
+                    adClicks: { $sum: '$adClicks' },
+                    visits: { $sum: '$visits' },
+                },
+            },
+        ]);
+        const statsMap = new Map(statsAgg.map((s: any) => [String(s._id), s]));
+        const usersWithStats = users.map((u: any) => {
+            const s = statsMap.get(String(u._id));
+            return {
+                ...u,
+                reads: s?.reads || 0,
+                adClicks: s?.adClicks || 0,
+                visits: s?.visits || 0,
+            };
+        });
+
         res.status(200).json({
-            users,
+            users: usersWithStats,
             total,
             page: Number(page),
             pages: Math.ceil(total / Number(limit))

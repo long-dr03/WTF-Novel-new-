@@ -142,4 +142,11 @@ NovelSchema.index({ publishStatus: 1 });
 NovelSchema.index({ views: -1, createdAt: -1 });
 NovelSchema.index({ slug: 1 });
 
+// Compound index khớp với truy vấn danh sách công khai:
+//   filter { publishStatus:'published' }  +  sort { isFeatured:-1, <field>:-1 }
+// Giúp MongoDB dùng index cho cả lọc lẫn sắp xếp (tránh in-memory sort).
+NovelSchema.index({ publishStatus: 1, isFeatured: -1, updatedAt: -1 });
+NovelSchema.index({ publishStatus: 1, isFeatured: -1, views: -1 });
+NovelSchema.index({ publishStatus: 1, isFeatured: -1, createdAt: -1 });
+
 export default (mongoose.models.Novel as Model<INovel>) || mongoose.model<INovel>('Novel', NovelSchema);

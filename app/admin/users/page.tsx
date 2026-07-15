@@ -32,6 +32,9 @@ interface User {
     role: 'user' | 'admin' | 'author'
     avatar: string
     isBanned: boolean
+    reads?: number
+    adClicks?: number
+    visits?: number
 }
 
 export default function UsersPage() {
@@ -120,13 +123,15 @@ export default function UsersPage() {
                             <TableHead>Email</TableHead>
                             <TableHead>Vai trò</TableHead>
                             <TableHead>Trạng thái</TableHead>
+                            <TableHead className="text-right">Lượt đọc</TableHead>
+                            <TableHead className="text-right">Click QC</TableHead>
                             <TableHead className="text-right">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={8} className="h-24 text-center">
                                     <div className="flex justify-center">
                                         <Loader2 className="w-6 h-6 animate-spin" />
                                     </div>
@@ -134,7 +139,7 @@ export default function UsersPage() {
                             </TableRow>
                         ) : users.length === 0 ? (
                              <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={8} className="h-24 text-center">
                                     Không tìm thấy người dùng.
                                 </TableCell>
                             </TableRow>
@@ -158,6 +163,12 @@ export default function UsersPage() {
                                         <Badge variant={user.isBanned ? "destructive" : "outline"} className={!user.isBanned ? "bg-green-500/10 text-green-500 border-green-500/20" : ""}>
                                             {user.isBanned ? "Bị khóa" : "Hoạt động"}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums font-medium">
+                                        {(user.reads || 0).toLocaleString('vi-VN')}
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums font-medium">
+                                        {(user.adClicks || 0).toLocaleString('vi-VN')}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>

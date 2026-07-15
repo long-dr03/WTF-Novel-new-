@@ -46,6 +46,7 @@ import { toast } from "sonner"
 import { InlineAd } from "@/components/ads/InlineAd"
 import { useTheme } from "next-themes"
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider"
+import axios from "@/setup/axios"
 
 interface Chapter {
     _id: string
@@ -340,6 +341,8 @@ export default function ReadChapterPage() {
         if (typeof window !== "undefined") {
             sessionStorage.setItem(`ad-unlocked-${novelId}-${chapterNumber}`, "true")
         }
+        // Ghi nhận lượt click mở khóa quảng cáo (chỉ tính khi đã đăng nhập, xử lý ở server) — fire-and-forget
+        axios.post('/track/ad-click', { novelId, chapterNumber }).catch(() => {})
     }
 
     // Sync active player with new chapter data on navigation
@@ -544,12 +547,14 @@ export default function ReadChapterPage() {
     
     return (
         <div className={cn(
-            "min-h-screen transition-all duration-300", 
+            "min-h-screen transition-colors duration-300",
             currentTheme.bg
         )}>
-            {/* Fixed Header */}
+            {/* Fixed Header — bỏ backdrop-blur: header đã mờ đục 95% nên blur gần như
+                không nhìn thấy nhưng buộc trình duyệt vẽ lại vùng phía sau mỗi khung hình
+                khi cuộn (nguyên nhân chính gây giật khi cuộn ở chương dài / cỡ chữ lớn). */}
             <header className={cn(
-                "sticky top-0 z-40 backdrop-blur border-b transition-all duration-300 w-full lg:pr-[280px]",
+                "sticky top-0 z-40 border-b transition-colors duration-300 w-full lg:pr-[280px]",
                 currentTheme.header,
                 currentTheme.border,
                 currentTheme.text
@@ -762,7 +767,7 @@ export default function ReadChapterPage() {
             </header>
 
             <main className={cn(
-                "w-full px-4 pt-8 pb-8 transition-all duration-300",
+                "w-full px-4 pt-8 pb-8 transition-colors duration-300",
                 player.audioUrl && "pb-[96px]"
             )}>
                 <div className="max-w-4xl mx-auto space-y-8">
@@ -827,8 +832,8 @@ export default function ReadChapterPage() {
                             </p>
                         </div>
                     ) : (
-                        <article 
-                            className={`prose prose-lg max-w-none transition-all select-none ${currentTheme.text}`}
+                        <article
+                            className={`prose prose-lg max-w-none select-none reading-content ${currentTheme.text}`}
                             style={{
                                 fontSize: `${fontSize}px`,
                                 lineHeight: lineHeight,
