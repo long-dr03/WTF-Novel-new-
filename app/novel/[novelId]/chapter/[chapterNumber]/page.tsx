@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, type CSSProperties } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -93,6 +93,16 @@ export default function ReadChapterPage() {
     const [fontSize, setFontSize] = useState(18)
     const [lineHeight, setLineHeight] = useState(1.8)
     const [fontFamily, setFontFamily] = useState("serif")
+
+    // Cài đặt đọc được áp qua CSS variable trên phần tử gốc -> khi KÉO slider ta chỉ
+    // cập nhật biến CSS + nhãn trực tiếp lên DOM (không setState => KHÔNG re-render toàn
+    // bộ trang đọc mỗi khung hình). Chỉ commit vào state khi thả (pointer up) để lưu lại.
+    const rootRef = useRef<HTMLDivElement>(null)
+    const fontSizeLabelRef = useRef<HTMLSpanElement>(null)
+    const lineHeightLabelRef = useRef<HTMLSpanElement>(null)
+    const setReadingVar = (name: string, value: string) => {
+        rootRef.current?.style.setProperty(name, value)
+    }
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme()
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>(() => {
         if (typeof window !== "undefined") {
@@ -546,7 +556,14 @@ export default function ReadChapterPage() {
     }
     
     return (
-        <div className={cn(
+        <div
+            ref={rootRef}
+            style={{
+                ['--r-fs' as any]: `${fontSize}px`,
+                ['--r-lh' as any]: lineHeight,
+                ['--r-ff' as any]: fontFamily,
+            } as CSSProperties}
+            className={cn(
             "min-h-screen transition-colors duration-300",
             currentTheme.bg
         )}>
@@ -689,26 +706,38 @@ export default function ReadChapterPage() {
                                         </div>
                                         {/* Font Size */}
                                         <div>
-                                            <label className="text-sm font-medium">Cỡ chữ: {fontSize}px</label>
+                                            <label className="text-sm font-medium">Cỡ chữ: <span ref={fontSizeLabelRef}>{fontSize}</span>px</label>
                                             <input
                                                 type="range"
                                                 min="14"
                                                 max="28"
-                                                value={fontSize}
-                                                onChange={(e) => setFontSize(Number(e.target.value))}
+                                                defaultValue={fontSize}
+                                                onChange={(e) => {
+                                                    const v = Number(e.target.value)
+                                                    setReadingVar('--r-fs', `${v}px`)
+                                                    if (fontSizeLabelRef.current) fontSizeLabelRef.current.textContent = String(v)
+                                                }}
+                                                onPointerUp={(e) => setFontSize(Number((e.target as HTMLInputElement).value))}
+                                                onKeyUp={(e) => setFontSize(Number((e.target as HTMLInputElement).value))}
                                                 className="w-full mt-1"
                                             />
                                         </div>
                                         {/* Line Height */}
                                         <div>
-                                            <label className="text-sm font-medium">Khoảng cách dòng: {lineHeight}</label>
+                                            <label className="text-sm font-medium">Khoảng cách dòng: <span ref={lineHeightLabelRef}>{lineHeight}</span></label>
                                             <input
                                                 type="range"
                                                 min="1.2"
                                                 max="2.5"
                                                 step="0.1"
-                                                value={lineHeight}
-                                                onChange={(e) => setLineHeight(Number(e.target.value))}
+                                                defaultValue={lineHeight}
+                                                onChange={(e) => {
+                                                    const v = Number(e.target.value)
+                                                    setReadingVar('--r-lh', String(v))
+                                                    if (lineHeightLabelRef.current) lineHeightLabelRef.current.textContent = String(v)
+                                                }}
+                                                onPointerUp={(e) => setLineHeight(Number((e.target as HTMLInputElement).value))}
+                                                onKeyUp={(e) => setLineHeight(Number((e.target as HTMLInputElement).value))}
                                                 className="w-full mt-1"
                                             />
                                         </div>
@@ -835,9 +864,9 @@ export default function ReadChapterPage() {
                         <article
                             className={`prose prose-lg max-w-none select-none reading-content ${currentTheme.text}`}
                             style={{
-                                fontSize: `${fontSize}px`,
-                                lineHeight: lineHeight,
-                                fontFamily: fontFamily,
+                                fontSize: 'var(--r-fs)',
+                                lineHeight: 'var(--r-lh)',
+                                fontFamily: 'var(--r-ff)',
                                 color: readingTheme === 'light' ? '#1c1917' : readingTheme === 'sepia' ? '#5f4b32' : '#e0e0e0'
                             }}
                             dangerouslySetInnerHTML={{ __html: chapter.content }}
