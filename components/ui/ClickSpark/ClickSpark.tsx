@@ -31,7 +31,8 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sparksRef = useRef<Spark[]>([]);
-  const startTimeRef = useRef<number | null>(null);
+  // id của vòng lặp rAF đang chạy; null nghĩa là ĐANG NGHỈ (không vẽ gì).
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -82,19 +83,21 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
     [easing]
   );
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationId: number;
-
-    const draw = (timestamp: number) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp;
+  /**
+   * Vẽ MỘT khung hình. Vòng lặp chỉ tự lên lịch tiếp KHI còn spark.
+   * Khi hết spark -> xoá canvas lần cuối và DỪNG hẳn (animationRef = null),
+   * tránh việc clearRect trên canvas cỡ cả trang mỗi frame khi không có gì để vẽ.
+   */
+  const drawFrame = useCallback(
+    (timestamp: number) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!canvas || !ctx) {
+        animationRef.current = null;
+        return;
       }
-      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       sparksRef.current = sparksRef.current.filter((spark: Spark) => {
         const elapsed = timestamp - spark.startTime;
@@ -123,15 +126,24 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
         return true;
       });
 
-      animationId = requestAnimationFrame(draw);
-    };
+      if (sparksRef.current.length > 0) {
+        animationRef.current = requestAnimationFrame(drawFrame);
+      } else {
+        animationRef.current = null; // nghỉ
+      }
+    },
+    [duration, easeFunc, sparkColor, sparkRadius, sparkSize, extraScale]
+  );
 
-    animationId = requestAnimationFrame(draw);
-
+  // Dọn dẹp vòng lặp khi unmount
+  useEffect(() => {
     return () => {
-      cancelAnimationFrame(animationId);
+      if (animationRef.current != null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
     };
-  }, [sparkColor, sparkSize, sparkRadius, sparkCount, duration, easeFunc, extraScale]);
+  }, []);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
     const canvas = canvasRef.current;
@@ -149,6 +161,11 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
     }));
 
     sparksRef.current.push(...newSparks);
+
+    // Khởi động vòng lặp CHỈ khi đang nghỉ
+    if (animationRef.current == null) {
+      animationRef.current = requestAnimationFrame(drawFrame);
+    }
   };
 
   return (
