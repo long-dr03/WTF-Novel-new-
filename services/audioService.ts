@@ -32,6 +32,62 @@ const extractApiData = <T>(response: any): T | null => {
     return response?.data ?? response ?? null;
 };
 
+/** PUT file thẳng lên R2 qua presigned URL, có callback tiến trình %. */
+function putToR2(
+    url: string,
+    file: File,
+    contentType: string,
+    onProgress?: (percent: number) => void
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', url, true);
+        // Content-Type PHẢI khớp giá trị đã ký ở server, nếu không R2 trả 403.
+        xhr.setRequestHeader('Content-Type', contentType);
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error(`R2 PUT thất bại: ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error('Lỗi mạng khi tải lên R2'));
+        xhr.send(file);
+    });
+}
+
+/**
+ * Upload 1 file audio lên Cloudflare R2:
+ *  1) xin presigned URL từ server (/audio/r2-presign)
+ *  2) PUT file thẳng lên R2 (không đi qua server)
+ * @returns publicUrl để lưu vào chương, hoặc null nếu lỗi
+ */
+export const uploadChapterAudioToR2 = async (
+    file: File,
+    onProgress?: (percent: number) => void
+): Promise<string | null> => {
+    try {
+        const contentType = file.type || 'audio/mpeg';
+        const presign: any = await axios.post('/audio/r2-presign', {
+            filename: file.name,
+            contentType,
+        });
+        const data = extractApiData<{
+            uploadUrl: string;
+            publicUrl: string;
+            key: string;
+            contentType: string;
+        }>(presign);
+        if (!data?.uploadUrl || !data?.publicUrl) return null;
+
+        await putToR2(data.uploadUrl, file, data.contentType || contentType, onProgress);
+        return data.publicUrl;
+    } catch (error) {
+        console.error('Error uploading audio to R2:', error);
+        return null;
+    }
+};
+
 
 
 /**

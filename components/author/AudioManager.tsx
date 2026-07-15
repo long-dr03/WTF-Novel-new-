@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { useUploadThing } from "@/lib/uploadthing"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -28,11 +27,16 @@ import {
     getNovelAudioList,
     updateChapterAudioUrl,
     deleteChapterAudio,
+    uploadChapterAudioToR2,
     formatDuration,
     formatDurationText,
     type AudioInfo,
     type NovelAudioList,
 } from "@/services/audioService"
+import { toast } from "sonner"
+
+// Giới hạn kích thước file audio khi upload lên Cloudflare R2
+const MAX_AUDIO_MB = 200
 
 interface Chapter {
     _id?: string;
@@ -58,6 +62,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
 
     // Single chapter processing
     const [uploadingChapter, setUploadingChapter] = useState<string | null>(null)
+    const [uploadProgress, setUploadProgress] = useState(0)
 
     // Audio player
     const [playingAudio, setPlayingAudio] = useState<string | null>(null)
@@ -102,45 +107,50 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
         fileInputRef.current?.click()
     }
 
-    // UploadThing hook
-    const { startUpload } = useUploadThing("chapterAudio", {
-        onClientUploadComplete: async (res) => {
-            if (res && res[0] && uploadTargetChapter) {
-                try {
-                    const uploadedUrl = res[0].ufsUrl || res[0].url
-                    const result = await updateChapterAudioUrl(uploadTargetChapter, uploadedUrl, 0) // Duration 0 as placeholder
-                    if (result) {
-                        await loadAudioList()
-                    }
-                } catch (error) {
-                    console.error('Error updating audio URL:', error)
-                } finally {
-                    setUploadingChapter(null)
-                    setUploadTargetChapter(null)
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = ''
-                    }
-                }
-            }
-        },
-        onUploadError: (error) => {
-            console.error('UploadThing error:', error)
-            setUploadingChapter(null)
-            setUploadTargetChapter(null)
-        }
-    })
-
+    // Upload audio lên Cloudflare R2 (presigned PUT trực tiếp, không qua server)
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !uploadTargetChapter) return
 
-        setUploadingChapter(uploadTargetChapter)
+        const chapterId = uploadTargetChapter
+
+        // Kiểm tra kích thước phía client để báo lỗi rõ ràng thay vì thất bại âm thầm
+        if (file.size > MAX_AUDIO_MB * 1024 * 1024) {
+            toast.error(`File quá lớn (${(file.size / 1024 / 1024).toFixed(1)}MB). Tối đa ${MAX_AUDIO_MB}MB.`)
+            setUploadTargetChapter(null)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+        if (!file.type.startsWith('audio/')) {
+            toast.error('Vui lòng chọn đúng file audio (mp3, m4a, wav...).')
+            setUploadTargetChapter(null)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+
+        setUploadingChapter(chapterId)
+        setUploadProgress(0)
         try {
-            await startUpload([file])
-        } catch (error) {
-            console.error('Error starting upload:', error)
+            const publicUrl = await uploadChapterAudioToR2(file, (p) => setUploadProgress(p))
+            if (!publicUrl) {
+                toast.error('Tải audio lên thất bại. Vui lòng thử lại.')
+                return
+            }
+            const result = await updateChapterAudioUrl(chapterId, publicUrl, 0)
+            if (result) {
+                await loadAudioList()
+                toast.success('Tải audio lên thành công!')
+            } else {
+                toast.error('Đã tải lên nhưng không lưu được vào chương. Vui lòng thử lại.')
+            }
+        } catch (error: any) {
+            console.error('Error uploading audio:', error)
+            toast.error(`Tải audio thất bại: ${error?.message || 'Lỗi không xác định'}`)
+        } finally {
             setUploadingChapter(null)
             setUploadTargetChapter(null)
+            setUploadProgress(0)
+            if (fileInputRef.current) fileInputRef.current.value = ''
         }
     }
 
@@ -340,7 +350,11 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
                                                 title="Upload audio"
                                             >
                                                 {isUploading ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    uploadProgress > 0 && uploadProgress < 100 ? (
+                                                        <span className="text-[10px] font-bold tabular-nums">{uploadProgress}%</span>
+                                                    ) : (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    )
                                                 ) : (
                                                     <Upload className="w-4 h-4" />
                                                 )}

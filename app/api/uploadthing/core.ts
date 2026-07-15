@@ -65,7 +65,7 @@ export const ourFileRouter = {
 
     chapterAudio: f({
         audio: {
-            maxFileSize: "32MB",
+            maxFileSize: "128MB",
             maxFileCount: 1,
         },
     })

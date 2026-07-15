@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Không bundle các package server nặng/native vào route handler — để Node tự require.
-  serverExternalPackages: ["mongoose", "bcryptjs"],
+  serverExternalPackages: ["mongoose", "bcryptjs", "@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
   images: {
     remotePatterns: [
       {
