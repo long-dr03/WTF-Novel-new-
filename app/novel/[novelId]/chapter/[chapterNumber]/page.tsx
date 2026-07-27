@@ -773,16 +773,19 @@ export default function ReadChapterPage() {
 
                             {/* Audio Player Toggle Button */}
                             <Button 
-                                variant="ghost" 
-                                size="icon"
                                 onClick={handlePlayAudio}
                                 className={cn(
-                                    "transition-colors",
-                                    player.audioUrl === chapter?.audioUrl && player.isPlaying && "text-primary animate-pulse"
+                                    "h-8 px-2.5 rounded-full text-xs font-extrabold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border-0",
+                                    chapter?.audioUrl 
+                                        ? "bg-gradient-to-r from-rose-500 via-pink-500 to-primary text-white shadow-pink-500/25 hover:opacity-95 active:scale-95" 
+                                        : "bg-muted text-muted-foreground opacity-60 hover:opacity-80"
                                 )}
-                                title="Trình phát nhạc / giọng đọc"
+                                title={chapter?.audioUrl ? "Phát audio chương này" : "Chương chưa có audio"}
                             >
-                                <Headphones className="h-4 w-4" />
+                                <Headphones className={cn("h-3.5 w-3.5", player.audioUrl === chapter?.audioUrl && player.isPlaying && "animate-bounce")} />
+                                <span className="font-extrabold tracking-wide">
+                                    {player.audioUrl === chapter?.audioUrl && player.isPlaying ? "Đang phát" : "Phát Audio"}
+                                </span>
                             </Button>
 
                             <Button variant="ghost" size="icon" asChild>
@@ -814,6 +817,49 @@ export default function ReadChapterPage() {
                         <p className="text-sm opacity-60">
                             {chapter.wordCount?.toLocaleString() || 0} từ • {chapter.views?.toLocaleString() || 0} lượt xem
                         </p>
+
+                        {/* Prominent Audio Player Banner inside Chapter */}
+                        <div className="mt-5 pt-4 border-t border-current/10 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-pink-500/10 via-rose-500/5 to-primary/10 p-4 rounded-xl border border-pink-500/20">
+                            <div className="flex items-center gap-3 text-left">
+                                <div className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/20 shrink-0">
+                                    <Headphones className={cn("w-5 h-5 sm:w-6 sm:h-6", player.audioUrl === chapter?.audioUrl && player.isPlaying && "animate-bounce")} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-1.5 font-extrabold text-xs text-primary uppercase tracking-wide">
+                                        <span>Giọng đọc Audio</span>
+                                        {chapter.audioUrl ? (
+                                            <span className="bg-pink-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-extrabold animate-pulse">Có sẵn</span>
+                                        ) : (
+                                            <span className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.2 rounded-full font-medium">Chưa có</span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs sm:text-sm font-semibold opacity-90 mt-0.5">
+                                        {chapter.audioUrl 
+                                            ? (player.audioUrl === chapter?.audioUrl && player.isPlaying ? "Đang phát giọng đọc chương này..." : "Bấm nút bên cạnh để nghe giọng đọc audio chương này") 
+                                            : "Chương này chưa được cập nhật giọng đọc audio"}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {chapter.audioUrl && (
+                                <Button
+                                    onClick={handlePlayAudio}
+                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-primary hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-pink-500/25 active:scale-95 transition-all shrink-0 cursor-pointer border-0"
+                                >
+                                    {player.audioUrl === chapter?.audioUrl && player.isPlaying ? (
+                                        <>
+                                            <Pause className="w-4 h-4 mr-1.5 fill-current" />
+                                            Tạm dừng Audio
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="w-4 h-4 mr-1.5 fill-current ml-0.5" />
+                                            Phát Audio Ngay
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Content */}
