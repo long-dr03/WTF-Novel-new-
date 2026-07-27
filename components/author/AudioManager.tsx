@@ -34,9 +34,12 @@ import {
     type NovelAudioList,
 } from "@/services/audioService"
 import { toast } from "sonner"
+import { compressAudioToMp3 } from "@/lib/audioCompress"
 
-// Giới hạn kích thước file audio khi upload lên Cloudflare R2
-const MAX_AUDIO_MB = 200
+// Giới hạn kích thước file GỐC (trước khi nén) — bản gốc rất nặng nên cho rộng rãi
+const MAX_AUDIO_MB = 500
+// Bitrate MP3 mục tiêu (mono) — 96k gần như trong suốt với giọng đọc
+const TARGET_AUDIO_KBPS = 96
 
 interface Chapter {
     _id?: string;
@@ -63,6 +66,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
     // Single chapter processing
     const [uploadingChapter, setUploadingChapter] = useState<string | null>(null)
     const [uploadProgress, setUploadProgress] = useState(0)
+    const [uploadPhase, setUploadPhase] = useState<'compress' | 'upload' | null>(null)
 
     // Audio player
     const [playingAudio, setPlayingAudio] = useState<string | null>(null)
@@ -131,7 +135,31 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
         setUploadingChapter(chapterId)
         setUploadProgress(0)
         try {
-            const publicUrl = await uploadChapterAudioToR2(file, (p) => setUploadProgress(p))
+            // 1) Nén sang MP3 mono NGAY TRÊN TRÌNH DUYỆT -> chỉ bản nhẹ được upload/lưu.
+            //    Nếu nén lỗi (trình duyệt không decode được) -> fallback dùng file gốc.
+            let toUpload = file
+            setUploadPhase('compress')
+            setUploadProgress(0)
+            try {
+                const compressed = await compressAudioToMp3(file, {
+                    bitrate: TARGET_AUDIO_KBPS,
+                    onProgress: (p) => setUploadProgress(p),
+                })
+                if (compressed.size > 0 && compressed.size < file.size) {
+                    toUpload = compressed
+                    const before = (file.size / 1024 / 1024).toFixed(1)
+                    const after = (compressed.size / 1024 / 1024).toFixed(1)
+                    const saved = Math.round((1 - compressed.size / file.size) * 100)
+                    toast.success(`Đã nén: ${before}MB → ${after}MB (-${saved}%)`)
+                }
+            } catch (err) {
+                console.warn('Nén audio thất bại, dùng file gốc:', err)
+            }
+
+            // 2) Upload bản đã nén lên R2
+            setUploadPhase('upload')
+            setUploadProgress(0)
+            const publicUrl = await uploadChapterAudioToR2(toUpload, (p) => setUploadProgress(p))
             if (!publicUrl) {
                 toast.error('Tải audio lên thất bại. Vui lòng thử lại.')
                 return
@@ -150,6 +178,7 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
             setUploadingChapter(null)
             setUploadTargetChapter(null)
             setUploadProgress(0)
+            setUploadPhase(null)
             if (fileInputRef.current) fileInputRef.current.value = ''
         }
     }
@@ -347,7 +376,13 @@ const AudioManager = ({ novelId, chapters, isDarkMode = true, onClose, isOpen }:
                                                 size="icon-sm"
                                                 onClick={() => handleUploadClick(chapterId)}
                                                 disabled={isUploading}
-                                                title="Upload audio"
+                                                title={
+                                                    isUploading && uploadPhase === 'compress'
+                                                        ? `Đang nén... ${uploadProgress}%`
+                                                        : isUploading && uploadPhase === 'upload'
+                                                            ? `Đang tải lên... ${uploadProgress}%`
+                                                            : 'Upload audio (tự nén MP3 96k trước khi tải)'
+                                                }
                                             >
                                                 {isUploading ? (
                                                     uploadProgress > 0 && uploadProgress < 100 ? (

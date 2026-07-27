@@ -10,6 +10,7 @@ import SideAds from "@/components/ads/SideAds";
 import WelcomePopup from "@/components/ads/WelcomePopup";
 import { useAudioPlayer } from "@/components/providers/AudioPlayerContext";
 import { GlobalAudioPlayer } from "@/components/reader/GlobalAudioPlayer";
+import { MobileQuickAudioButton } from "@/components/reader/MobileQuickAudioButton";
 import { cn } from "@/lib/utils";
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
         {!isReaderPage && <Footer />}
         {!isAuthorPage && <SideAds />}
         {!isAuthorPage && <WelcomePopup />}
+        {!isReaderPage && <MobileQuickAudioButton />}
         <GlobalAudioPlayer />
       </NovelAdProvider>
     </SiteSettingsProvider>

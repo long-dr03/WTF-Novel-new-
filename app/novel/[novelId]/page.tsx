@@ -24,7 +24,8 @@ import {
     Flag,
     TrendingUp,
     Search,
-    Star
+    Star,
+    Headphones
 } from "lucide-react"
 import { 
     getNovelByIdService, 
@@ -398,16 +399,24 @@ export default function NovelDetailPage() {
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex flex-wrap gap-3.5 mt-2">
+                        <div className="flex flex-wrap gap-3 mt-2">
                             {chapters.length > 0 && (
-                                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl px-5 py-2 text-xs shadow cursor-pointer">
+                                <Button asChild className="bg-gradient-to-r from-rose-500 via-pink-500 to-primary hover:opacity-95 text-white font-bold rounded-xl px-5 py-2 text-xs shadow-md cursor-pointer border-0">
+                                    <Link href={`/novel/${novelId}/chapter/1`}>
+                                        <Headphones className="w-4 h-4 mr-1.5" />
+                                        Nghe Audio
+                                    </Link>
+                                </Button>
+                            )}
+                            {chapters.length > 0 && (
+                                <Button asChild variant="outline" className="font-bold rounded-xl px-5 py-2 text-xs cursor-pointer">
                                     <Link href={`/novel/${novelId}/chapter/1`}>
                                         Chương đầu
                                     </Link>
                                 </Button>
                             )}
                             {stats.latestChapter && (
-                                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl px-5 py-2 text-xs shadow cursor-pointer">
+                                <Button asChild variant="outline" className="font-bold rounded-xl px-5 py-2 text-xs cursor-pointer">
                                     <Link href={`/novel/${novelId}/chapter/${stats.latestChapter.chapterNumber}`}>
                                         Chương cuối
                                     </Link>

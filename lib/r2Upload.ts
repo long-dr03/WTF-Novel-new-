@@ -1,32 +1,65 @@
 import axios from "@/setup/axios";
 
 /**
- * Convert 1 file ẢNH sang WebP ngay trên trình duyệt (canvas) để nhẹ hơn + tốt SEO.
- * - Bỏ qua nếu không phải ảnh, hoặc đã là webp, hoặc là gif (giữ animation).
- * - Nếu trình duyệt không hỗ trợ encode webp -> trả file gốc.
+ * Thu nhỏ canvas nếu cạnh dài vượt maxDim (giữ đúng tỉ lệ). Trả canvas mới hoặc chính nó.
+ * Dùng bởi các uploader có sẵn canvas (bìa/avatar) để giới hạn kích thước ảnh lưu.
  */
-export async function fileToWebp(file: File, quality = 0.85): Promise<File> {
-    if (
-        !file.type.startsWith("image/") ||
-        file.type === "image/webp" ||
-        file.type === "image/gif"
-    ) {
+export function downscaleCanvas(canvas: HTMLCanvasElement, maxDim: number): HTMLCanvasElement {
+    const longest = Math.max(canvas.width, canvas.height);
+    if (longest <= maxDim) return canvas;
+    const f = maxDim / longest;
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(canvas.width * f));
+    out.height = Math.max(1, Math.round(canvas.height * f));
+    const ctx = out.getContext("2d");
+    if (!ctx) return canvas;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(canvas, 0, 0, out.width, out.height);
+    return out;
+}
+
+/**
+ * Convert 1 file ẢNH sang WebP trên trình duyệt: downscale nếu quá lớn rồi encode WebP.
+ * - Bỏ qua gif (giữ animation).
+ * - Ảnh webp sẵn: chỉ re-encode nếu quá lớn HOẶC ra file nhỏ hơn; nếu không thì giữ gốc.
+ * - Trình duyệt không encode được webp -> trả file gốc.
+ */
+export async function fileToWebp(
+    file: File,
+    opts: { maxDimension?: number; quality?: number } = {}
+): Promise<File> {
+    const { maxDimension = 1600, quality = 0.8 } = opts;
+    if (!file.type.startsWith("image/") || file.type === "image/gif") {
         return file;
     }
     try {
         const bitmap = await createImageBitmap(file);
+        let w = bitmap.width;
+        let h = bitmap.height;
+        const longest = Math.max(w, h);
+        const oversized = longest > maxDimension;
+        if (oversized) {
+            const f = maxDimension / longest;
+            w = Math.round(w * f);
+            h = Math.round(h * f);
+        }
+
         const canvas = document.createElement("canvas");
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext("2d");
         if (!ctx) return file;
-        ctx.drawImage(bitmap, 0, 0);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(bitmap, 0, 0, w, h);
         bitmap.close?.();
 
         const blob: Blob | null = await new Promise((resolve) =>
             canvas.toBlob(resolve, "image/webp", quality)
         );
         if (!blob || blob.type !== "image/webp") return file;
+
+        // Ảnh webp gốc, không bị thu nhỏ, mà re-encode không nhẹ hơn -> giữ nguyên gốc
+        if (file.type === "image/webp" && !oversized && blob.size >= file.size) return file;
 
         const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
         return new File([blob], name, { type: "image/webp" });

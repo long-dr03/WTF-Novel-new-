@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X, RotateCw, ZoomIn, ZoomOut, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { uploadMediaToR2 } from '@/lib/r2Upload'
+import { uploadMediaToR2, downscaleCanvas } from '@/lib/r2Upload'
 import 'react-image-crop/dist/ReactCrop.css'
 import './avatar-upload.css'
 
@@ -168,13 +168,15 @@ export function CoverImageUpload({ value, defaultPreview, onChange, onError }: C
 
         ctx.restore()
 
-        canvas.toBlob(async (blob) => {
+        // Thu nhỏ về tối đa 1000px (cạnh dài) trước khi encode -> ảnh bìa nhẹ hơn nhiều
+        const outCanvas = downscaleCanvas(canvas, 1000)
+        outCanvas.toBlob(async (blob) => {
             if (!blob) {
                 setIsProcessing(false)
                 return
             }
 
-            // Xuất thẳng WebP (nhẹ hơn PNG ~70%, tốt cho SEO) rồi upload lên R2
+            // WebP q0.8 (nhẹ hơn PNG ~70%, tốt cho SEO) rồi upload lên R2
             const file = new File([blob], 'cover.webp', { type: 'image/webp' })
 
             setIsUploading(true)
@@ -193,7 +195,7 @@ export function CoverImageUpload({ value, defaultPreview, onChange, onError }: C
                 setIsUploading(false)
                 setIsProcessing(false)
             }
-        }, 'image/webp', 0.9)
+        }, 'image/webp', 0.8)
     }, [completedCrop, scale, rotate, filter, brightness, contrast, onChange, onError])
 
     const handleReset = () => {

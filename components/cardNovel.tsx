@@ -5,7 +5,8 @@ import SpotlightCard from '../components/ui/SpotlightCard/SpotlightCard'
 import { Badge } from "@/components/ui/badge"
 import Image from 'next/image'
 import Link from "next/link"
-import { BookOpen } from 'lucide-react'
+import { useRouter } from "next/navigation"
+import { BookOpen, Headphones } from 'lucide-react'
 
 interface NovelCardProps {
     novelId?: string
@@ -26,10 +27,19 @@ const CardNovel = ({
     ],
     className = ""
 }: NovelCardProps) => {
+    const router = useRouter()
     const [imageError, setImageError] = useState(false)
 
     const handleImageError = () => {
         setImageError(true)
+    }
+
+    const handleQuickAudioPlay = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (novelId) {
+            router.push(`/novel/${novelId}/chapter/1`)
+        }
     }
 
     const novelLink = novelId ? `/novel/${novelId}` : '#';
@@ -40,7 +50,7 @@ const CardNovel = ({
             spotlightColor="rgba(255, 133, 162, 0.12)"
         >
             <div className="flex flex-col gap-3">
-                <div className="img_container w-full aspect-[2/3] overflow-hidden bg-muted relative">
+                <div className="img_container w-full aspect-[2/3] overflow-hidden bg-muted relative group/img">
                     {coverImage && !imageError ? (
                         <Image
                             src={coverImage}
@@ -54,6 +64,18 @@ const CardNovel = ({
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
                             <BookOpen className="h-12 w-12 text-muted-foreground/30" />
                         </div>
+                    )}
+
+                    {/* Quick Audio Badge Button */}
+                    {novelId && (
+                        <button
+                            onClick={handleQuickAudioPlay}
+                            className="absolute top-2 right-2 flex items-center gap-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md hover:scale-105 active:scale-95 transition-all z-10 border border-white/20"
+                            title="Nghe Audio Nhanh"
+                        >
+                            <Headphones className="w-3 h-3" />
+                            <span>Audio</span>
+                        </button>
                     )}
                 </div>
                 <div className="text_container flex flex-col gap-1.5 px-3.5">

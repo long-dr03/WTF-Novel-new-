@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Star, BookOpen } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star, BookOpen, Headphones } from "lucide-react"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 
@@ -170,32 +170,22 @@ export function RecommendedBanner({ novels }: RecommendedBannerProps) {
                                             </div>
 
                                             {/* Latest Chapters Link */}
-                                            <div className="flex flex-col gap-1 mt-2">
+                                            <div className="flex flex-col gap-1.5 mt-2">
+                                                <Link 
+                                                    href={`/novel/${novelIdStr}/chapter/1`}
+                                                    className="inline-flex max-w-max items-center justify-center text-[10px] font-bold text-white bg-gradient-to-r from-pink-500 to-rose-500 hover:opacity-90 px-2 py-0.5 rounded-lg shadow-sm transition-all"
+                                                >
+                                                    <Headphones className="w-2.5 h-2.5 mr-1" />
+                                                    Nghe Audio
+                                                </Link>
                                                 {chaptersCount > 0 ? (
-                                                    <>
-                                                        <Link 
-                                                            href={`/novel/${novelIdStr}/chapter/${chaptersCount}`}
-                                                            className="inline-flex max-w-max items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 hover:text-primary dark:hover:text-primary bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-primary/5 dark:hover:bg-primary/10 px-2 py-1 rounded-lg border border-zinc-200/30 dark:border-zinc-800/50 transition-all"
-                                                        >
-                                                            Chương {chaptersCount}
-                                                        </Link>
-                                                        {chaptersCount > 1 && (
-                                                            <Link 
-                                                                href={`/novel/${novelIdStr}/chapter/${chaptersCount - 1}`}
-                                                                className="inline-flex max-w-max items-center justify-center text-[10px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-primary dark:hover:text-primary bg-zinc-100/50 dark:bg-zinc-900/40 px-2 py-0.5 rounded-lg border border-zinc-200/10 dark:border-zinc-800/20 transition-all"
-                                                            >
-                                                                Chương {chaptersCount - 1}
-                                                            </Link>
-                                                        )}
-                                                    </>
-                                                ) : (
                                                     <Link 
-                                                        href={`/novel/${novelIdStr}`}
-                                                        className="inline-flex max-w-max items-center justify-center text-[10px] font-semibold text-primary dark:text-primary hover:underline bg-primary/5 px-2 py-1 rounded-lg transition-all"
+                                                        href={`/novel/${novelIdStr}/chapter/${chaptersCount}`}
+                                                        className="inline-flex max-w-max items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 hover:text-primary dark:hover:text-primary bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-primary/5 dark:hover:bg-primary/10 px-2 py-0.5 rounded-lg border border-zinc-200/30 dark:border-zinc-800/50 transition-all"
                                                     >
-                                                        Bắt đầu đọc
+                                                        Chương Mới: {chaptersCount}
                                                     </Link>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </div>
                                     </div>

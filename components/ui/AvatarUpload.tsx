@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X, RotateCw, ZoomIn, ZoomOut, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { uploadMediaToR2 } from '@/lib/r2Upload'
+import { uploadMediaToR2, downscaleCanvas } from '@/lib/r2Upload'
 import 'react-image-crop/dist/ReactCrop.css'
 import './avatar-upload.css'
 
@@ -169,13 +169,15 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
 
         ctx.restore()
 
-        canvas.toBlob(async (blob) => {
+        // Avatar chỉ cần nhỏ: thu về tối đa 512px trước khi encode
+        const outCanvas = downscaleCanvas(canvas, 512)
+        outCanvas.toBlob(async (blob) => {
             if (!blob) {
                 setIsProcessing(false)
                 return
             }
 
-            // Xuất WebP (nhẹ hơn, tốt SEO) rồi upload lên R2
+            // WebP q0.8 (nhẹ hơn, tốt SEO) rồi upload lên R2
             const file = new File([blob], 'avatar.webp', { type: 'image/webp' })
 
             setIsUploading(true)
@@ -194,7 +196,7 @@ export function AvatarUpload({ value, defaultPreview, onChange, onError }: Avata
                 setIsUploading(false)
                 setIsProcessing(false)
             }
-        }, 'image/webp', 0.9)
+        }, 'image/webp', 0.8)
     }, [completedCrop, scale, rotate, filter, brightness, contrast, onChange, onError])
 
     const handleReset = () => {
