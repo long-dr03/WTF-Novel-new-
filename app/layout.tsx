@@ -117,13 +117,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         suppressHydrationWarning
       >
-        {process.env.NODE_ENV === "development" && (
-          <Script 
-            src="//unpkg.com/react-grab/dist/index.global.js" 
-            crossOrigin="anonymous" 
-            strategy="beforeInteractive" 
-          />
-        )}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
             <AudioPlayerProvider>
