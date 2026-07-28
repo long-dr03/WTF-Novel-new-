@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import HomeClient, { HomeInitialData } from "@/components/HomeClient";
 import { callController } from "@/server/callController";
 import { getPublicNovels, getPublicGenres } from "@/server/controllers/getNovel";
+
+export const metadata: Metadata = {
+  title: "Góc Truyện - Nền tảng đọc & nghe truyện online miễn phí",
+  description: "Đọc truyện online, nghe truyện audio mới nhất với kho truyện ngôn tình, tiên hiệp, kiếm hiệp, đô thị phong phú. Cập nhật liên tục 24/7.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 // ISR: dữ liệu trang chủ là công khai nên tái tạo tĩnh tối đa mỗi 60s.
 // => TTFB/LCP nhanh (HTML có sẵn nội dung), không còn 6 request client sau hydrate.
