@@ -5,18 +5,21 @@ type Controller = (req: any, res: any) => any | Promise<any>;
 
 /**
  * Gọi TRỰC TIẾP một controller (kiểu Express-shim) ở phía server mà KHÔNG đi qua HTTP.
- *
- * Dùng cho Server Component (vd. trang chủ SSR/ISR) để lấy dữ liệu công khai:
- * tránh việc Next server tự gọi API của chính nó qua localhost — vốn dễ lỗi
- * ECONNREFUSED lúc khởi động/rebuild và chậm hơn vì thêm 1 vòng HTTP.
- *
- * @returns payload mà controller trả về (thường là { success, message, data }).
+ * Dùng cho Server Component (vd. trang chủ SSR/ISR) để lấy dữ liệu công khai.
  */
 export async function callController(
     controller: Controller,
     opts: { query?: Record<string, any>; params?: Record<string, any> } = {}
 ): Promise<any> {
-    await connectDB();
+    try {
+        const db = await connectDB();
+        if (!db) {
+            return { success: false, message: "DB not connected", data: null };
+        }
+    } catch (e) {
+        console.error("connectDB error in callController:", e);
+        return { success: false, message: "DB error", data: null };
+    }
 
     const req: Partial<ShimRequest> = {
         query: opts.query || {},
@@ -35,6 +38,12 @@ export async function callController(
         setHeader() { return this; },
     };
 
-    await controller(req as any, res);
+    try {
+        await controller(req as any, res);
+    } catch (err) {
+        console.error("Controller execution error in callController:", err);
+        return { success: false, message: "Controller error", data: null };
+    }
+
     return captured;
 }
