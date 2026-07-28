@@ -336,6 +336,9 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
     }
 
     const handleAdClick = () => {
+        if (adLink) {
+            window.open(adLink, '_blank', 'noopener,noreferrer');
+        }
         setIsAdUnlocked(true)
         if (typeof window !== "undefined") {
             sessionStorage.setItem(`ad-unlocked-${novelId}-${chapterNumber}`, "true")
