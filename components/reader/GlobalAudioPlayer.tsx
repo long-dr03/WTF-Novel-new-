@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAudioPlayer } from "@/components/providers/AudioPlayerContext"
 import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
@@ -11,7 +10,6 @@ import { useTheme } from "next-themes"
 import Image from "next/image"
 
 export function GlobalAudioPlayer() {
-    const router = useRouter()
     const { theme } = useTheme()
     const {
         audioUrl,
@@ -68,7 +66,13 @@ export function GlobalAudioPlayer() {
 
     const handleTitleClick = () => {
         if (novelId && chapterNumber !== null) {
-            router.push(`/novel/${novelId}/chapter/${chapterNumber}`)
+            const path = `/novel/${encodeURIComponent(novelId)}/chapter/${chapterNumber}`
+            if (window.location.pathname === path) {
+                window.scrollTo({ top: 0, behavior: "smooth" })
+            } else {
+                // A full navigation loads matching assets when an older tab crosses a deployment.
+                window.location.assign(path)
+            }
         }
     }
 

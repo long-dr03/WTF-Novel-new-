@@ -109,8 +109,8 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme()
     const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>(() => {
         if (typeof window !== "undefined") {
-            const saved = localStorage.getItem('reading-theme') as 'light' | 'sepia' | 'dark'
-            return saved || 'light'
+            const saved = localStorage.getItem('reading-theme')
+            return saved === 'dark' || saved === 'sepia' ? saved : 'light'
         }
         return 'light'
     })
@@ -154,8 +154,8 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
 
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const saved = localStorage.getItem('reading-theme') as 'light' | 'sepia' | 'dark'
-            if (saved) {
+            const saved = localStorage.getItem('reading-theme')
+            if (saved === 'light' || saved === 'sepia' || saved === 'dark') {
                 setReadingTheme(saved)
                 setGlobalTheme(saved === 'dark' ? 'dark' : 'light')
             } else {
