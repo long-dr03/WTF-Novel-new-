@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAudioPlayer } from "@/components/providers/AudioPlayerContext"
-import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX, Moon } from "lucide-react"
+import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -40,21 +40,6 @@ export function GlobalAudioPlayer() {
     const [isMuted, setIsMuted] = useState(false)
     const [failedCoverUrl, setFailedCoverUrl] = useState("")
     const [prevVolume, setPrevVolume] = useState(1)
-    const [sleepDeadline, setSleepDeadline] = useState<number | null>(null)
-    const closePlayerRef = useRef(closePlayer)
-
-    useEffect(() => {
-        closePlayerRef.current = closePlayer
-    }, [closePlayer])
-
-    useEffect(() => {
-        if (sleepDeadline === null) return
-        const timer = window.setTimeout(() => {
-            closePlayerRef.current()
-            setSleepDeadline(null)
-        }, Math.max(0, sleepDeadline - Date.now()))
-        return () => window.clearTimeout(timer)
-    }, [sleepDeadline])
 
     // Sync muted state
     const handleMuteToggle = () => {
@@ -82,7 +67,7 @@ export function GlobalAudioPlayer() {
     const displayedTime = Math.min(Math.max(currentTime || 0, 0), safeDuration)
 
     const handleTitleClick = () => {
-        if (novelId && chapterNumber) {
+        if (novelId && chapterNumber !== null) {
             router.push(`/novel/${novelId}/chapter/${chapterNumber}`)
         }
     }
@@ -94,14 +79,16 @@ export function GlobalAudioPlayer() {
             "fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-background px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] font-sans text-foreground shadow-[0_-8px_30px_rgb(0,0,0,0.08)] md:hidden"
         )}>
             <div className="flex min-w-0 items-center gap-2.5">
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-secondary shadow-sm">
+                <button type="button" onClick={handleTitleClick} disabled={!novelId || chapterNumber === null}
+                    aria-label="Đến chương truyện đang phát"
+                    className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-secondary shadow-sm disabled:cursor-default">
                     <Image src={coverUrl && failedCoverUrl !== coverUrl ? coverUrl : "/logo.jpg"}
                         alt={novelTitle ? `Bìa truyện ${novelTitle}` : "Logo website"}
                         fill sizes="40px" unoptimized className="object-cover"
                         onError={() => { if (coverUrl) setFailedCoverUrl(coverUrl) }} />
-                </div>
+                </button>
                 <div className="min-w-0 flex-1">
-                    <button type="button" onClick={handleTitleClick} disabled={!novelId || !chapterNumber}
+                    <button type="button" onClick={handleTitleClick} disabled={!novelId || chapterNumber === null}
                         className="block w-full truncate text-left text-sm font-semibold leading-5 disabled:cursor-default"
                         title={title || "Chương truyện"}>
                         {title || "Chương truyện"}
@@ -128,12 +115,6 @@ export function GlobalAudioPlayer() {
                         aria-label={`Tốc độ phát ${playbackRate} lần. Nhấn để đổi tốc độ`}
                         className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-secondary text-xs font-semibold text-secondary-foreground active:scale-95 disabled:opacity-50"
                     >{playbackRate}×</button>
-                    <button type="button" onClick={() => setSleepDeadline(value => value === null ? Date.now() + 30 * 60_000 : null)}
-                        aria-label={sleepDeadline === null ? "Hẹn tắt sau 30 phút" : "Hủy hẹn giờ tắt"}
-                        aria-pressed={sleepDeadline !== null}
-                        className={cn("relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-secondary text-secondary-foreground active:scale-95",
-                            sleepDeadline !== null && "ring-2 ring-primary")}
-                    ><Moon className="h-5 w-5" /></button>
                 </div>
             </div>
             <div className="mt-2 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
