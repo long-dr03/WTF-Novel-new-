@@ -353,6 +353,7 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
         player.loadAudio(chapter.audioUrl, {
             title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
             novelTitle: novel?.title || "",
+            coverUrl: novel?.image || novel?.coverImage || "",
             novelId: novelId,
             chapterNumber: chapter.chapterNumber,
             hasNext: hasNextChapter,
@@ -379,6 +380,7 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
             player.loadAudio(isActuallyUnlocked ? (chapter.audioUrl || null) : null, {
                 title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
                 novelTitle: novel?.title || "",
+                coverUrl: novel?.image || novel?.coverImage || "",
                 novelId: novelId,
                 chapterNumber: chapter.chapterNumber,
                 hasNext: hasNextChapter,

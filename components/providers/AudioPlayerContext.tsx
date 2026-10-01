@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 interface TrackInfo {
     title: string; novelTitle: string; novelId: string; chapterNumber: number;
+    coverUrl?: string;
     hasNext: boolean; hasPrev: boolean; isLocked: boolean;
     nextChapterNumber?: number | null; previousChapterNumber?: number | null;
 }
@@ -19,6 +20,7 @@ interface AudioPlayerContextType {
     autoNext: boolean
     title: string
     novelTitle: string
+    coverUrl: string
     novelId: string
     chapterNumber: number | null
     hasNext: boolean
@@ -59,6 +61,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     const [title, setTitle] = useState("")
     const [novelTitle, setNovelTitle] = useState("")
+    const [coverUrl, setCoverUrl] = useState("")
     const [novelId, setNovelId] = useState("")
     const [chapterNumber, setChapterNumber] = useState<number | null>(null)
     const [hasNext, setHasNext] = useState(false)
@@ -126,6 +129,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                     setAudioUrl(track.url)
                     setTitle(track.title)
                     setNovelTitle(track.novelTitle)
+                    setCoverUrl(track.coverUrl || "")
                     setNovelId(track.novelId)
                     setChapterNumber(track.chapterNumber)
                     navigationRef.current = { next: track.nextChapterNumber ?? null, previous: track.previousChapterNumber ?? null }
@@ -164,6 +168,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         navigationRef.current = { next: info.nextChapterNumber ?? null, previous: info.previousChapterNumber ?? null }
         setTitle(info.title)
         setNovelTitle(info.novelTitle)
+        setCoverUrl(info.coverUrl || "")
         setNovelId(info.novelId)
         setChapterNumber(info.chapterNumber)
         setHasNext(info.hasNext)
@@ -182,6 +187,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                 url,
                 title: info.title,
                 novelTitle: info.novelTitle,
+                coverUrl: info.coverUrl || "",
                 novelId: info.novelId,
                 chapterNumber: info.chapterNumber,
                 hasNext: info.hasNext,
@@ -283,6 +289,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                 autoNext,
                 title,
                 novelTitle,
+                coverUrl,
                 novelId,
                 chapterNumber,
                 hasNext,

@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
+import Image from "next/image"
 
 export function GlobalAudioPlayer() {
     const router = useRouter()
@@ -21,6 +22,7 @@ export function GlobalAudioPlayer() {
         playbackRate,
         title,
         novelTitle,
+        coverUrl,
         novelId,
         chapterNumber,
         hasNext,
@@ -36,6 +38,7 @@ export function GlobalAudioPlayer() {
     } = useAudioPlayer()
 
     const [isMuted, setIsMuted] = useState(false)
+    const [failedCoverUrl, setFailedCoverUrl] = useState("")
     const [prevVolume, setPrevVolume] = useState(1)
     const [sleepDeadline, setSleepDeadline] = useState<number | null>(null)
     const closePlayerRef = useRef(closePlayer)
@@ -91,11 +94,11 @@ export function GlobalAudioPlayer() {
             "fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-background px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] font-sans text-foreground shadow-[0_-8px_30px_rgb(0,0,0,0.08)] md:hidden"
         )}>
             <div className="flex min-w-0 items-center gap-2.5">
-                <div className="flex h-9 w-6 shrink-0 items-end justify-center gap-0.5" aria-hidden="true">
-                    {[14, 23, 30, 24].map((height, index) => (
-                        <span key={index} className={cn("w-1 rounded-full bg-primary", isPlaying && "animate-pulse")}
-                            style={{ height, animationDelay: `${index * 120}ms` }} />
-                    ))}
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-secondary shadow-sm">
+                    <Image src={coverUrl && failedCoverUrl !== coverUrl ? coverUrl : "/logo.jpg"}
+                        alt={novelTitle ? `Bìa truyện ${novelTitle}` : "Logo website"}
+                        fill sizes="40px" unoptimized className="object-cover"
+                        onError={() => { if (coverUrl) setFailedCoverUrl(coverUrl) }} />
                 </div>
                 <div className="min-w-0 flex-1">
                     <button type="button" onClick={handleTitleClick} disabled={!novelId || !chapterNumber}
