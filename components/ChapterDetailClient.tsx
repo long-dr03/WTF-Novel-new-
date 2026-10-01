@@ -107,19 +107,9 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
         rootRef.current?.style.setProperty(name, value)
     }
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme()
-    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>(() => {
-        if (typeof window !== "undefined") {
-            const saved = localStorage.getItem('reading-theme')
-            return saved === 'dark' || saved === 'sepia' ? saved : 'light'
-        }
-        return 'light'
-    })
-    const [isAdUnlocked, setIsAdUnlocked] = useState(() => {
-        if (typeof window !== "undefined") {
-            return sessionStorage.getItem(`ad-unlocked-${novelId}-${chapterNumber}`) === "true"
-        }
-        return false
-    })
+    // The first client render must match server HTML; restore browser preferences in effects below.
+    const [readingTheme, setReadingTheme] = useState<'light' | 'sepia' | 'dark'>('light')
+    const [isAdUnlocked, setIsAdUnlocked] = useState(false)
     const player = useAudioControls()
     const { ads, popup } = useSiteSettings()
 
