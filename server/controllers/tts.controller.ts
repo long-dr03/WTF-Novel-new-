@@ -1,5 +1,7 @@
 import type { Request, Response } from '../types';
 import Chapter from '../models/Chapter';
+import Novel from '../models/Novel';
+import { accessibleNovel, canManageNovel, publishedChapters } from '../queries/novelAccess';
 import mongoose from 'mongoose';
 import ApiResponse from '../utils/apiResponse';
 import fs from 'fs';
@@ -23,6 +25,9 @@ export const uploadChapterAudio = async (req: Request, res: Response) => {
         if (!chapter) {
             return ApiResponse.notFound(res, 'Không tìm thấy chapter');
         }
+
+        const novel = await Novel.findById(chapter.novelId).select('author');
+        if (!novel || !await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
 
         if (!req.file) {
             return ApiResponse.badRequest(res, 'Vui lòng upload file audio');
@@ -76,6 +81,9 @@ export const deleteChapterAudio = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy chapter');
         }
 
+        const novel = await Novel.findById(chapter.novelId).select('author');
+        if (!novel || !await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
+
         if (!chapter.audioUrl) {
             return ApiResponse.badRequest(res, 'Chapter chưa có audio');
         }
@@ -116,12 +124,18 @@ export const getChapterAudioInfo = async (req: Request, res: Response) => {
         }
 
         const chapter = await Chapter.findById(chapterId)
-            .select('audioUrl audioStatus audioDuration audioGeneratedAt audioSource chapterNumber title');
+            .select('novelId status scheduledAt audioUrl audioStatus audioDuration audioGeneratedAt audioSource chapterNumber title');
 
         if (!chapter) {
             return ApiResponse.notFound(res, 'Không tìm thấy chapter');
         }
 
+        const access = await accessibleNovel(req, String(chapter.novelId));
+        if (!access || (!access.preview && chapter.status !== 'published' &&
+            !(chapter.status === 'scheduled' && chapter.scheduledAt && chapter.scheduledAt <= new Date()))) {
+            return ApiResponse.notFound(res);
+        }
+        res.setHeader('Cache-Control', access.preview ? 'private, no-store' : 'public, max-age=30, s-maxage=60');
         return ApiResponse.success(res, {
             chapterId: chapter._id,
             chapterNumber: chapter.chapterNumber,
@@ -150,7 +164,9 @@ export const getNovelAudioList = async (req: Request, res: Response) => {
             return ApiResponse.badRequest(res, 'ID novel không hợp lệ');
         }
 
-        const chapters = await Chapter.find({ novelId })
+        const access = await accessibleNovel(req, novelId);
+        if (!access) return ApiResponse.notFound(res);
+        const chapters = await Chapter.find({ novelId: access.novel._id, ...(access.preview ? {} : publishedChapters()) })
             .select('chapterNumber title audioUrl audioStatus audioDuration audioSource')
             .sort({ chapterNumber: 1 });
 
@@ -163,6 +179,7 @@ export const getNovelAudioList = async (req: Request, res: Response) => {
             totalDuration: chapters.reduce((sum, ch) => sum + (ch.audioDuration || 0), 0)
         };
 
+        res.setHeader('Cache-Control', access.preview ? 'private, no-store' : 'public, max-age=30, s-maxage=60');
         return ApiResponse.success(res, {
             chapters,
             stats
@@ -194,6 +211,9 @@ export const updateChapterAudioUrl = async (req: Request, res: Response) => {
         if (!chapter) {
             return ApiResponse.notFound(res, 'Không tìm thấy chapter');
         }
+
+        const novel = await Novel.findById(chapter.novelId).select('author');
+        if (!novel || !await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
 
         chapter.audioUrl = audioUrl;
         chapter.audioStatus = 'completed';

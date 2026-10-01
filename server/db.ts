@@ -14,11 +14,14 @@ export const connectDB = async (): Promise<typeof mongoose | null> => {
     const mongodbUri = process.env.MONGODB_URI;
 
     if (!mongodbUri) {
-        console.warn('⚠️ MONGODB_URI chưa được cấu hình trong .env');
-        return null;
+        throw new Error('MONGODB_URI chưa được cấu hình');
     }
 
-    if (cached.conn) return cached.conn;
+    if (cached.conn?.connection.readyState === 1) return cached.conn;
+    if (cached.conn) {
+        cached.conn = null;
+        cached.promise = null;
+    }
 
     if (!cached.promise) {
         cached.promise = mongoose
@@ -28,27 +31,11 @@ export const connectDB = async (): Promise<typeof mongoose | null> => {
             })
             .then((m) => {
                 console.log('✅ MongoDB connected successfully');
-                import('./models/Novel').then(async (module) => {
-                    const Novel = module.default;
-                    try {
-                        const novelsWithoutSlug = await Novel.find({ $or: [{ slug: { $exists: false } }, { slug: '' }] });
-                        if (novelsWithoutSlug.length > 0) {
-                            console.log(`🔧 [Migration] Found ${novelsWithoutSlug.length} novels without slug. Migrating...`);
-                            for (const novel of novelsWithoutSlug) {
-                                await novel.save();
-                            }
-                            console.log(`🔧 [Migration] Migrated ${novelsWithoutSlug.length} novels successfully.`);
-                        }
-                    } catch (err) {
-                        console.error('❌ [Migration] Error migrating novels:', err);
-                    }
-                }).catch(e => console.error('Failed to import Novel model in db.ts:', e));
                 return m;
             })
             .catch((err) => {
                 cached.promise = null;
-                console.error('❌ MongoDB connection error:', err);
-                return null;
+                throw err;
             });
     }
 

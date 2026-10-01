@@ -34,8 +34,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getChapterContentService, getChaptersByNovelService, getNovelByIdService, addToLibraryService, createReportService } from "@/services/novelService"
-import { useAudioPlayer } from "@/components/providers/AudioPlayerContext"
+import { getChapterContentService, getChapterPageService, getNovelByIdService, addToLibraryService, createReportService } from "@/services/novelService"
+import { useAudioControls } from "@/components/providers/AudioPlayerContext"
 import { CommentSection } from "@/components/CommentSection"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useNovelAd } from "@/components/providers/NovelAdProvider"
@@ -58,6 +58,7 @@ interface Chapter {
     charCount: number
     views: number
     status: string
+    navigation?: { previous: number | null; next: number | null }
     audioUrl?: string | null
     publishedAt?: string
     createdAt?: string
@@ -81,13 +82,18 @@ interface ChapterInfo {
 export default function ChapterDetailClient({ initialChapter, initialNovel }: { initialChapter?: any; initialNovel?: any }) {
     const params = useParams()
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, isLoading: authLoading } = useAuth()
     const { setNovelAd } = useNovelAd()
     const novelId = params.novelId as string
     const chapterNumber = parseInt(params.chapterNumber as string)
 
     const [chapter, setChapter] = useState<Chapter | null>(initialChapter || null)
     const [novel, setNovel] = useState<Novel | null>(initialNovel || null)
+    const [chapterPage, setChapterPage] = useState(0)
+    const [hasMoreChapters, setHasMoreChapters] = useState(true)
+    const [loadingChapters, setLoadingChapters] = useState(false)
+    const chapterScopeRef = useRef(novelId)
+    chapterScopeRef.current = novelId
     const [chapters, setChapters] = useState<ChapterInfo[]>([])
     const [loading, setLoading] = useState(!initialChapter)
     const [fontSize, setFontSize] = useState(18)
@@ -114,7 +120,7 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
         }
         return false
     })
-    const player = useAudioPlayer()
+    const player = useAudioControls()
     const { ads, popup } = useSiteSettings()
 
     useEffect(() => {
@@ -130,10 +136,21 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
     }, [novelId, chapterNumber])
 
     useEffect(() => {
+        if (!chapter?._id || authLoading) return;
+        let sessionId = sessionStorage.getItem('read-session');
+        if (!sessionId) {
+            sessionId = crypto.randomUUID();
+            sessionStorage.setItem('read-session', sessionId);
+        }
+        // The server deduplicates a chapter per reader per Vietnam calendar day.
+        axios.post('/track/read', { chapterId: chapter._id, sessionId }).catch(() => {});
+    }, [chapter?._id, user?.id, authLoading]);
+
+    useEffect(() => {
         if (user && chapter && chapter._id && novel && novel._id) {
              addToLibraryService(novel._id, 'history', chapter._id).catch(err => console.error("Failed to save history", err))
         }
-    }, [user, chapter, novel])
+    }, [user?.id, chapter?._id, novel?._id])
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -240,10 +257,9 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
         const fetchData = async () => {
             if (!novelId || !chapterNumber) return
             try {
-                const [chapterResponse, novelResponse, chaptersResponse] = await Promise.all([
+                const [chapterResponse, novelResponse] = await Promise.all([
                     initialChapter ? Promise.resolve(initialChapter) : getChapterContentService(novelId, chapterNumber),
-                    initialNovel ? Promise.resolve(initialNovel) : getNovelByIdService(novelId),
-                    getChaptersByNovelService(novelId)
+                    initialNovel ? Promise.resolve(initialNovel) : getNovelByIdService(novelId)
                 ])
                 const chapterData = chapterResponse as unknown as Chapter
                 if (chapterData && chapterData._id) {
@@ -255,12 +271,6 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
                     setNovel(novelData)
                 }
                 
-                const chaptersData = chaptersResponse as unknown as ChapterInfo[]
-                if (Array.isArray(chaptersData)) {
-                    setChapters(chaptersData)
-                } else {
-                    setChapters([])
-                }
             } catch (error) {
                 console.error("Error fetching chapter:", error)
             } finally {
@@ -300,19 +310,35 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
     const adLink = novel?.adLink || (isGlobalAdEnabled ? (globalAdLink || "https://s.shopee.vn/5L5nAgyTop") : "")
     const isActuallyUnlocked = isAdUnlocked || !adLink
 
-    const hasPrevChapter = chapterNumber > 1
-    const hasNextChapter = chapters.length > 0 && chapterNumber < Math.max(...chapters.map(c => c.chapterNumber))
-
+    const previousChapter = chapter?.navigation?.previous ?? null
+    const nextChapter = chapter?.navigation?.next ?? null
+    const hasPrevChapter = previousChapter !== null
+    const hasNextChapter = nextChapter !== null
     const goToPrevChapter = () => {
-        if (hasPrevChapter) {
-            router.push(`/novel/${novelId}/chapter/${chapterNumber - 1}`)
-        }
+        if (previousChapter !== null) router.push(`/novel/${novelId}/chapter/${previousChapter}`)
     }
-
     const goToNextChapter = () => {
-        if (hasNextChapter) {
-            router.push(`/novel/${novelId}/chapter/${chapterNumber + 1}`)
-        }
+        if (nextChapter !== null) router.push(`/novel/${novelId}/chapter/${nextChapter}`)
+    }
+    useEffect(() => {
+        setChapters([]); setChapterPage(0); setHasMoreChapters(true)
+    }, [novelId])
+    const loadChapterPage = async () => {
+        if (loadingChapters || !hasMoreChapters) return
+        const scope = novelId
+        setLoadingChapters(true)
+        try {
+            const data = await getChapterPageService(novelId, chapterPage + 1)
+            if (chapterScopeRef.current === scope) {
+                setChapters(previous => {
+                    const ids = new Set(previous.map(c => c._id))
+                    return [...previous, ...data.chapters.filter(c => c._id && !ids.has(c._id)) as ChapterInfo[]]
+                })
+                setChapterPage(previous => previous + 1)
+                setHasMoreChapters(data.hasMore)
+            }
+        } catch { toast.error('Không thể tải danh sách chương') }
+        finally { setLoadingChapters(false) }
     }
 
     const handlePlayAudio = () => {
@@ -330,7 +356,9 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
             novelId: novelId,
             chapterNumber: chapter.chapterNumber,
             hasNext: hasNextChapter,
+                nextChapterNumber: nextChapter,
             hasPrev: hasPrevChapter,
+                previousChapterNumber: previousChapter,
             isLocked: false
         })
     }
@@ -354,11 +382,13 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
                 novelId: novelId,
                 chapterNumber: chapter.chapterNumber,
                 hasNext: hasNextChapter,
+                nextChapterNumber: nextChapter,
                 hasPrev: hasPrevChapter,
+                previousChapterNumber: previousChapter,
                 isLocked: !isActuallyUnlocked
             })
         }
-    }, [chapterNumber, isActuallyUnlocked, chapter, novel, hasNextChapter, hasPrevChapter])
+    }, [chapterNumber, isActuallyUnlocked, chapter, novel, hasNextChapter, hasPrevChapter, nextChapter, previousChapter])
 
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => {
@@ -606,7 +636,7 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
                                 </button>
                             </div>
 
-                            <DropdownMenu modal={false}>
+                            <DropdownMenu modal={false} onOpenChange={open => { if (open && chapterPage === 0) void loadChapterPage() }}>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon">
                                         <List className="h-4 w-4" />
@@ -624,6 +654,10 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
                                             Chương {ch.chapterNumber}: {ch.title}
                                         </DropdownMenuItem>
                                     ))}
+                                    {hasMoreChapters && <DropdownMenuItem disabled={loadingChapters}
+                                        onSelect={event => { event.preventDefault(); void loadChapterPage() }}>
+                                        {loadingChapters ? 'Đang tải...' : 'Xem thêm chương'}
+                                    </DropdownMenuItem>}
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
@@ -766,7 +800,7 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
 
             <main className={cn(
                 "w-full px-4 pt-8 pb-8 transition-colors duration-300",
-                player.audioUrl && "pb-[96px]"
+                player.audioUrl && "pb-[calc(140px+env(safe-area-inset-bottom))] md:pb-[96px]"
             )}>
                 <div className="max-w-4xl mx-auto space-y-8">
                     <div className={cn(
@@ -893,7 +927,10 @@ export default function ChapterDetailClient({ initialChapter, initialNovel }: { 
             </div>
         </main>
 
-            <div className="fixed bottom-24 right-6 z-45 flex flex-col items-end gap-3 select-none">
+            <div className={cn(
+                "fixed right-6 z-45 flex flex-col items-end gap-3 select-none",
+                player.audioUrl ? "bottom-[calc(124px+env(safe-area-inset-bottom))] md:bottom-24" : "bottom-24"
+            )}>
                 {isScrollPanelOpen && (
                     <div className={cn(
                         "rounded-full p-2 shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200 border text-xs font-semibold backdrop-blur-md",

@@ -4,6 +4,7 @@ import Novel from '../models/Novel';
 import Chapter from '../models/Chapter';
 import mongoose from 'mongoose';
 import ApiResponse from '../utils/apiResponse';
+import { boundedInteger } from '../utils/queryParams';
 
 export interface AuthRequest extends Request {
     user?: {
@@ -36,23 +37,31 @@ export const getComments = async (req: Request, res: Response) => {
             filter.novelId = novelId;
         }
 
-        const comments = await Comment.find(filter)
+        const page = boundedInteger(req.query.page, 1, 10000);
+        const limit = boundedInteger(req.query.limit, 20, 50);
+        const roots = await Comment.find({ ...filter, parentId: null })
             .populate('userId', 'username avatar')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit + 1).lean();
+        const hasMore = roots.length > limit;
+        const topLevelComments = roots.slice(0, limit);
+        const comments = topLevelComments.length ? await Comment.find({
+            ...filter, parentId: { $in: topLevelComments.map(c => c._id) },
+        }).populate('userId', 'username avatar').sort({ createdAt: -1, _id: -1 }).lean() : [];
+        const repliesByParent = new Map<string, typeof comments>();
+        for (const comment of comments) {
+            if (comment.parentId) {
+                const key = String(comment.parentId);
+                const replies = repliesByParent.get(key) || [];
+                replies.push(comment);
+                repliesByParent.set(key, replies);
+            }
+        }
+        const commentTree = topLevelComments.map(comment => ({
+            ...comment,
+            replies: (repliesByParent.get(String(comment._id)) || []).reverse(),
+        }));
 
-        // Phân loại top-level comments và replies
-        const topLevelComments = comments.filter(c => !c.parentId);
-        const replies = comments.filter(c => c.parentId);
-
-        const commentTree = topLevelComments.map(c => {
-            const commentObj = c.toObject() as any;
-            commentObj.replies = replies
-                .filter(r => r.parentId && r.parentId.toString() === c._id.toString())
-                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Trả lời cũ trước
-            return commentObj;
-        });
-
-        return ApiResponse.success(res, commentTree, 'Lấy danh sách bình luận thành công');
+        return ApiResponse.success(res, commentTree, 'Lấy danh sách bình luận thành công', 200, { page, limit, hasMore });
     } catch (error) {
         console.error('Get comments error:', error);
         return ApiResponse.serverError(res, 'Lỗi khi lấy danh sách bình luận');

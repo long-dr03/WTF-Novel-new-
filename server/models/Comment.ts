@@ -45,6 +45,8 @@ const CommentSchema: Schema = new Schema({
     timestamps: true
 });
 
+CommentSchema.index({ novelId: 1, parentId: 1, createdAt: -1, _id: -1 });
+CommentSchema.index({ chapterId: 1, parentId: 1, createdAt: -1, _id: -1 });
 CommentSchema.index({ novelId: 1 });
 CommentSchema.index({ chapterId: 1 });
 CommentSchema.index({ parentId: 1 });

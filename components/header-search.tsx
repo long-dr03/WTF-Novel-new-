@@ -58,17 +58,21 @@ export function HeaderSearch({ isHeader = false }: { isHeader?: boolean }) {
     React.useEffect(() => {
         if (query.length < 2) {
             setData([])
+            setIsLoading(false)
             return
         }
 
+        let active = true
         setIsLoading(true)
         const timer = setTimeout(async () => {
             const results = await searchAPI(query)
-            setData(results)
-            setIsLoading(false)
+            if (active) {
+                setData(results)
+                setIsLoading(false)
+            }
         }, 400)
 
-        return () => clearTimeout(timer)
+        return () => { active = false; clearTimeout(timer) }
     }, [query])
 
     return (

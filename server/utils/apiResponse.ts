@@ -44,6 +44,7 @@ interface ApiResponseError {
 }
 
 interface MetaData {
+    hasMore?: boolean;
     page?: number;
     limit?: number;
     total?: number;

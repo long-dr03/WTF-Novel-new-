@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata, ResolvingMetadata } from "next";
 import ChapterDetailClient from "@/components/ChapterDetailClient";
 import { callController } from "@/server/callController";
@@ -7,7 +8,7 @@ interface PageProps {
   params: Promise<{ novelId: string; chapterNumber: string }>;
 }
 
-async function fetchChapterAndNovelData(novelId: string, chapterNumberStr: string) {
+const fetchChapterAndNovelData = cache(async function (novelId: string, chapterNumberStr: string) {
   try {
     const chapterNumber = parseInt(chapterNumberStr, 10);
     const [novelRes, chapterRes] = await Promise.all([
@@ -23,7 +24,7 @@ async function fetchChapterAndNovelData(novelId: string, chapterNumberStr: strin
     console.error("Error fetching chapter data on server:", error);
     return { novel: null, chapter: null };
   }
-}
+});
 
 export async function generateMetadata(
   { params }: PageProps,

@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Góc Truyện
 
-## Getting Started
+Ứng dụng đọc, nghe và quản lý truyện bằng Next.js 16, React 19, TypeScript và MongoDB.
 
-First, run the development server:
+## Chạy cục bộ
+
+Cần Node.js 20.9+ và MongoDB. Tạo `.env` với `MONGODB_URI` và `JWT_SECRET`. Để dùng Cloudflare R2 cần thêm `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`. Nếu dùng UploadThing, đặt `UPLOADTHING_TOKEN`. `NEXT_PUBLIC_SITE_URL` là URL của website.
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Chạy `npx tsc --noEmit`, `node --test tests/*.test.cjs`, `npm run lint`, `npm run build` để kiểm tra. Trang chủ cần MongoDB để hiển thị dữ liệu. Khi thiếu kết nối, trang chủ hiển thị trạng thái rỗng; các API phụ thuộc DB trả lỗi sớm.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Đăng chương hẹn giờ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Chương có `status: scheduled` và `scheduledAt` trong tương lai. Độc giả thấy chương sau thời điểm này dù job chưa chạy; job đổi trạng thái bền vững thành `published`. Cấu hình một scheduler của môi trường triển khai chạy **mỗi phút** bằng một trong hai cách:
 
-## Learn More
+- Chạy `npm run publish:scheduled` trong môi trường có quyền truy cập MongoDB.
+- Gửi `POST /api/jobs/publish` với header `Authorization: Bearer <CRON_SECRET>`. Đặt `CRON_SECRET` trong môi trường của ứng dụng.
 
-To learn more about Next.js, take a look at the following resources:
+`npm run migrate:slugs` backfill slug cũ theo lô khi cần; migration này không chạy trong request và cần được khởi chạy thủ công một lần.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Triển khai trên Dokploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Chọn **Build Type: Dockerfile**, **Dockerfile Path: `Dockerfile`**, **Docker Context Path: `.`** và cổng ứng dụng **3000**. Dockerfile cài dependency từ `package-lock.json` bằng Node 20 rồi build Next.js. Nếu vẫn chọn Nixpacks, Dokploy sẽ chạy bước tải Nix trước khi dùng tới mã nguồn; lỗi `Canceled: context canceled` ở bước này là lỗi môi trường build, không phải lỗi biên dịch Next.js.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Lượt đọc được ghi qua `POST /api/track/read`, tối đa một lần cho mỗi chương, mỗi độc giả, mỗi ngày theo giờ Việt Nam. Bản ghi dùng để vẽ thống kê tác giả trong 90 ngày gần nhất. Dữ liệu lượt xem cũ vẫn nằm ở bộ đếm `views`, nhưng biểu đồ chỉ có dữ liệu kể từ khi triển khai cơ chế ghi nhận mới.

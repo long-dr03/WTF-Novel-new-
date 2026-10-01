@@ -1,6 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface INovel extends Document {
+    createdAt: Date;
+    updatedAt: Date;
     title: string;
     description: string;
     image: string;

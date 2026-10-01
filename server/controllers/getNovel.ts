@@ -4,7 +4,8 @@ import Chapter from "../models/Chapter";
 import mongoose from "mongoose";
 import type { Request, Response } from "../types";
 import ApiResponse from "../utils/apiResponse";
-import { recordActivity } from "../models/Analytics";
+import { accessibleNovel, publishedChapters, canManageNovel } from "../queries/novelAccess";
+import { boundedInteger, literalSearch } from "../utils/queryParams";
 
 /**
  * Cache-Control cho các endpoint đọc công khai (không phụ thuộc user).
@@ -29,21 +30,20 @@ export const getNovelById = async (req: Request, res: Response) => {
             return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
 
-        let query;
-        if (mongoose.Types.ObjectId.isValid(novelId)) {
-            query = Novel.findById(novelId);
-        } else {
-            query = Novel.findOne({ slug: novelId });
-        }
-
-        const novel = await query
+        const preview = req.query.preview === 'true';
+        res.setHeader('Cache-Control', preview ? 'private, no-store' : LIST_CACHE);
+        const filter = mongoose.Types.ObjectId.isValid(novelId) ? { _id: novelId } : { slug: novelId };
+        // Keep the publication condition in the actual read, not a separate preflight query.
+        const novel = await Novel.findOne({ ...filter, ...(preview ? {} : { publishStatus: 'published' }) })
             .populate('author', 'username avatar')
-            .populate('genres', 'name slug')
-            .lean();
+            .populate('genres', 'name slug').lean();
+        if (novel && preview && !await canManageNovel(req, (novel.author as unknown as { _id: unknown })._id)) {
+            return ApiResponse.notFound(res, 'Không tìm thấy truyện');
+        }
         if (!novel) {
             return ApiResponse.notFound(res, 'Không tìm thấy truyện');
         }
-        res.setHeader('Cache-Control', LIST_CACHE);
+        res.setHeader('Cache-Control', preview ? 'private, no-store' : LIST_CACHE);
         return ApiResponse.success(res, novel, 'Lấy thông tin truyện thành công');
     } catch (error) {
         console.error('Get novel error:', error);
@@ -60,8 +60,13 @@ export const getNovelsByAuthor = async (req: Request, res: Response) => {
         if (!authorId || !mongoose.Types.ObjectId.isValid(authorId)) {
             return ApiResponse.badRequest(res, 'ID tác giả không hợp lệ');
         }
-        const novels = await Novel.find({ author: authorId })
-            .sort({ createdAt: -1 });
+        const preview = req.query.preview === 'true';
+        if (preview && req.userId !== authorId && !await canManageNovel(req, authorId)) {
+            return ApiResponse.forbidden(res);
+        }
+        res.setHeader('Cache-Control', preview ? 'private, no-store' : LIST_CACHE);
+        const novels = await Novel.find({ author: authorId, ...(preview ? {} : { publishStatus: 'published' }) })
+            .sort({ createdAt: -1 }).lean();
         return ApiResponse.success(res, novels, 'Lấy danh sách truyện thành công');
     } catch (error) {
         console.error('Get novels by author error:', error);
@@ -74,7 +79,7 @@ export const getNovelsByAuthor = async (req: Request, res: Response) => {
  */
 export const getPopularNovels = async (req: Request, res: Response) => {
     try {
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = boundedInteger(req.query.limit, 10, 100);
         const novels = await Novel.find({ publishStatus: 'published' })
             .select(NOVEL_LIST_FIELDS)
             .sort({ views: -1 })
@@ -94,9 +99,9 @@ export const getPopularNovels = async (req: Request, res: Response) => {
  */
 export const getPublicNovels = async (req: Request, res: Response) => {
     try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 12;
-        const search = req.query.search as string;
+        const page = boundedInteger(req.query.page, 1, 10000);
+        const limit = boundedInteger(req.query.limit, 12, 100);
+        const search = literalSearch(req.query.search);
         const genre = req.query.genre as string;
         const isFeatured = req.query.isFeatured === 'true';
         const sort = req.query.sort as string;
@@ -113,19 +118,10 @@ export const getPublicNovels = async (req: Request, res: Response) => {
         }
 
         if (genre) {
-            const genreList = genre.split(',').filter(g => g.trim() !== '');
-            const genreIds = [];
-
-            for (const g of genreList) {
-                if (mongoose.Types.ObjectId.isValid(g)) {
-                    genreIds.push(g);
-                } else {
-                    const genreDoc = await Genre.findOne({ slug: g });
-                    if (genreDoc) {
-                        genreIds.push(genreDoc._id);
-                    }
-                }
-            }
+            const genreList = genre.split(',').map(g => g.trim()).filter(Boolean).slice(0, 20);
+            const slugs = genreList.filter(g => !mongoose.Types.ObjectId.isValid(g));
+            const matched = slugs.length ? await Genre.find({ slug: { $in: slugs } }).select('_id').lean() : [];
+            const genreIds = [...genreList.filter(g => mongoose.Types.ObjectId.isValid(g)), ...matched.map(g => g._id)];
 
             if (genreIds.length > 0) {
                 query.genres = { $in: genreIds };
@@ -138,7 +134,7 @@ export const getPublicNovels = async (req: Request, res: Response) => {
             query.isFeatured = true;
         }
 
-        let sortObj: any = { isFeatured: -1 };
+        const sortObj: Record<string, -1> = { isFeatured: -1 };
         if (sort === 'popular') {
             sortObj.views = -1;
         } else if (sort === 'updated') {
@@ -148,6 +144,7 @@ export const getPublicNovels = async (req: Request, res: Response) => {
         }
 
         // Chạy song song find + count để tiết kiệm 1 vòng round-trip tới DB
+        const includeTotal = req.query.includeTotal !== 'false';
         const [novels, total] = await Promise.all([
             Novel.find(query)
                 .select(NOVEL_LIST_FIELDS)
@@ -157,7 +154,7 @@ export const getPublicNovels = async (req: Request, res: Response) => {
                 .skip((page - 1) * limit)
                 .limit(limit)
                 .lean(),
-            Novel.countDocuments(query),
+            includeTotal ? Novel.countDocuments(query) : Promise.resolve(null),
         ]);
 
         res.setHeader('Cache-Control', LIST_CACHE);
@@ -165,7 +162,7 @@ export const getPublicNovels = async (req: Request, res: Response) => {
             novels,
             total,
             page,
-            pages: Math.ceil(total / limit)
+            pages: total === null ? null : Math.ceil(total / limit)
         }, 'Lấy danh sách truyện thành công');
     } catch (error) {
         console.error('Get public novels error:', error);
@@ -197,21 +194,24 @@ export const getChaptersByNovel = async (req: Request, res: Response) => {
             return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
 
-        let actualNovelId = novelId;
-        if (!mongoose.Types.ObjectId.isValid(novelId)) {
-            const novelDoc = await Novel.findOne({ slug: novelId }).select('_id');
-            if (!novelDoc) {
-                return ApiResponse.notFound(res, 'Không tìm thấy truyện');
-            }
-            actualNovelId = novelDoc._id.toString();
-        }
+        const access = await accessibleNovel(req, novelId);
+        if (!access) return ApiResponse.notFound(res, 'Không tìm thấy truyện');
+        const actualNovelId = access.novel._id;
 
-        const chapters = await Chapter.find({ novelId: actualNovelId })
-            .select('chapterNumber title status publishedAt createdAt views wordCount')
-            .sort({ chapterNumber: 1 })
-            .lean();
-        res.setHeader('Cache-Control', LIST_CACHE);
-        return ApiResponse.success(res, chapters, 'Lấy danh sách chương thành công');
+        const filter = { novelId: actualNovelId, ...(access.preview ? {} : publishedChapters()) };
+        const page = boundedInteger(req.query.page, 1, 10000);
+        const limit = boundedInteger(req.query.limit, 100, 100);
+        const direction = req.query.order === 'desc' ? -1 : 1;
+        const paginated = !access.preview || req.query.page !== undefined;
+        const query = Chapter.find(filter)
+            .select('chapterNumber title status scheduledAt publishedAt createdAt views wordCount')
+            .sort({ chapterNumber: direction });
+        if (paginated) query.skip((page - 1) * limit).limit(limit + 1);
+        const chapters = await query.lean();
+        const hasMore = paginated && chapters.length > limit;
+        res.setHeader('Cache-Control', access.preview ? 'private, no-store' : LIST_CACHE);
+        return ApiResponse.success(res, paginated ? chapters.slice(0, limit) : chapters,
+            'Lấy danh sách chương thành công', 200, { page, limit, hasMore });
     } catch (error) {
         console.error('Get chapters error:', error);
         return ApiResponse.serverError(res, 'Lỗi khi lấy danh sách chương');
@@ -228,35 +228,48 @@ export const getChapterContent = async (req: Request, res: Response) => {
             return ApiResponse.badRequest(res, 'ID hoặc Slug truyện không hợp lệ');
         }
 
-        let actualNovelId = novelId;
-        if (!mongoose.Types.ObjectId.isValid(novelId)) {
-            const novelDoc = await Novel.findOne({ slug: novelId }).select('_id');
-            if (!novelDoc) {
-                return ApiResponse.notFound(res, 'Không tìm thấy truyện');
-            }
-            actualNovelId = novelDoc._id.toString();
-        }
+        const number = Number(chapterNumber);
+        if (!Number.isSafeInteger(number) || number < 1) return ApiResponse.badRequest(res, 'Số chương không hợp lệ');
+        const access = await accessibleNovel(req, novelId);
+        if (!access) return ApiResponse.notFound(res, 'Không tìm thấy truyện');
+        const actualNovelId = access.novel._id;
 
         const chapter = await Chapter.findOne({
             novelId: actualNovelId,
-            chapterNumber: parseInt(chapterNumber)
+            chapterNumber: number,
+            ...(access.preview ? {} : publishedChapters())
         }).lean();
         if (!chapter) {
             return ApiResponse.notFound(res, 'Không tìm thấy chương');
         }
 
-        // Increment views asynchronously in the background to avoid blocking on writing large document contents
-        Chapter.updateOne({ _id: chapter._id }, { $inc: { views: 1 } }).catch(e => console.error('Increment views error:', e));
-
-        // Ghi nhận "lượt đọc theo user" (chỉ khi đã đăng nhập) — fire-and-forget
-        if (req.userId) {
-            recordActivity(req.userId, 'reads').catch(e => console.error('Track read error:', e));
-        }
-
-        chapter.views = (chapter.views || 0) + 1;
-        return ApiResponse.success(res, chapter, 'Lấy nội dung chương thành công');
+        const filter = { novelId: actualNovelId, ...(access.preview ? {} : publishedChapters()) };
+        const [previous, next] = await Promise.all([
+            Chapter.findOne({ ...filter, chapterNumber: { $lt: number } }).sort({ chapterNumber: -1 }).select('chapterNumber').lean(),
+            Chapter.findOne({ ...filter, chapterNumber: { $gt: number } }).sort({ chapterNumber: 1 }).select('chapterNumber').lean(),
+        ]);
+        if (!access.preview) delete chapter.contentJson;
+        res.setHeader('Cache-Control', access.preview ? 'private, no-store' : LIST_CACHE);
+        return ApiResponse.success(res, { ...chapter, navigation: { previous: previous?.chapterNumber ?? null, next: next?.chapterNumber ?? null } }, 'Lấy nội dung chương thành công');
     } catch (error) {
         console.error('Get chapter content error:', error);
         return ApiResponse.serverError(res, 'Lỗi khi lấy nội dung chương');
+    }
+}
+
+export async function getChapterSummary(req: Request, res: Response) {
+    try {
+        const access = await accessibleNovel(req, req.params.novelId);
+        if (!access) return ApiResponse.notFound(res);
+        const [summary] = await Chapter.aggregate([
+            { $match: { novelId: access.novel._id, ...(access.preview ? {} : publishedChapters()) } },
+            { $group: { _id: null, total: { $sum: 1 }, totalWords: { $sum: '$wordCount' },
+                totalViews: { $sum: '$views' }, first: { $min: '$chapterNumber' }, last: { $max: '$chapterNumber' } } },
+        ]);
+        res.setHeader('Cache-Control', access.preview ? 'private, no-store' : LIST_CACHE);
+        return ApiResponse.success(res, summary || { total: 0, totalWords: 0, totalViews: 0, first: null, last: null });
+    } catch (error) {
+        console.error('Chapter summary error:', error);
+        return ApiResponse.serverError(res);
     }
 }

@@ -1,7 +1,13 @@
 "use client"
 
-import React, { createContext, useContext, useState, useRef, useEffect } from "react"
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
+
+interface TrackInfo {
+    title: string; novelTitle: string; novelId: string; chapterNumber: number;
+    hasNext: boolean; hasPrev: boolean; isLocked: boolean;
+    nextChapterNumber?: number | null; previousChapterNumber?: number | null;
+}
 
 interface AudioPlayerContextType {
     audioUrl: string | null
@@ -18,7 +24,7 @@ interface AudioPlayerContextType {
     hasNext: boolean
     hasPrev: boolean
     isLocked: boolean
-    loadAudio: (url: string | null, info: { title: string; novelTitle: string; novelId: string; chapterNumber: number; hasNext: boolean; hasPrev: boolean; isLocked: boolean }) => void
+    loadAudio: (url: string | null, info: TrackInfo) => void
     togglePlay: () => void
     seek: (time: number) => void
     setVolume: (vol: number) => void
@@ -30,6 +36,14 @@ interface AudioPlayerContextType {
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined)
+
+type AudioControls = Pick<AudioPlayerContextType, 'audioUrl' | 'isPlaying' | 'loadAudio' | 'togglePlay'>;
+const AudioControlsContext = createContext<AudioControls | undefined>(undefined);
+export function useAudioControls() {
+    const context = useContext(AudioControlsContext);
+    if (!context) throw new Error('useAudioControls must be used within AudioPlayerProvider');
+    return context;
+}
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
     const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -51,6 +65,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     const [hasPrev, setHasPrev] = useState(false)
     const [isLocked, setIsLocked] = useState(false)
 
+    const navigationRef = useRef<{ next: number | null; previous: number | null }>({ next: null, previous: null })
     const stateRef = useRef({ autoNext, hasNext, novelId, chapterNumber })
 
     // Keep stateRef in sync
@@ -63,19 +78,27 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         const audio = new Audio()
         audioRef.current = audio
 
+        let lastSaved = 0
+        const savePosition = () => {
+            localStorage.setItem("audio-last-time", String(audio.currentTime))
+        }
         const handleTimeUpdate = () => {
             setCurrentTime(audio.currentTime)
-            localStorage.setItem("audio-last-time", String(audio.currentTime))
+            if (Date.now() - lastSaved >= 5000) {
+                savePosition()
+                lastSaved = Date.now()
+            }
         }
         const handleDurationChange = () => setDuration(audio.duration || 0)
         const handleEnded = () => {
             setIsPlaying(false)
             const { autoNext, hasNext, novelId, chapterNumber } = stateRef.current
             if (autoNext && hasNext && novelId && chapterNumber !== null) {
-                router.push(`/novel/${novelId}/chapter/${chapterNumber + 1}`)
+                router.push(`/novel/${novelId}/chapter/${navigationRef.current.next ?? chapterNumber + 1}`)
             }
         }
 
+        audio.addEventListener("pause", savePosition)
         audio.addEventListener("timeupdate", handleTimeUpdate)
         audio.addEventListener("durationchange", handleDurationChange)
         audio.addEventListener("ended", handleEnded)
@@ -105,6 +128,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                     setNovelTitle(track.novelTitle)
                     setNovelId(track.novelId)
                     setChapterNumber(track.chapterNumber)
+                    navigationRef.current = { next: track.nextChapterNumber ?? null, previous: track.previousChapterNumber ?? null }
                     setHasNext(track.hasNext)
                     setHasPrev(track.hasPrev)
                     setIsLocked(track.isLocked || false)
@@ -126,16 +150,18 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
         return () => {
             audio.pause()
+            audio.removeEventListener("pause", savePosition)
             audio.removeEventListener("timeupdate", handleTimeUpdate)
             audio.removeEventListener("durationchange", handleDurationChange)
             audio.removeEventListener("ended", handleEnded)
         }
     }, [])
 
-    const loadAudio = (
+    const loadAudio = useCallback((
         url: string | null,
-        info: { title: string; novelTitle: string; novelId: string; chapterNumber: number; hasNext: boolean; hasPrev: boolean; isLocked: boolean }
+        info: TrackInfo
     ) => {
+        navigationRef.current = { next: info.nextChapterNumber ?? null, previous: info.previousChapterNumber ?? null }
         setTitle(info.title)
         setNovelTitle(info.novelTitle)
         setNovelId(info.novelId)
@@ -159,6 +185,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                 novelId: info.novelId,
                 chapterNumber: info.chapterNumber,
                 hasNext: info.hasNext,
+                nextChapterNumber: info.nextChapterNumber,
+                previousChapterNumber: info.previousChapterNumber,
                 hasPrev: info.hasPrev,
                 isLocked: info.isLocked
             }))
@@ -183,9 +211,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                 setIsPlaying(false)
             }
         }
-    }
+    }, [audioUrl, playbackRate])
 
-    const togglePlay = () => {
+    const togglePlay = useCallback(() => {
         if (!audioRef.current || !audioUrl || isLocked) return
 
         if (isPlaying) {
@@ -196,7 +224,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
                 .then(() => setIsPlaying(true))
                 .catch(console.error)
         }
-    }
+    }, [audioUrl, isLocked, isPlaying])
 
     const seek = (time: number) => {
         if (audioRef.current) {
@@ -219,13 +247,13 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     const playNext = () => {
         if (hasNext && novelId && chapterNumber !== null) {
-            router.push(`/novel/${novelId}/chapter/${chapterNumber + 1}`)
+            router.push(`/novel/${novelId}/chapter/${navigationRef.current.next ?? chapterNumber + 1}`)
         }
     }
 
     const playPrev = () => {
         if (hasPrev && novelId && chapterNumber !== null) {
-            router.push(`/novel/${novelId}/chapter/${chapterNumber - 1}`)
+            router.push(`/novel/${novelId}/chapter/${navigationRef.current.previous ?? chapterNumber - 1}`)
         }
     }
 
@@ -240,7 +268,10 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         setDuration(0)
     }
 
+    const controls = useMemo(() => ({ audioUrl, isPlaying, loadAudio, togglePlay }), [audioUrl, isPlaying, loadAudio, togglePlay]);
+
     return (
+        <AudioControlsContext.Provider value={controls}>
         <AudioPlayerContext.Provider
             value={{
                 audioUrl,
@@ -270,6 +301,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         >
             {children}
         </AudioPlayerContext.Provider>
+        </AudioControlsContext.Provider>
     )
 }
 

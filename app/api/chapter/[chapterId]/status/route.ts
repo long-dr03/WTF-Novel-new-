@@ -6,5 +6,5 @@ type Ctx = { params: Promise<{ chapterId: string }> };
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
     const { chapterId } = await ctx.params;
-    return handle(req, updateChapterStatus, { params: { chapterId } });
+    return handle(req, updateChapterStatus, { auth: true, params: { chapterId } });
 }

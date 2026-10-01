@@ -49,7 +49,7 @@ export function MobileQuickAudioButton() {
             {/* Floating Mobile Quick Audio Button */}
             <div className={cn(
                 "fixed right-3 md:hidden z-[45] transition-all duration-300",
-                audioUrl ? "bottom-22" : "bottom-6"
+                audioUrl ? "bottom-[calc(124px+env(safe-area-inset-bottom))]" : "bottom-6"
             )}>
                 <button
                     onClick={() => setIsOpen(true)}

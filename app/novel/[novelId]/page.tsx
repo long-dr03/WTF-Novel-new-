@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata, ResolvingMetadata } from "next";
 import NovelDetailClient from "@/components/NovelDetailClient";
 import { callController } from "@/server/callController";
@@ -7,7 +8,7 @@ interface PageProps {
   params: Promise<{ novelId: string }>;
 }
 
-async function fetchNovelData(novelId: string) {
+const fetchNovelData = cache(async function (novelId: string) {
   try {
     const res = await callController(getNovelById, { params: { id: novelId } });
     if (res?.success && res.data) {
@@ -17,7 +18,7 @@ async function fetchNovelData(novelId: string) {
     console.error("Error fetching novel data on server:", error);
   }
   return null;
-}
+});
 
 export async function generateMetadata(
   { params }: PageProps,

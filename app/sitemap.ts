@@ -1,6 +1,8 @@
+import { connectDB } from '@/server/db';
+import Novel from '@/server/models/Novel';
 import type { MetadataRoute } from 'next';
 import { callController } from '@/server/callController';
-import { getPublicNovels, getPublicGenres } from '@/server/controllers/getNovel';
+import { getPublicGenres } from '@/server/controllers/getNovel';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://goctruyen.wtfdev.qzz.io';
@@ -24,13 +26,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let genreRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    const [novelsRes, genresRes] = await Promise.all([
-      callController(getPublicNovels, { query: { limit: 500, sort: 'updated' } }),
+    await connectDB();
+    const [novels, genresRes] = await Promise.all([
+      Novel.find({ publishStatus: 'published' }).select('_id slug updatedAt').sort({ _id: 1 }).limit(49000).lean(),
       callController(getPublicGenres),
     ]);
 
-    if (novelsRes?.success && Array.isArray(novelsRes.data?.novels)) {
-      novelRoutes = novelsRes.data.novels.map((novel: any) => ({
+    if (novels.length) {
+      novelRoutes = novels.map((novel) => ({
         url: `${siteUrl}/novel/${novel.slug || novel._id}`,
         lastModified: novel.updatedAt ? new Date(novel.updatedAt) : new Date(),
         changeFrequency: 'daily' as const,

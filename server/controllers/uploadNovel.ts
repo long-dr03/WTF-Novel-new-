@@ -4,6 +4,14 @@ import Chapter from '../models/Chapter';
 import User from '../models/User';
 import mongoose from 'mongoose';
 import ApiResponse from '../utils/apiResponse';
+import { canManageNovel } from '../queries/novelAccess';
+
+function scheduleDate(status: string, value: unknown) {
+    if (status !== 'scheduled') return null;
+    const date = new Date(String(value || ''));
+    if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) throw new Error('INVALID_SCHEDULE');
+    return date;
+}
 
 const mapStatus = (status: string): 'ongoing' | 'completed' | 'hiatus' => {
     const statusMap: Record<string, 'ongoing' | 'completed' | 'hiatus'> = {
@@ -23,9 +31,10 @@ const mapStatus = (status: string): 'ongoing' | 'completed' | 'hiatus' => {
 export const createNovel = async (req: Request, res: Response) => {
     try {
         const data = req.body.data;
+        if (!req.userId) return ApiResponse.unauthorized(res);
 
-        if (!data || !data.title || !data.description || !data.author) {
-            return ApiResponse.badRequest(res, 'Thiếu thông tin bắt buộc: title, description, author');
+        if (!data || !data.title || !data.description) {
+            return ApiResponse.badRequest(res, 'Thiếu thông tin bắt buộc: title, description');
         }
 
         const validGenres = (data.genres || [])
@@ -49,7 +58,7 @@ export const createNovel = async (req: Request, res: Response) => {
         const novelData = {
             title: data.title,
             description: data.description,
-            author: data.author,
+            author: req.userId,
             genres: validGenres,
             image: imageUrl,
             status: mapStatus(data.status),
@@ -94,6 +103,9 @@ export const uploadChapter = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy truyện');
         }
 
+        if (!await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
+        const scheduledAt = scheduleDate(data.status || 'draft', data.scheduledAt);
+
         let existingChapter = null;
 
         if (data.chapterId) {
@@ -106,6 +118,8 @@ export const uploadChapter = async (req: Request, res: Response) => {
         }
 
         if (existingChapter) {
+            if (String(existingChapter.novelId) !== String(novel._id)) return ApiResponse.badRequest(res, 'Chương không thuộc truyện');
+            existingChapter.scheduledAt = scheduledAt || undefined;
             existingChapter.title = data.title;
             existingChapter.content = data.content;
             existingChapter.contentJson = data.contentJson;
@@ -131,6 +145,7 @@ export const uploadChapter = async (req: Request, res: Response) => {
                 contentJson: data.contentJson,
                 wordCount: data.wordCount,
                 charCount: data.charCount,
+                scheduledAt,
                 status: data.status || 'draft'
             });
             await chapter.save();
@@ -144,6 +159,7 @@ export const uploadChapter = async (req: Request, res: Response) => {
         }
 
     } catch (error) {
+        if (error instanceof Error && error.message === 'INVALID_SCHEDULE') return ApiResponse.badRequest(res, 'Chọn thời gian đăng trong tương lai');
         console.error('Upload chapter error:', error);
         return ApiResponse.serverError(res);
     }
@@ -170,6 +186,9 @@ export const updateChapterStatus = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy chương');
         }
 
+        const novel = await Novel.findById(chapter.novelId).select('author');
+        if (!novel || !await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
+        chapter.scheduledAt = scheduleDate(status, req.body.scheduledAt) || undefined;
         chapter.status = status;
         if (status === 'published' && !chapter.publishedAt) {
             chapter.publishedAt = new Date();
@@ -182,6 +201,7 @@ export const updateChapterStatus = async (req: Request, res: Response) => {
             publishedAt: chapter.publishedAt
         }, 'Cập nhật trạng thái chương thành công');
     } catch (error) {
+        if (error instanceof Error && error.message === 'INVALID_SCHEDULE') return ApiResponse.badRequest(res, 'Chọn thời gian đăng trong tương lai');
         console.error('Update chapter status error:', error);
         return ApiResponse.serverError(res);
     }
@@ -208,6 +228,7 @@ export const updateNovelStatus = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy truyện');
         }
 
+        if (!await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
         novel.status = status;
         await novel.save();
 
@@ -238,6 +259,7 @@ export const updateNovel = async (req: Request, res: Response) => {
             return ApiResponse.notFound(res, 'Không tìm thấy truyện');
         }
 
+        if (!await canManageNovel(req, novel.author)) return ApiResponse.forbidden(res);
         if (title) novel.title = title;
         if (description) novel.description = description;
         if (image) novel.image = image;

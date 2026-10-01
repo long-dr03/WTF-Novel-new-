@@ -11,7 +11,6 @@ import WelcomePopup from "@/components/ads/WelcomePopup";
 import { useAudioPlayer } from "@/components/providers/AudioPlayerContext";
 import { GlobalAudioPlayer } from "@/components/reader/GlobalAudioPlayer";
 import { MobileQuickAudioButton } from "@/components/reader/MobileQuickAudioButton";
-import { cn } from "@/lib/utils";
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -35,11 +34,14 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
           sparkCount={8}
           duration={400}
         >
-          <main className={cn("flex-1 z-10 w-full", audioUrl && "pb-[72px]")}>
+          <main className="flex-1 z-10 w-full">
             {children}
           </main>
         </ClickSpark>
         {!isReaderPage && <Footer />}
+        {audioUrl && !isReaderPage && (
+          <div aria-hidden="true" className="h-[calc(132px+env(safe-area-inset-bottom))] shrink-0 md:h-[72px]" />
+        )}
         {!isAuthorPage && <SideAds />}
         {!isAuthorPage && <WelcomePopup />}
         {!isReaderPage && <MobileQuickAudioButton />}

@@ -1,4 +1,5 @@
-import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary, createReport, getReports, updateReportStatus, getAuthorStats, getComments, createComment, likeComment } from '../controller/NovelController';
+import axios from '../setup/axios';
+import { createNovel, uploadChapter, getNovelById, getPopularNovels, getAllNovels, getLatestNovels, getNovelsByAuthor, getChaptersByNovel, getChapterPage, getChapterContent, updateChapterStatus, updateNovelStatus, updateNovel, getPublicNovels, getPublicGenres, addToLibrary, getLibrary, checkLibraryStatus, removeFromLibrary, createReport, getReports, updateReportStatus, getAuthorStats, getComments, createComment, likeComment } from '../controller/NovelController';
 
 interface NovelData {
     title: string;
@@ -48,6 +49,8 @@ interface Chapter {
     createdAt?: string;
     updatedAt?: string;
     views?: number;
+    scheduledAt?: string;
+    navigation?: { previous: number | null; next: number | null };
 }
 
 interface ChapterData {
@@ -111,7 +114,7 @@ const createNovelService = async (novelData: NovelData): Promise<any> => {
  */
 const getNovelsByAuthorService = async (authorId: string): Promise<Novel[] | null> => {
     try {
-        const response = await getNovelsByAuthor(authorId);
+        const response = await getNovelsByAuthor(authorId, true);
         return extractApiData<Novel[]>(response);
     } catch (error) {
         console.error("Error fetching novels by author:", error);
@@ -123,9 +126,9 @@ const getNovelsByAuthorService = async (authorId: string): Promise<Novel[] | nul
  * Lấy thông tin chi tiết tiểu thuyết theo ID
  * @param novelId ID tiểu thuyết
  */
-const getNovelByIdService = async (novelId: string): Promise<Novel | null> => {
+const getNovelByIdService = async (novelId: string, preview = false): Promise<Novel | null> => {
     try {
-        const response = await getNovelById(novelId);
+        const response = await getNovelById(novelId, preview);
         return extractApiData<Novel>(response);
     } catch (error: any) {
         // 404 = truyện không tồn tại/đã bị xóa: tình huống bình thường (UI hiển thị "Không tìm thấy truyện"), không log đỏ.
@@ -182,9 +185,14 @@ const getLatestNovelsService = async (limit: number = 8): Promise<Novel[] | null
  * Lấy danh sách chương của một tiểu thuyết
  * @param novelId ID tiểu thuyết
  */
-const getChaptersByNovelService = async (novelId: string): Promise<Chapter[] | null> => {
+export const getChapterPageService = async (novelId: string, page = 1, order: 'asc' | 'desc' = 'asc') => {
+    const response = await getChapterPage(novelId, page, order) as { meta?: { hasMore?: boolean } };
+    return { chapters: extractApiData<Chapter[]>(response) || [], hasMore: Boolean(response?.meta?.hasMore) };
+};
+
+const getChaptersByNovelService = async (novelId: string, preview = false): Promise<Chapter[] | null> => {
     try {
-        const response = await getChaptersByNovel(novelId);
+        const response = await getChaptersByNovel(novelId, preview);
         return extractApiData<Chapter[]>(response);
     } catch (error: any) {
         if (error?.response?.status !== 404) console.error("Error fetching chapters:", error);
@@ -197,9 +205,9 @@ const getChaptersByNovelService = async (novelId: string): Promise<Chapter[] | n
  * @param novelId ID tiểu thuyết
  * @param chapterNumber Số thứ tự chương
  */
-const getChapterContentService = async (novelId: string, chapterNumber: number): Promise<Chapter | null> => {
+const getChapterContentService = async (novelId: string, chapterNumber: number, preview = false): Promise<Chapter | null> => {
     try {
-        const response = await getChapterContent(novelId, chapterNumber);
+        const response = await getChapterContent(novelId, chapterNumber, preview);
         return extractApiData<Chapter>(response);
     } catch (error: any) {
         if (error?.response?.status !== 404) console.error("Error fetching chapter content:", error);
@@ -212,9 +220,9 @@ const getChapterContentService = async (novelId: string, chapterNumber: number):
  * @param chapterId ID chương
  * @param status Trạng thái mới (draft, published, scheduled)
  */
-const updateChapterStatusService = async (chapterId: string, status: 'draft' | 'published' | 'scheduled'): Promise<any> => {
+const updateChapterStatusService = async (chapterId: string, status: 'draft' | 'published' | 'scheduled', scheduledAt?: Date): Promise<unknown> => {
     try {
-        const response = await updateChapterStatus(chapterId, status);
+        const response = await updateChapterStatus(chapterId, status, scheduledAt);
         return extractApiData(response);
     } catch (error) {
         console.error("Error updating chapter status:", error);
@@ -356,6 +364,21 @@ const getAuthorStatsService = async () => {
     }
 }
 
+export interface CommentPageItem {
+    _id: string;
+    userId: { _id: string; username: string; avatar?: string };
+    content: string;
+    createdAt: string | Date;
+    likes: string[];
+    parentId?: string | null;
+    replies?: CommentPageItem[];
+}
+
+export const getCommentsPageService = async (novelId: string, chapterId?: string, page = 1) => {
+    const response = await getComments(novelId, chapterId, page) as { meta?: { hasMore?: boolean } };
+    return { comments: extractApiData<CommentPageItem[]>(response) || [], hasMore: Boolean(response?.meta?.hasMore) };
+};
+
 const getCommentsService = async (novelId: string, chapterId?: string): Promise<any[] | null> => {
     try {
         const response = await getComments(novelId, chapterId);
@@ -414,3 +437,10 @@ export {
 }
 
 export type { Novel, Chapter, ChapterData, NovelData }
+
+export interface ChapterSummary {
+    total: number; totalWords: number; totalViews: number; first: number | null; last: number | null;
+}
+export async function getChapterSummaryService(novelId: string): Promise<ChapterSummary | null> {
+    return extractApiData<ChapterSummary>(await axios.get(`/novel/${novelId}/chapters/summary`));
+}

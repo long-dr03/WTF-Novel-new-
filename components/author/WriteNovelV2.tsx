@@ -90,6 +90,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
     const [isSaving, setIsSaving] = useState(false);
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterNumber, setChapterNumber] = useState(1);
+    const [scheduledAt, setScheduledAt] = useState('');
     const [chapterStatus, setChapterStatus] = useState<'draft' | 'published' | 'scheduled'>('draft');
 
     const [internalSidebarOpen, setInternalSidebarOpen] = useState(true);
@@ -169,7 +170,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
         }
         setIsLoadingChapters(true);
         try {
-            const response = await getChaptersByNovelService(novelId);
+            const response = await getChaptersByNovelService(novelId, true);
             if (response && Array.isArray(response)) {
                 setChapters(response);
                 if (response.length > 0) {
@@ -199,11 +200,13 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
         setSelectedChapterId(chapter._id || chapter.id || null);
         setSidebarOpen(false);
         try {
-            const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber);
+            const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber, true);
             if (chapterData) {
                 setChapterNumber(chapterData.chapterNumber);
                 setChapterTitle(chapterData.title || '');
                 setChapterStatus(chapterData.status || 'draft');
+                const date = chapterData.scheduledAt ? new Date(chapterData.scheduledAt) : null;
+                setScheduledAt(date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
                 if (chapterData.contentJson) editor.commands.setContent(chapterData.contentJson);
                 else if (chapterData.content) editor.commands.setContent(chapterData.content);
                 setEditMode('edit');
@@ -215,7 +218,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
     const handleNewChapter = () => {
         if (!editor) return;
         const defStatus = getAuthorPrefs().defaultChapterStatus;
-        setEditMode('new'); setSelectedChapterId(null); setChapterTitle(''); setChapterStatus(defStatus);
+        setEditMode('new'); setSelectedChapterId(null); setChapterTitle(''); setChapterStatus(defStatus); setScheduledAt('');
         setSidebarOpen(false);
         editor.commands.clearContent();
         if (chapters.length > 0) {
@@ -242,7 +245,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
     };
 
     const handleStatusChange = async (newStatus: 'draft' | 'published' | 'scheduled') => {
-        if (editMode === 'new') { setChapterStatus(newStatus); return; }
+        if (editMode === 'new' || newStatus === 'scheduled') { setChapterStatus(newStatus); return; }
         if (!selectedChapterId) return;
         try {
             const result = await updateChapterStatusService(selectedChapterId, newStatus);
@@ -255,6 +258,9 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
 
     const handleSave = useCallback(async () => {
         if (!editor || !selectedNovelId) { alert('Chọn truyện trước!'); return; }
+        if (chapterStatus === 'scheduled' && (!scheduledAt || new Date(scheduledAt).getTime() <= Date.now())) {
+            alert('Chọn thời gian đăng trong tương lai'); return;
+        }
         setIsSaving(true);
         const htmlContent = editor.getHTML();
         const jsonContent = editor.getJSON();
@@ -276,6 +282,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
             title: chapterTitle || `Chương ${chapterNumber}`,
             content: htmlContent, contentJson: jsonContent,
             wordCount: words, charCount: chars, status: chapterStatus,
+            ...(chapterStatus === 'scheduled' && { scheduledAt: new Date(scheduledAt) }),
             ...(editMode === 'new' && prefs.defaultAuthorNote.trim() && { authorNote: prefs.defaultAuthorNote.trim() }),
             ...(editMode === 'edit' && selectedChapterId && { chapterId: selectedChapterId }),
         };
@@ -296,7 +303,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
             } else { alert('Lỗi server!'); }
         } catch (e) { console.error(e); alert('Lỗi lưu!'); }
         finally { setIsSaving(false); }
-    }, [editor, selectedNovelId, chapterNumber, chapterTitle, editMode, selectedChapterId, chapters, chapterStatus]);
+    }, [editor, selectedNovelId, chapterNumber, chapterTitle, editMode, selectedChapterId, chapters, chapterStatus, scheduledAt]);
 
     const theme = {
         bg: isDarkMode ? "bg-[#191919]" : "bg-white",
@@ -504,7 +511,7 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                                  </Button>
                              </div>
 
-                             {editMode === 'edit' && chapterStatus !== 'published' && (
+                             {chapterStatus !== 'published' && (
                                 <Select value={chapterStatus} onValueChange={(v: any) => handleStatusChange(v)}>
                                     <SelectTrigger className="w-[110px] h-9 bg-transparent border-stone-700 text-xs">
                                         <SelectValue />
@@ -517,6 +524,10 @@ const WriteNovelV2 = ({ novels = [], selectedNovelId = null, onNovelChange }: Wr
                                 </Select>
                              )}
                              
+                             {chapterStatus === 'scheduled' && (
+                                <Input type="datetime-local" aria-label="Thời gian đăng" value={scheduledAt}
+                                    onChange={event => setScheduledAt(event.target.value)} className="w-auto h-9" />
+                             )}
                              <Button onClick={handleSave} disabled={isSaving} className="h-9 px-5 bg-white text-black hover:bg-stone-200 font-medium min-w-[90px]">
                                  {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Lưu"}
                              </Button>

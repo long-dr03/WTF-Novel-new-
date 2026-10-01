@@ -12,5 +12,5 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
     const { id } = await ctx.params;
-    return handle(req, updateNovel, { params: { novelId: id } });
+    return handle(req, updateNovel, { auth: true, params: { novelId: id } });
 }

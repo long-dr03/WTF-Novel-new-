@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 COPY . .
 
@@ -22,6 +22,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json

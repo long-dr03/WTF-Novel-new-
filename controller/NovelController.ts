@@ -40,12 +40,12 @@ const createNovel = (data: NovelData) => {
     });
 };
 
-const getNovelsByAuthor = (authorId: string) => {
-    return axios.get(`/author/${authorId}/novels`);
+const getNovelsByAuthor = (authorId: string, preview = false) => {
+    return axios.get(`/author/${authorId}/novels`, { params: preview ? { preview: "true" } : {} });
 };
 
-const getNovelById = (novelId: string) => {
-    return axios.get(`/novel/${novelId}`);
+const getNovelById = (novelId: string, preview = false) => {
+    return axios.get(`/novel/${novelId}`, { params: preview ? { preview: "true" } : {} });
 };
 
 const getPopularNovels = (limit: number = 10) => {
@@ -72,16 +72,20 @@ const getLatestNovels = (limit: number = 8) => {
     return axios.get(`/novels/latest?limit=${limit}`);
 };
 
-const getChaptersByNovel = (novelId: string) => {
-    return axios.get(`/novel/${novelId}/chapters`);
+const getChaptersByNovel = (novelId: string, preview = false) => {
+    return axios.get(`/novel/${novelId}/chapters`, { params: preview ? { preview: "true" } : {} });
 };
 
-const getChapterContent = (novelId: string, chapterNumber: number) => {
-    return axios.get(`/novel/${novelId}/chapter/${chapterNumber}`);
+const getChapterPage = (novelId: string, page = 1, order: 'asc' | 'desc' = 'asc') => {
+    return axios.get(`/novel/${novelId}/chapters`, { params: { page, order, limit: 100 } });
 };
 
-const updateChapterStatus = (chapterId: string, status: 'draft' | 'published' | 'scheduled') => {
-    return axios.put(`/chapter/${chapterId}/status`, { status });
+const getChapterContent = (novelId: string, chapterNumber: number, preview = false) => {
+    return axios.get(`/novel/${novelId}/chapter/${chapterNumber}`, { params: preview ? { preview: "true" } : {} });
+};
+
+const updateChapterStatus = (chapterId: string, status: 'draft' | 'published' | 'scheduled', scheduledAt?: Date) => {
+    return axios.put(`/chapter/${chapterId}/status`, { status, scheduledAt });
 };
 
 const updateNovelStatus = (novelId: string, status: 'ongoing' | 'completed' | 'hiatus') => {
@@ -125,8 +129,8 @@ const getAuthorStats = () => {
     return axios.get('/author/stats');
 };
 
-const getComments = (novelId: string, chapterId?: string) => {
-    return axios.get('/comments', { params: { novelId, chapterId } });
+const getComments = (novelId: string, chapterId?: string, page = 1) => {
+    return axios.get('/comments', { params: { novelId, chapterId, page } });
 };
 
 const createComment = (novelId: string, content: string, chapterId?: string, parentId?: string) => {
@@ -148,6 +152,7 @@ export {
     getPublicGenres,
     getLatestNovels,
     getChaptersByNovel,
+    getChapterPage,
     getChapterContent,
     updateChapterStatus,
     updateNovelStatus,

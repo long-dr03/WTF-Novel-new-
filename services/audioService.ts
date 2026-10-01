@@ -97,7 +97,7 @@ export const uploadChapterAudioToR2 = async (
  */
 export const getChapterAudioInfo = async (chapterId: string): Promise<AudioInfo | null> => {
     try {
-        const response: any = await axios.get(`/audio/chapter/${chapterId}/audio`);
+        const response: any = await axios.get(`/audio/chapter/${chapterId}/audio`, { params: { preview: 'true' } });
         return extractApiData<AudioInfo>(response);
     } catch (error) {
         console.error('Error fetching chapter audio info:', error);
@@ -188,7 +188,7 @@ export const deleteChapterAudio = async (chapterId: string): Promise<boolean> =>
  */
 export const getNovelAudioList = async (novelId: string): Promise<NovelAudioList | null> => {
     try {
-        const response: any = await axios.get(`/audio/novel/${novelId}/audio`);
+        const response: any = await axios.get(`/audio/novel/${novelId}/audio`, { params: { preview: 'true' } });
         return extractApiData<NovelAudioList>(response);
     } catch (error) {
         console.error('Error fetching novel audio list:', error);

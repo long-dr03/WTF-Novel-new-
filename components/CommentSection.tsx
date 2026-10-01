@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Send, ThumbsUp, MessageSquare } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { useAuth } from "@/components/providers/AuthProvider"
-import { getCommentsService, createCommentService, likeCommentService } from "@/services/novelService"
+import { getCommentsPageService, createCommentService, likeCommentService } from "@/services/novelService"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +36,11 @@ interface CommentSectionProps {
 export function CommentSection({ theme = 'light', novelId, chapterId }: CommentSectionProps) {
     const { user } = useAuth()
     const [comments, setComments] = useState<Comment[]>([])
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const scopeRef = useRef('')
+    scopeRef.current = `${novelId}:${chapterId}`
     const [newComment, setNewComment] = useState("")
     const [loading, setLoading] = useState(true)
     const [replyingToId, setReplyingToId] = useState<string | null>(null)
@@ -48,9 +53,12 @@ export function CommentSection({ theme = 'light', novelId, chapterId }: CommentS
     const fetchComments = useCallback(async () => {
         if (!novelId) return
         try {
-            const data = await getCommentsService(novelId, chapterId)
-            if (data) {
-                setComments(data)
+            const scope = `${novelId}:${chapterId}`
+            const data = await getCommentsPageService(novelId, chapterId)
+            if (scopeRef.current === scope) {
+                setComments(data.comments)
+                setPage(1)
+                setHasMore(data.hasMore)
             }
         } catch (error) {
             console.error("Failed to fetch comments", error)
@@ -62,6 +70,24 @@ export function CommentSection({ theme = 'light', novelId, chapterId }: CommentS
     useEffect(() => {
         fetchComments()
     }, [fetchComments])
+
+    const loadMore = async () => {
+        if (loadingMore) return
+        const scope = scopeRef.current
+        setLoadingMore(true)
+        try {
+            const data = await getCommentsPageService(novelId, chapterId, page + 1)
+            if (scopeRef.current === scope) {
+                setComments(previous => {
+                    const ids = new Set(previous.map(c => c._id))
+                    return [...previous, ...data.comments.filter(c => !ids.has(c._id))]
+                })
+                setPage(previous => previous + 1)
+                setHasMore(data.hasMore)
+            }
+        } catch { toast.error('Không thể tải thêm bình luận') }
+        finally { setLoadingMore(false) }
+    }
 
     const handleSubmit = async () => {
         if (!newComment.trim() || !user || isSubmitting || cooldown) return
@@ -400,6 +426,9 @@ export function CommentSection({ theme = 'light', novelId, chapterId }: CommentS
                         </div>
                     )
                 })}
+                {hasMore && <Button variant="outline" disabled={loadingMore} onClick={loadMore}>
+                    {loadingMore ? 'Đang tải...' : 'Xem thêm bình luận'}
+                </Button>}
             </div>
         </div>
     )

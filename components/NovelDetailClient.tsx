@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -20,7 +20,9 @@ import {
 } from "lucide-react"
 import { 
     getNovelByIdService, 
-    getChaptersByNovelService, 
+    getChapterPageService,
+    getChapterSummaryService,
+    type ChapterSummary,
     checkLibraryStatusService, 
     addToLibraryService, 
     removeFromLibraryService, 
@@ -74,6 +76,11 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
     const novelId = params.novelId as string
 
     const [novel, setNovel] = useState<Novel | null>(initialNovel || null)
+    const [chapterSummary, setChapterSummary] = useState<ChapterSummary | null>(null)
+    const [chapterPage, setChapterPage] = useState(1)
+    const [hasMoreChapters, setHasMoreChapters] = useState(false)
+    const [loadingChapters, setLoadingChapters] = useState(false)
+    const listScope = useRef('')
     const [chapters, setChapters] = useState<Chapter[]>([])
     const [loading, setLoading] = useState(!initialNovel)
     const [imageError, setImageError] = useState(false)
@@ -147,9 +154,9 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
         const fetchData = async () => {
             if (!novelId) return
             try {
-                const [novelData, chaptersData] = await Promise.all([
+                const [novelData, summary] = await Promise.all([
                     initialNovel ? Promise.resolve(initialNovel) : getNovelByIdService(novelId),
-                    getChaptersByNovelService(novelId)
+                    getChapterSummaryService(novelId)
                 ])
                 if (novelData) {
                     setNovel(novelData as Novel)
@@ -163,9 +170,7 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
                         }).catch(e => console.error("Error fetching related novels", e))
                     }
                 }
-                if (chaptersData) {
-                    setChapters(chaptersData as Chapter[])
-                }
+                setChapterSummary(summary)
             } catch (error) {
                 console.error("Error fetching novel:", error)
             } finally {
@@ -213,14 +218,33 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
         }
     }
 
-    const stats = useMemo(() => {
-        const totalWords = chapters.reduce((sum, ch) => sum + (ch.wordCount || 0), 0)
-        const totalViews = chapters.reduce((sum, ch) => sum + (ch.views || 0), 0)
-        const latestChapter = chapters.length > 0
-            ? chapters.reduce((latest, ch) => ch.chapterNumber > latest.chapterNumber ? ch : latest)
-            : null
-        return { totalWords, totalViews, latestChapter }
-    }, [chapters])
+    const stats = { latestChapter: chapterSummary?.last != null ? { chapterNumber: chapterSummary.last } : null }
+    listScope.current = `${novelId}:${sortOrder}`
+    useEffect(() => {
+        let active = true
+        setChapters([]); setChapterPage(1); setHasMoreChapters(false); setLoadingChapters(true)
+        getChapterPageService(novelId, 1, sortOrder).then(data => {
+            if (active) { setChapters(data.chapters as Chapter[]); setHasMoreChapters(data.hasMore) }
+        }).catch(() => { if (active) toast.error('Không thể tải danh sách chương') })
+            .finally(() => { if (active) setLoadingChapters(false) })
+        return () => { active = false }
+    }, [novelId, sortOrder])
+    const loadMoreChapters = async () => {
+        if (loadingChapters) return
+        const scope = listScope.current
+        setLoadingChapters(true)
+        try {
+            const data = await getChapterPageService(novelId, chapterPage + 1, sortOrder)
+            if (listScope.current === scope) {
+                setChapters(previous => {
+                    const ids = new Set(previous.map(c => c._id))
+                    return [...previous, ...data.chapters.filter(c => !ids.has(c._id as string)) as Chapter[]]
+                })
+                setChapterPage(previous => previous + 1); setHasMoreChapters(data.hasMore)
+            }
+        } catch { toast.error('Không thể tải thêm chương') }
+        finally { if (listScope.current === scope) setLoadingChapters(false) }
+    }
 
     const sortedChapters = useMemo(() => {
         return [...chapters].sort((a, b) =>
@@ -383,7 +407,7 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
                         <div className="flex flex-wrap gap-3 mt-2">
                             {chapters.length > 0 && (
                                 <Button asChild className="bg-gradient-to-r from-rose-500 via-pink-500 to-primary hover:opacity-95 text-white font-bold rounded-xl px-5 py-2 text-xs shadow-md cursor-pointer border-0">
-                                    <Link href={`/novel/${novelId}/chapter/1`}>
+                                    <Link href={`/novel/${novelId}/chapter/${chapterSummary?.first ?? 1}`}>
                                         <Headphones className="w-4 h-4 mr-1.5" />
                                         Nghe Audio
                                     </Link>
@@ -391,7 +415,7 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
                             )}
                             {chapters.length > 0 && (
                                 <Button asChild variant="outline" className="font-bold rounded-xl px-5 py-2 text-xs cursor-pointer">
-                                    <Link href={`/novel/${novelId}/chapter/1`}>
+                                    <Link href={`/novel/${novelId}/chapter/${chapterSummary?.first ?? 1}`}>
                                         Chương đầu
                                     </Link>
                                 </Button>
@@ -511,7 +535,7 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
                             </Button>
                         </div>
 
-                        {chapters.length === 0 ? (
+                        {loadingChapters && chapters.length === 0 ? <p>Đang tải danh sách chương...</p> : chapters.length === 0 ? (
                             <div className="text-center py-12 text-zinc-400 dark:text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-2xl bg-zinc-50/30 dark:bg-transparent">
                                 <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">Truyện chưa có chương nào</p>
@@ -534,6 +558,9 @@ export default function NovelDetailClient({ initialNovel }: { initialNovel?: any
                                 ))}
                             </div>
                         )}
+                        {hasMoreChapters && <Button variant="outline" disabled={loadingChapters} onClick={loadMoreChapters}>
+                            {loadingChapters ? 'Đang tải...' : 'Xem thêm chương'}
+                        </Button>}
                     </div>
 
                     {/* Related Novels */}

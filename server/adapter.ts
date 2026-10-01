@@ -4,7 +4,6 @@ import { promises as fsp } from 'fs';
 import { connectDB } from './db';
 import { verifyToken } from './variables/jwt';
 import User from './models/User';
-import Chapter from './models/Chapter';
 import type { ShimRequest, ShimResponse } from './types';
 
 type Handler = (req: ShimRequest, res: ShimResponse) => any | Promise<any>;
@@ -16,28 +15,6 @@ interface HandleOpts {
     auth?: boolean;
     /** Bắt buộc quyền admin (tương đương `protect` + `admin`) */
     admin?: boolean;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Scheduler: tự động đăng chương hẹn giờ (thay cho setInterval cũ)   */
-/* ------------------------------------------------------------------ */
-let lastScheduledRun = 0;
-
-async function runScheduledPublishThrottled(): Promise<void> {
-    const now = Date.now();
-    if (now - lastScheduledRun < 60_000) return; // tối đa 1 lần / phút
-    lastScheduledRun = now;
-    try {
-        const result = await Chapter.updateMany(
-            { status: 'scheduled', scheduledAt: { $lte: new Date() } },
-            { $set: { status: 'published', publishedAt: new Date() } }
-        );
-        if (result.modifiedCount > 0) {
-            console.log(`⏰ [Scheduler] Đã tự động đăng tải ${result.modifiedCount} chương truyện hẹn giờ.`);
-        }
-    } catch (err) {
-        console.error('⏰ [Scheduler] Lỗi khi đăng chương hẹn giờ:', err);
-    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -184,13 +161,10 @@ export async function handle(
     opts: HandleOpts = {}
 ): Promise<NextResponse> {
     try {
-        await connectDB();
+        if (!await connectDB()) throw new Error('DB unavailable');
     } catch {
         return NextResponse.json({ message: 'Lỗi kết nối cơ sở dữ liệu' }, { status: 500 });
     }
-
-    // Chạy scheduler đăng chương hẹn giờ (throttle 1 phút/lần)
-    void runScheduledPublishThrottled();
 
     const res = createRes();
     const req = await buildReq(request, opts.params || {});

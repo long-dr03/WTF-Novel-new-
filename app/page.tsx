@@ -28,7 +28,7 @@ const EMPTY: HomeInitialData = {
 
 // Gọi controller getPublicNovels TRỰC TIẾP (không qua HTTP) và lấy phần data.
 async function fetchNovels(query: Record<string, any>) {
-  const r = await callController(getPublicNovels, { query });
+  const r = await callController(getPublicNovels, { query: { includeTotal: "false", ...query } });
   return r?.success ? r.data : null; // { novels, total, page, pages }
 }
 
@@ -45,7 +45,7 @@ async function loadHomeData(): Promise<HomeInitialData> {
         fetchNovels({ status: "completed", limit: "6" }),
         fetchNovels({ limit: "10", sort: "popular" }),
         callController(getPublicGenres).then((r) => (r?.success ? r.data : [])),
-        fetchNovels({ page: "1", limit: "10", sort: "updated" }),
+        fetchNovels({ page: "1", limit: "10", sort: "updated", includeTotal: "true" }),
         fetchNovels({ limit: "6", sort: "newest" }),
       ]);
 

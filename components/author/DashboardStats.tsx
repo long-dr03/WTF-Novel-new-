@@ -55,7 +55,7 @@ export const DashboardStats = () => {
         {
             title: "Tổng lượt xem",
             value: summary.totalViews.toLocaleString(),
-            description: `Tăng trưởng ${summary.growthRate}`,
+            description: summary.growthRate === null ? "Chưa đủ dữ liệu so sánh" : `Tăng trưởng ${summary.growthRate}`,
             icon: <Eye className="h-4 w-4 text-emerald-500" />
         },
         {

@@ -9,7 +9,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "publish:scheduled": "node scripts/publish-scheduled.cjs",
+    "migrate:slugs": "node scripts/migrate-slugs.cjs",
+    "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1087.0",

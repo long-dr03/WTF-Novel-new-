@@ -257,7 +257,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
         setIsLoadingChapters(true);
         try {
-            const response = await getChaptersByNovelService(novelId);
+            const response = await getChaptersByNovelService(novelId, true);
             if (response && Array.isArray(response)) {
                 // Sắp xếp theo số chương
                 setChapters(response as Chapter[]);
@@ -300,7 +300,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
         setSelectedChapterId(chapter._id || chapter.id || null);
 
         try {
-            const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber);
+            const chapterData = await getChapterContentService(selectedNovelId, chapter.chapterNumber, true);
             console.log('📖 Chapter data loaded:', chapterData);
 
             if (chapterData) {
@@ -365,7 +365,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
                 // Reload danh sách chương
                 if (selectedNovelId) {
-                    const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                    const chaptersData = await getChaptersByNovelService(selectedNovelId, true);
                     if (chaptersData && Array.isArray(chaptersData)) {
                         const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
                         setChapters(sortedChapters);
@@ -399,7 +399,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
 
                 // Reload danh sách chương
                 if (selectedNovelId) {
-                    const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                    const chaptersData = await getChaptersByNovelService(selectedNovelId, true);
                     if (chaptersData && Array.isArray(chaptersData)) {
                         const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
                         setChapters(sortedChapters);
@@ -452,7 +452,7 @@ const WriteNovel = ({ novels = [], selectedNovelId = null, onNovelChange }: Writ
                 alert(editMode === 'edit' ? 'Cập nhật chương thành công!' : 'Lưu chương mới thành công!');
 
                 // Reload danh sách chương - API trả về array trực tiếp
-                const chaptersData = await getChaptersByNovelService(selectedNovelId);
+                const chaptersData = await getChaptersByNovelService(selectedNovelId, true);
                 if (chaptersData && Array.isArray(chaptersData)) {
                     const sortedChapters = chaptersData.sort((a: Chapter, b: Chapter) => a.chapterNumber - b.chapterNumber);
                     setChapters(sortedChapters);
